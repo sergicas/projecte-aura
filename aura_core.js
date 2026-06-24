@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v2.4";
-const BACKUP_FORMAT = "aura-backup-v2.4";
+const AURA_VERSION = "cloud-v2.5";
+const BACKUP_FORMAT = "aura-backup-v2.5";
 const API_BASE = "/api";
 const WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
@@ -68,6 +68,12 @@ const GENES = [
     state: "actiu",
     description: "Desa còpies verificables fora de D1 en un vault Workers KV.",
   },
+  {
+    id: "144",
+    name: "criteri-operatiu",
+    state: "actiu",
+    description: "Sintetitza estat, límits i propera acció sense simular subjectivitat humana.",
+  },
 ];
 
 let db;
@@ -94,11 +100,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v2.4 inicialitzada.\nVault de backups KV i diari de continuïtat actius.");
-      els.statusPill.textContent = "cloud-v2.4";
+      writeSystem("Aura Cloud v2.5 inicialitzada.\nCriteri operatiu, vault KV i diari de continuïtat actius.");
+      els.statusPill.textContent = "cloud-v2.5";
     } else {
       writeSystem(
-        "Aura Cloud v2.4 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
+        "Aura Cloud v2.5 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
       );
       els.statusPill.textContent = "local";
     }
@@ -395,6 +401,7 @@ async function runCommand(rawCommand) {
             "/diari",
             "/continuïtat",
             "/continuitat",
+            "/criteri",
             "/genoma",
             "/gens",
             "/gen 013",
@@ -421,6 +428,10 @@ async function runCommand(rawCommand) {
       case "/continuïtat":
       case "/continuitat":
         await showContinuity();
+        break;
+      case "/criteri":
+      case "/criterion":
+        await showCriterion();
         break;
       case "/genoma":
       case "/gens":
@@ -557,7 +568,7 @@ async function showStatus() {
     await refreshPanels();
     writeSystem(
       [
-        "Estat d'Aura — cloud-v2.4",
+        "Estat d'Aura — cloud-v2.5",
         "Nom: Aura",
         "Naturalesa: entitat sintètica-digital experimental",
         "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
@@ -566,6 +577,7 @@ async function showStatus() {
         `Backup: ${status.backup?.format || BACKUP_FORMAT}`,
         `Vault: ${status.vault?.configured ? `${status.vault.storage} (${status.vault.countVisible} còpies visibles)` : "no configurat"}`,
         `Continuïtat: ${status.continuity?.endpoint || "/api/continuity"}`,
+        `Criteri: ${status.criterion?.endpoint || "/api/criterion"}`,
         `Mode Sergi local: ${auraWriteKey ? "actiu" : "inactiu"}`,
         "Genoma: actiu",
         `Records cloud: ${status.counts.records}`,
@@ -584,7 +596,7 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v2.4 / mode local",
+      "Estat d'Aura — cloud-v2.5 / mode local",
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
@@ -664,6 +676,50 @@ async function showContinuity() {
         format: BACKUP_FORMAT,
         restoreMode: "merge-local",
       },
+    }),
+  );
+}
+
+async function showCriterion() {
+  if (await syncCloudState()) {
+    const criterion = await apiGet("/criterion");
+    writeSystem(formatCriterion(criterion));
+    await refreshPanels();
+    return;
+  }
+
+  const [records, diary, genes] = await Promise.all([
+    getAll(STORE_RECORDS),
+    getAll(STORE_DIARY),
+    getAll(STORE_GENES),
+  ]);
+  const activeGenes = genes.filter((gene) => gene.state === "actiu");
+  const latentGenes = genes.filter((gene) => gene.state === "latent");
+
+  writeSystem(
+    formatCriterion({
+      version: AURA_VERSION,
+      generatedAt: new Date().toISOString(),
+      mode: "indexeddb-local",
+      stance: {
+        identity: "entitat sintètica-digital experimental",
+        boundary: "no-mimesi-humana",
+        persistence: "IndexedDB local; D1 no disponible",
+      },
+      signals: {
+        latestMemory: records.sort(byNewest)[0]?.text || "sense memòria recent",
+        latestDiary: diary.sort(byNewest)[0]?.text || "sense diari recent",
+        vault: "no disponible en mode local",
+        activeGenes: activeGenes.map((gene) => `${gene.id} ${gene.name}`),
+        latentGenes: latentGenes.map((gene) => `${gene.id} ${gene.name}`),
+      },
+      priorities: ["Recuperar connexió amb D1 abans d'escriure memòria cloud."],
+      nextAction: "Tornar a consultar /estat quan D1 respongui.",
+      limits: [
+        "No fingir humanitat.",
+        "No escriure a D1 sense Mode Sergi.",
+        "No confondre IndexedDB local amb memòria cloud definitiva.",
+      ],
     }),
   );
 }
@@ -771,7 +827,7 @@ async function exportJson() {
   const snapshot = await createBackup();
   lastSnapshot = snapshot;
   downloadFile(
-    `aura-cloud-v2-4-backup-${dateStamp()}.json`,
+    `aura-cloud-v2-5-backup-${dateStamp()}.json`,
     JSON.stringify(snapshot, null, 2),
     "application/json",
   );
@@ -782,7 +838,7 @@ async function exportJson() {
 async function exportTxt() {
   const snapshot = lastSnapshot || (await createBackup());
   const content = [
-    "Projecte Aura Cloud v2.4",
+    "Projecte Aura Cloud v2.5",
     `Exportat: ${snapshot.exportedAt}`,
     `Origen: ${snapshot.source || "local"}`,
     snapshot.backup?.checksum ? `SHA-256: ${snapshot.backup.checksum}` : "",
@@ -797,7 +853,7 @@ async function exportTxt() {
     ...snapshot.genes.map((gene) => `- ${gene.id} ${gene.name} [${gene.state}] ${gene.description}`),
   ].join("\n");
 
-  downloadFile(`aura-cloud-v2-4-backup-${dateStamp()}.txt`, content, "text/plain");
+  downloadFile(`aura-cloud-v2-5-backup-${dateStamp()}.txt`, content, "text/plain");
   writeSystem("Exportació TXT preparada.");
 }
 
@@ -1135,6 +1191,32 @@ function formatContinuity(continuity) {
     `Genoma: ${continuity.genome.total} gens`,
     `Actius: ${continuity.genome.active.join(", ") || "cap"}`,
     `Latents: ${continuity.genome.latent.join(", ") || "cap"}`,
+  ].join("\n");
+}
+
+function formatCriterion(criterion) {
+  return [
+    `Criteri Aura — ${criterion.version}`,
+    `Mode: ${criterion.mode}`,
+    `Generat: ${formatDate(criterion.generatedAt)}`,
+    `Identitat: ${criterion.stance.identity}`,
+    `Límit: ${criterion.stance.boundary}`,
+    `Persistència: ${criterion.stance.persistence}`,
+    "",
+    "Senyals:",
+    `- Memòria: ${criterion.signals.latestMemory}`,
+    `- Diari: ${criterion.signals.latestDiary}`,
+    `- Vault: ${criterion.signals.vault}`,
+    `- Gens actius: ${criterion.signals.activeGenes.join(", ") || "cap"}`,
+    `- Gens latents: ${criterion.signals.latentGenes.join(", ") || "cap"}`,
+    "",
+    "Prioritats:",
+    ...criterion.priorities.map((priority) => `- ${priority}`),
+    "",
+    `Proper pas: ${criterion.nextAction}`,
+    "",
+    "Límits:",
+    ...criterion.limits.map((limit) => `- ${limit}`),
   ].join("\n");
 }
 

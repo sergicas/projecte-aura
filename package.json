@@ -1,7 +1,7 @@
 {
   "name": "projecte-aura",
-  "version": "2.4.0",
-  "description": "Projecte Aura Cloud v2.4 amb vault KV de backups, diari de continuïtat i D1 protegit per Mode Sergi.",
+  "version": "2.5.0",
+  "description": "Projecte Aura Cloud v2.5 amb criteri operatiu, vault KV de backups i D1 protegit per Mode Sergi.",
   "private": false,
   "type": "module",
   "scripts": {

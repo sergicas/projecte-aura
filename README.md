@@ -1,6 +1,6 @@
-# Projecte Aura Cloud v2.4
+# Projecte Aura Cloud v2.5
 
-Projecte Aura Cloud v2.4 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el diari de continuïtat permet anotar estat intern, i el vault Workers KV conserva backups fora de D1.
+Projecte Aura Cloud v2.5 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, i el criteri operatiu sintetitza estat, límits i propera acció sense simular subjectivitat humana.
 
 ## Arquitectura
 
@@ -24,6 +24,7 @@ Nota: R2 queda preparat com a següent millora possible, però el compte de Clou
 - `/diari`
 - `/continuïtat`
 - `/continuitat`
+- `/criteri`
 - `/genoma`
 - `/gens`
 - `/gen 013`
@@ -80,12 +81,15 @@ npm run dev:pages
 - `POST /api/import` amb Mode Sergi
 - `POST /api/restore` amb Mode Sergi
 - `GET /api/continuity`
+- `GET /api/criterion`
+- `GET /api/criteri`
 
 ## Versions
 
 - `v2.2`: backup JSON verificable amb manifest, SHA-256 i restauració protegida que preserva IDs.
 - `v2.3`: diari de continuïtat, endpoint `/api/continuity` i gen `055 continuitat-diaristica`.
 - `v2.4`: vault Workers KV fora de D1, endpoint `/api/backups` i gen `089 vault-backup-kv`.
+- `v2.5`: criteri operatiu determinista, endpoint `/api/criterion` i gen `144 criteri-operatiu`.
 
 ## Principis fundacionals
 

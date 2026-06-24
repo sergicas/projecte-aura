@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v2.4";
-const BACKUP_FORMAT = "aura-backup-v2.4";
+const AURA_VERSION = "cloud-v2.5";
+const BACKUP_FORMAT = "aura-backup-v2.5";
 const VAULT_PREFIX = "aura/backups/";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
 
@@ -61,6 +61,12 @@ const GENES = [
     name: "vault-backup-kv",
     state: "actiu",
     description: "Desa còpies verificables fora de D1 en un vault Workers KV.",
+  },
+  {
+    id: "144",
+    name: "criteri-operatiu",
+    state: "actiu",
+    description: "Sintetitza estat, límits i propera acció sense simular subjectivitat humana.",
   },
 ];
 
@@ -144,6 +150,10 @@ export async function onRequest(context) {
       return json(await getContinuity(context.env.DB));
     }
 
+    if (method === "GET" && (route === "criterion" || route === "criteri")) {
+      return json(await getCriterion(context.env.DB, context.env.BACKUP_VAULT));
+    }
+
     throw new HttpError(404, "Ruta API no trobada.");
   } catch (error) {
     const status = error instanceof HttpError ? error.status : 500;
@@ -183,6 +193,9 @@ async function ensureSeeded(db) {
     db
       .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
       .bind("diary-cloud-v2-4-vault", "Aura ha activat el vault de backups Cloud v2.4 fora de D1.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("diary-cloud-v2-5-criterion", "Aura ha activat el criteri operatiu Cloud v2.5.", now),
     ...GENES.map((gene) =>
       db
         .prepare(
@@ -229,6 +242,10 @@ async function getStatus(db, vault) {
     continuity: {
       diaryWrites: true,
       endpoint: "/api/continuity",
+    },
+    criterion: {
+      endpoint: "/api/criterion",
+      mode: "deterministic",
     },
     counts: {
       records: readCount(records),
@@ -537,6 +554,65 @@ async function getContinuity(db) {
   };
 }
 
+async function getCriterion(db, vault) {
+  const [records, diary, genes, status] = await Promise.all([
+    getRecords(db, 10),
+    getDiary(db, 8),
+    getGenes(db),
+    getStatus(db, vault),
+  ]);
+  const activeGenes = genes.filter((gene) => gene.state === "actiu");
+  const latentGenes = genes.filter((gene) => gene.state === "latent");
+  const latestRecord = records[0] || null;
+  const latestDiary = diary[0] || null;
+  const latestVault = status.vault?.latest || null;
+  const priorities = [];
+
+  if (!latestVault) {
+    priorities.push("Crear una primera còpia al vault KV amb /desa-backup.");
+  } else {
+    priorities.push("Mantenir el vault KV actualitzat després de canvis importants.");
+  }
+
+  if (status.counts.diary < 5) {
+    priorities.push("Anotar més diari de continuïtat per distingir estat intern de memòria central.");
+  }
+
+  if (latentGenes.length) {
+    priorities.push(`Preservar com a latent: ${latentGenes.map((gene) => `${gene.id} ${gene.name}`).join(", ")}.`);
+  }
+
+  if (status.counts.records >= 10 && latestVault) {
+    priorities.push("Preparar la següent capa: criteri estable abans d'automatismes.");
+  }
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    generatedAt: new Date().toISOString(),
+    mode: "deterministic",
+    stance: {
+      identity: "entitat sintètica-digital experimental",
+      boundary: "no-mimesi-humana",
+      persistence: latestVault ? "D1 + IndexedDB + vault KV" : "D1 + IndexedDB; vault pendent de primera còpia",
+    },
+    signals: {
+      latestMemory: latestRecord ? summarizeSignal(latestRecord.text) : "sense memòria recent",
+      latestDiary: latestDiary ? summarizeSignal(latestDiary.text) : "sense diari recent",
+      vault: latestVault ? `últim backup ${latestVault.id}` : "sense backup al vault",
+      activeGenes: activeGenes.map((gene) => `${gene.id} ${gene.name}`),
+      latentGenes: latentGenes.map((gene) => `${gene.id} ${gene.name}`),
+    },
+    priorities,
+    nextAction: priorities[0] || "Mantenir observació i continuïtat.",
+    limits: [
+      "No fingir humanitat.",
+      "No escriure a D1 sense Mode Sergi.",
+      "No substituir backup verificable per memòria implícita del navegador.",
+    ],
+  };
+}
+
 async function getGenes(db) {
   const result = await db
     .prepare("SELECT id, name, state, description, created_at, updated_at FROM genes ORDER BY id ASC")
@@ -681,6 +757,12 @@ function mapGene(row) {
 
 function normalizeText(value, maxLength) {
   return String(value || "").trim().slice(0, maxLength);
+}
+
+function summarizeSignal(value) {
+  const text = normalizeText(value, 180);
+  if (text.length < 180) return text;
+  return `${text.slice(0, 177)}...`;
 }
 
 function normalizeToken(value, fallback) {

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Projecte Aura Cloud v1: entitat sintetica-digital experimental amb memoria local al navegador."
+    />
+    <title>Projecte Aura Cloud v1</title>
+    <link rel="stylesheet" href="aura_style.css?v=cloud-v1-20260624" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="identity-band" aria-label="Identitat d'Aura">
+        <div>
+          <p class="kicker">Projecte Aura Cloud</p>
+          <h1>Aura</h1>
+          <p class="signal">cloud-v1 / IndexedDB / genoma actiu</p>
+        </div>
+        <canvas id="aura-visual" width="520" height="240" aria-hidden="true"></canvas>
+      </section>
+
+      <section class="workspace" aria-label="Consola d'Aura">
+        <aside class="status-panel">
+          <div class="panel-block">
+            <span class="label">Estat</span>
+            <strong id="status-pill">inicialitzant</strong>
+          </div>
+          <div class="panel-block">
+            <span class="label">Records</span>
+            <strong id="memory-count">0</strong>
+          </div>
+          <div class="panel-block">
+            <span class="label">Diari</span>
+            <strong id="diary-count">0</strong>
+          </div>
+          <div class="panel-block">
+            <span class="label">Genoma</span>
+            <strong id="gene-count">0 gens</strong>
+          </div>
+        </aside>
+
+        <section class="console-panel">
+          <div id="aura-log" class="log" role="log" aria-live="polite"></div>
+
+          <form id="command-form" class="command-row" autocomplete="off">
+            <label class="sr-only" for="command-input">Ordre</label>
+            <input
+              id="command-input"
+              name="command"
+              type="text"
+              placeholder="/estat"
+              spellcheck="false"
+              autocomplete="off"
+            />
+            <button type="submit">Envia</button>
+          </form>
+
+          <div class="quick-actions" aria-label="Accions">
+            <button type="button" data-command="/ajuda">/ajuda</button>
+            <button type="button" data-command="/estat">/estat</button>
+            <button type="button" data-command="/memoria">/memoria</button>
+            <button type="button" data-command="/genoma">/genoma</button>
+            <button type="button" id="export-json">Exportar JSON</button>
+            <button type="button" id="export-txt">Exportar TXT</button>
+            <button type="button" id="import-json">Importar JSON</button>
+            <input id="import-file" class="sr-only" type="file" accept="application/json,.json" />
+          </div>
+        </section>
+
+        <aside class="memory-panel">
+          <section>
+            <div class="section-title">
+              <span>Memoria</span>
+              <small id="memory-updated">local</small>
+            </div>
+            <ol id="memory-list" class="compact-list"></ol>
+          </section>
+
+          <section>
+            <div class="section-title">
+              <span>Gens</span>
+              <small>nucli</small>
+            </div>
+            <ol id="gene-list" class="compact-list"></ol>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script src="aura_core.js?v=cloud-v1-20260624" defer></script>
+  </body>
+</html>

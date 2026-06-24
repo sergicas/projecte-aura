@@ -1,0 +1,16 @@
+{
+  "name": "projecte-aura",
+  "version": "1.0.0",
+  "description": "Projecte Aura Cloud v1 per a Cloudflare Pages.",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "check": "node --check aura_core.js",
+    "serve": "python3 -m http.server 8788",
+    "prepare:pages": "rm -rf .deploy/projecte-aura && mkdir -p .deploy/projecte-aura && cp index.html aura_core.js aura_style.css _headers .deploy/projecte-aura/",
+    "deploy": "npm run prepare:pages && wrangler pages deploy .deploy/projecte-aura --project-name=projecte-aura --branch=main"
+  },
+  "devDependencies": {
+    "wrangler": "^4.104.0"
+  }
+}

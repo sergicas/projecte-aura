@@ -1,0 +1,35 @@
+CREATE TABLE IF NOT EXISTS records (
+  id TEXT PRIMARY KEY,
+  text TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'usuari',
+  source TEXT NOT NULL DEFAULT 'cloud',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_records_created_at ON records(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_records_kind ON records(kind);
+
+CREATE TABLE IF NOT EXISTS diary (
+  id TEXT PRIMARY KEY,
+  text TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_diary_created_at ON diary(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS genes (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  state TEXT NOT NULL,
+  description TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_genes_state ON genes(state);
+
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

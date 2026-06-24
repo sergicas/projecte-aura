@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "projecte-aura",
+  "compatibility_date": "2026-06-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": ".deploy/projecte-aura",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "projecte-aura-memory",
+      "database_id": "bed319d0-0b23-414a-a5e8-023db1f9812c",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

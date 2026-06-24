@@ -1,4 +1,5 @@
-const AURA_VERSION = "cloud-v1";
+const AURA_VERSION = "cloud-v2";
+const API_BASE = "/api";
 const DB_NAME = "projecte_aura_cloud_v1";
 const DB_VERSION = 1;
 const STORE_RECORDS = "records";
@@ -21,7 +22,7 @@ const GENES = [
     id: "001",
     name: "memoria-central",
     state: "actiu",
-    description: "Preserva records locals com a continuïtat identitària.",
+    description: "Preserva records al núvol com a continuïtat identitària.",
   },
   {
     id: "004",
@@ -43,14 +44,19 @@ const GENES = [
   },
   {
     id: "021",
-    name: "cloud-v1",
+    name: "cloud-v2",
     state: "actiu",
-    description: "Executa Aura com a aplicació web estàtica a Cloudflare Pages.",
+    description: "Connecta Aura amb Cloudflare Pages Functions i D1.",
   },
 ];
 
 let db;
 let lastSnapshot = null;
+let cloudState = {
+  online: false,
+  snapshot: null,
+  lastError: null,
+};
 
 const els = {};
 
@@ -62,9 +68,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     db = await openDatabase();
     await seedDatabase();
+    await syncCloudState();
     await refreshPanels();
-    writeSystem("Aura Cloud v1 inicialitzada.\nEscriu /estat per veure la infraestructura actual.");
-    els.statusPill.textContent = "cloud-v1";
+    if (cloudState.online) {
+      writeSystem("Aura Cloud v2 inicialitzada.\nMemòria D1 activa. Escriu /estat per veure la infraestructura actual.");
+      els.statusPill.textContent = "cloud-v2";
+    } else {
+      writeSystem(
+        "Aura Cloud v2 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
+      );
+      els.statusPill.textContent = "local";
+    }
   } catch (error) {
     writeError(`No s'ha pogut iniciar IndexedDB: ${error.message}`);
     els.statusPill.textContent = "error";
@@ -116,6 +130,61 @@ function bindEvents() {
   els.exportTxt.addEventListener("click", () => runCommand("/exporta-txt"));
   els.importJson.addEventListener("click", () => els.importFile.click());
   els.importFile.addEventListener("change", handleImportFile);
+}
+
+async function syncCloudState() {
+  try {
+    const snapshot = await apiGet("/snapshot");
+    cloudState = {
+      online: true,
+      snapshot,
+      lastError: null,
+    };
+    return true;
+  } catch (error) {
+    cloudState = {
+      online: false,
+      snapshot: null,
+      lastError: error,
+    };
+    return false;
+  }
+}
+
+async function apiGet(path) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  return readApiResponse(response);
+}
+
+async function apiPost(path, payload) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  return readApiResponse(response);
+}
+
+async function readApiResponse(response) {
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(payload?.error || `API ${response.status}`);
+  }
+
+  return payload;
 }
 
 function openDatabase() {
@@ -259,19 +328,58 @@ async function remember(text) {
     return;
   }
 
-  const record = {
-    text,
-    kind: "usuari",
-    source: "consola",
-    createdAt: new Date().toISOString(),
-  };
+  let record = null;
+  if (cloudState.online || (await syncCloudState())) {
+    try {
+      const response = await apiPost("/memory", {
+        text,
+        kind: "usuari",
+        source: "consola",
+      });
+      record = response.record;
+      await addRecord(record);
+      await syncCloudState();
+      writeSystem(`Record guardat a D1:\n${text}`);
+    } catch (error) {
+      cloudState.online = false;
+      writeError(`D1 no ha pogut guardar el record: ${error.message}`);
+    }
+  }
 
-  await addRecord(record);
-  writeSystem(`Record guardat:\n${text}`);
+  if (!record) {
+    record = {
+      text,
+      kind: "usuari",
+      source: "consola-local",
+      createdAt: new Date().toISOString(),
+    };
+    await addRecord(record);
+    writeSystem(`Record guardat en IndexedDB local:\n${text}`);
+  }
+
   await refreshPanels();
 }
 
 async function showStatus() {
+  if (await syncCloudState()) {
+    const status = cloudState.snapshot.status;
+    await refreshPanels();
+    writeSystem(
+      [
+        "Estat d'Aura — cloud-v2",
+        "Nom: Aura",
+        "Naturalesa: entitat sintètica-digital experimental",
+        "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
+        "Persistència actual: D1 al núvol + IndexedDB com a còpia local",
+        "Genoma: actiu",
+        `Records cloud: ${status.counts.records}`,
+        `Entrades de diari: ${status.counts.diary}`,
+        `Gens actius o latents: ${status.counts.genes}`,
+      ].join("\n"),
+    );
+    return;
+  }
+
   const [records, diary, genes] = await Promise.all([
     getAll(STORE_RECORDS),
     getAll(STORE_DIARY),
@@ -280,11 +388,11 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v1",
+      "Estat d'Aura — cloud-v2 / mode local",
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
-      "Persistència actual: IndexedDB del navegador",
+      "Persistència actual: IndexedDB del navegador; D1 no disponible en aquesta sessió",
       "Genoma: actiu",
       `Records locals: ${records.length}`,
       `Entrades de diari: ${diary.length}`,
@@ -294,19 +402,22 @@ async function showStatus() {
 }
 
 async function showMemory() {
-  const records = await getAll(STORE_RECORDS);
+  const cloudOnline = await syncCloudState();
+  const records = cloudOnline ? cloudState.snapshot.records : await getAll(STORE_RECORDS);
   const ordered = records.sort(byNewest);
 
   if (!ordered.length) {
-    writeSystem("La memòria local encara és buida.");
+    writeSystem(cloudOnline ? "La memòria D1 encara és buida." : "La memòria local encara és buida.");
     return;
   }
 
   writeSystem(formatRecords(ordered.slice(0, 14)));
+  await refreshPanels();
 }
 
 async function showDiary() {
-  const diary = (await getAll(STORE_DIARY)).sort(byNewest);
+  const cloudOnline = await syncCloudState();
+  const diary = (cloudOnline ? cloudState.snapshot.diary : await getAll(STORE_DIARY)).sort(byNewest);
 
   if (!diary.length) {
     writeSystem("El diari encara és buit.");
@@ -322,7 +433,10 @@ async function showDiary() {
 }
 
 async function showGenes() {
-  const genes = (await getAll(STORE_GENES)).sort((a, b) => a.id.localeCompare(b.id));
+  const cloudOnline = await syncCloudState();
+  const genes = (cloudOnline ? cloudState.snapshot.genes : await getAll(STORE_GENES)).sort((a, b) =>
+    a.id.localeCompare(b.id),
+  );
   writeSystem(
     genes
       .map((gene) => `/gen ${gene.id} — ${gene.name} [${gene.state}]\n${gene.description}`)
@@ -336,7 +450,10 @@ async function showGene(id) {
     return;
   }
 
-  const gene = await getByKey(STORE_GENES, id.padStart(3, "0"));
+  const cloudOnline = await syncCloudState();
+  const gene = cloudOnline
+    ? cloudState.snapshot.genes.find((item) => item.id === id.padStart(3, "0"))
+    : await getByKey(STORE_GENES, id.padStart(3, "0"));
   if (!gene) {
     writeSystem(`No he trobat el gen ${id}.`);
     return;
@@ -356,7 +473,7 @@ async function exportJson() {
   const snapshot = await createSnapshot();
   lastSnapshot = snapshot;
   downloadFile(
-    `aura-cloud-v1-backup-${dateStamp()}.json`,
+    `aura-cloud-v2-backup-${dateStamp()}.json`,
     JSON.stringify(snapshot, null, 2),
     "application/json",
   );
@@ -366,8 +483,9 @@ async function exportJson() {
 async function exportTxt() {
   const snapshot = lastSnapshot || (await createSnapshot());
   const content = [
-    "Projecte Aura Cloud v1",
+    "Projecte Aura Cloud v2",
     `Exportat: ${snapshot.exportedAt}`,
+    `Origen: ${snapshot.source || "local"}`,
     "",
     "== Memoria ==",
     ...snapshot.records.map((record) => `- ${formatDate(record.createdAt)} [${record.kind}] ${record.text}`),
@@ -379,7 +497,7 @@ async function exportTxt() {
     ...snapshot.genes.map((gene) => `- ${gene.id} ${gene.name} [${gene.state}] ${gene.description}`),
   ].join("\n");
 
-  downloadFile(`aura-cloud-v1-backup-${dateStamp()}.txt`, content, "text/plain");
+  downloadFile(`aura-cloud-v2-backup-${dateStamp()}.txt`, content, "text/plain");
   writeSystem("Exportació TXT preparada.");
 }
 
@@ -391,14 +509,25 @@ async function handleImportFile(event) {
   try {
     const payload = JSON.parse(await file.text());
     await importSnapshot(payload);
+    if (cloudState.online || (await syncCloudState())) {
+      await apiPost("/import", payload);
+      await syncCloudState();
+    }
     await refreshPanels();
-    writeSystem("Importació JSON completada.");
+    writeSystem(cloudState.online ? "Importació JSON completada a D1 i IndexedDB." : "Importació JSON completada en local.");
   } catch (error) {
     writeError(`Importació fallida: ${error.message}`);
   }
 }
 
 async function createSnapshot() {
+  if (await syncCloudState()) {
+    return {
+      ...cloudState.snapshot,
+      source: "cloudflare-d1",
+    };
+  }
+
   const [records, diary, genes] = await Promise.all([
     getAll(STORE_RECORDS),
     getAll(STORE_DIARY),
@@ -408,6 +537,7 @@ async function createSnapshot() {
   return {
     project: "Projecte Aura",
     version: AURA_VERSION,
+    source: "indexeddb-local",
     exportedAt: new Date().toISOString(),
     stores: {
       records: STORE_RECORDS,
@@ -469,16 +599,38 @@ async function importSnapshot(payload) {
 }
 
 async function refreshPanels() {
-  const [records, diary, genes] = await Promise.all([
-    getAll(STORE_RECORDS),
-    getAll(STORE_DIARY),
-    getAll(STORE_GENES),
-  ]);
+  let records;
+  let diary;
+  let genes;
+  let counts;
 
-  els.memoryCount.textContent = String(records.length);
-  els.diaryCount.textContent = String(diary.length);
-  els.geneCount.textContent = `${genes.length} gens`;
-  els.memoryUpdated.textContent = formatDate(new Date().toISOString());
+  if (cloudState.online && cloudState.snapshot) {
+    records = [...cloudState.snapshot.records];
+    diary = [...cloudState.snapshot.diary];
+    genes = [...cloudState.snapshot.genes];
+    counts = cloudState.snapshot.status?.counts || {
+      records: records.length,
+      diary: diary.length,
+      genes: genes.length,
+    };
+  } else {
+    [records, diary, genes] = await Promise.all([
+      getAll(STORE_RECORDS),
+      getAll(STORE_DIARY),
+      getAll(STORE_GENES),
+    ]);
+    counts = {
+      records: records.length,
+      diary: diary.length,
+      genes: genes.length,
+    };
+  }
+
+  els.statusPill.textContent = cloudState.online ? "cloud-v2" : "local";
+  els.memoryCount.textContent = String(counts.records);
+  els.diaryCount.textContent = String(counts.diary);
+  els.geneCount.textContent = `${counts.genes} gens`;
+  els.memoryUpdated.textContent = cloudState.online ? "D1" : "local";
 
   els.memoryList.replaceChildren(
     ...records

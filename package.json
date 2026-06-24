@@ -1,16 +1,21 @@
 {
   "name": "projecte-aura",
-  "version": "1.0.0",
-  "description": "Projecte Aura Cloud v1 per a Cloudflare Pages.",
+  "version": "2.0.0",
+  "description": "Projecte Aura Cloud v2 amb Cloudflare Pages Functions i D1.",
   "private": false,
   "type": "module",
   "scripts": {
-    "check": "node --check aura_core.js",
+    "check": "node --check aura_core.js && node --check 'functions/api/[[path]].js'",
+    "types": "wrangler types",
     "serve": "python3 -m http.server 8788",
     "prepare:pages": "rm -rf .deploy/projecte-aura && mkdir -p .deploy/projecte-aura && cp index.html aura_core.js aura_style.css _headers .deploy/projecte-aura/",
+    "dev:pages": "npm run prepare:pages && wrangler pages dev .deploy/projecte-aura --port=8788",
+    "migrate:local": "wrangler d1 migrations apply projecte-aura-memory --local",
+    "migrate:remote": "wrangler d1 migrations apply projecte-aura-memory --remote",
     "deploy": "npm run prepare:pages && wrangler pages deploy .deploy/projecte-aura --project-name=projecte-aura --branch=main"
   },
   "devDependencies": {
+    "@types/node": "^26.0.0",
     "wrangler": "^4.104.0"
   }
 }

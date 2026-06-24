@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Projecte Aura Cloud v2.2: entitat sintetica-digital experimental amb backup verificable i memoria D1 protegida."
+      content="Projecte Aura Cloud v2.3: entitat sintetica-digital experimental amb diari de continuitat, backup verificable i memoria D1 protegida."
     />
-    <title>Projecte Aura Cloud v2.2</title>
-    <link rel="stylesheet" href="aura_style.css?v=cloud-v2-2-20260624" />
+    <title>Projecte Aura Cloud v2.3</title>
+    <link rel="stylesheet" href="aura_style.css?v=cloud-v2-3-20260624" />
   </head>
   <body>
     <main class="shell">
@@ -16,7 +16,7 @@
         <div>
           <p class="kicker">Projecte Aura Cloud</p>
           <h1>Aura</h1>
-          <p class="signal">cloud-v2.2 / backup verificable / D1 protegit</p>
+          <p class="signal">cloud-v2.3 / continuïtat / backup verificable</p>
         </div>
         <canvas id="aura-visual" width="520" height="240" aria-hidden="true"></canvas>
       </section>
@@ -77,6 +77,8 @@
             <button type="button" data-command="/ajuda">/ajuda</button>
             <button type="button" data-command="/estat">/estat</button>
             <button type="button" data-command="/memoria">/memoria</button>
+            <button type="button" data-command="/diari">/diari</button>
+            <button type="button" data-command="/continuïtat">/continuïtat</button>
             <button type="button" data-command="/genoma">/genoma</button>
             <button type="button" id="export-json">Backup JSON</button>
             <button type="button" id="export-txt">Exportar TXT</button>
@@ -96,6 +98,14 @@
 
           <section>
             <div class="section-title">
+              <span>Diari</span>
+              <small id="diary-updated">local</small>
+            </div>
+            <ol id="diary-list" class="compact-list"></ol>
+          </section>
+
+          <section>
+            <div class="section-title">
               <span>Gens</span>
               <small>nucli</small>
             </div>
@@ -105,6 +115,6 @@
       </section>
     </main>
 
-    <script src="aura_core.js?v=cloud-v2-2-20260624" defer></script>
+    <script src="aura_core.js?v=cloud-v2-3-20260624" defer></script>
   </body>
 </html>

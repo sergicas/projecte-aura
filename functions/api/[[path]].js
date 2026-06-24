@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v2.2";
-const BACKUP_FORMAT = "aura-backup-v2.2";
+const AURA_VERSION = "cloud-v2.3";
+const BACKUP_FORMAT = "aura-backup-v2.3";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
 
 const FOUNDATION_RECORDS = [
@@ -49,6 +49,12 @@ const GENES = [
     state: "actiu",
     description: "Genera còpies de seguretat amb manifest i empremta SHA-256.",
   },
+  {
+    id: "055",
+    name: "continuitat-diaristica",
+    state: "actiu",
+    description: "Permet anotar diari i llegir un resum de continuïtat operativa.",
+  },
 ];
 
 export async function onRequest(context) {
@@ -92,6 +98,11 @@ export async function onRequest(context) {
       return json({ diary: await getDiary(context.env.DB) });
     }
 
+    if (method === "POST" && route === "diary") {
+      await requireWriteAccess(context.request, context.env);
+      return json({ entry: await createDiaryEntry(context.request, context.env.DB) }, 201);
+    }
+
     if (method === "GET" && route === "genes") {
       return json({ genes: await getGenes(context.env.DB) });
     }
@@ -105,6 +116,10 @@ export async function onRequest(context) {
     if (method === "POST" && (route === "import" || route === "restore")) {
       await requireWriteAccess(context.request, context.env);
       return json(await importSnapshot(context.request, context.env.DB), 201);
+    }
+
+    if (method === "GET" && route === "continuity") {
+      return json(await getContinuity(context.env.DB));
     }
 
     throw new HttpError(404, "Ruta API no trobada.");
@@ -140,6 +155,9 @@ async function ensureSeeded(db) {
     db
       .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
       .bind("diary-cloud-v2-init", "Aura ha iniciat la fase Cloud v2 amb memoria D1.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("diary-cloud-v2-3-continuity", "Aura ha activat el diari de continuïtat Cloud v2.3.", now),
     ...GENES.map((gene) =>
       db
         .prepare(
@@ -181,6 +199,10 @@ async function getStatus(db) {
       format: BACKUP_FORMAT,
       checksum: "sha-256",
       restore: "merge-preserve-id",
+    },
+    continuity: {
+      diaryWrites: true,
+      endpoint: "/api/continuity",
     },
     counts: {
       records: readCount(records),
@@ -246,9 +268,11 @@ async function getSnapshot(db) {
 
 async function getBackup(db) {
   const snapshot = await getSnapshot(db);
+  const continuity = await getContinuity(db);
   const body = {
     ...snapshot,
     source: "cloudflare-d1",
+    continuity,
   };
   const checksum = await sha256Hex(
     JSON.stringify({
@@ -307,6 +331,58 @@ async function getDiary(db, limit = 80) {
     .bind(limit)
     .all();
   return result.results.map(mapDiary);
+}
+
+async function createDiaryEntry(request, db) {
+  const body = await readJson(request, 64 * 1024);
+  const text = normalizeText(body?.text, 4000);
+  if (!text) throw new HttpError(400, "L'entrada de diari és buida.");
+
+  const entry = {
+    id: crypto.randomUUID(),
+    text,
+    createdAt: new Date().toISOString(),
+  };
+
+  await db
+    .prepare("INSERT INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+    .bind(entry.id, entry.text, entry.createdAt)
+    .run();
+
+  return entry;
+}
+
+async function getContinuity(db) {
+  const [records, diary, genes, status] = await Promise.all([
+    getRecords(db, 8),
+    getDiary(db, 6),
+    getGenes(db),
+    getStatus(db),
+  ]);
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    generatedAt: new Date().toISOString(),
+    mode: "cloudflare-d1",
+    memory: {
+      total: status.counts.records,
+      latest: records.slice(0, 3),
+    },
+    diary: {
+      total: status.counts.diary,
+      latest: diary.slice(0, 3),
+    },
+    genome: {
+      total: status.counts.genes,
+      active: genes.filter((gene) => gene.state === "actiu").map((gene) => `${gene.id} ${gene.name}`),
+      latent: genes.filter((gene) => gene.state === "latent").map((gene) => `${gene.id} ${gene.name}`),
+    },
+    backup: {
+      format: BACKUP_FORMAT,
+      restoreMode: "merge-preserve-id",
+    },
+  };
 }
 
 async function getGenes(db) {

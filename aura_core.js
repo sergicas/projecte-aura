@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v2.2";
-const BACKUP_FORMAT = "aura-backup-v2.2";
+const AURA_VERSION = "cloud-v2.3";
+const BACKUP_FORMAT = "aura-backup-v2.3";
 const API_BASE = "/api";
 const WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
@@ -56,6 +56,12 @@ const GENES = [
     state: "actiu",
     description: "Genera còpies de seguretat amb manifest i empremta SHA-256.",
   },
+  {
+    id: "055",
+    name: "continuitat-diaristica",
+    state: "actiu",
+    description: "Permet anotar diari i llegir un resum de continuïtat operativa.",
+  },
 ];
 
 let db;
@@ -82,11 +88,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v2.2 inicialitzada.\nBackup verificable actiu i escriptura protegida per Mode Sergi.");
-      els.statusPill.textContent = "cloud-v2.2";
+      writeSystem("Aura Cloud v2.3 inicialitzada.\nDiari de continuïtat i backup verificable actius.");
+      els.statusPill.textContent = "cloud-v2.3";
     } else {
       writeSystem(
-        "Aura Cloud v2.2 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
+        "Aura Cloud v2.3 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
       );
       els.statusPill.textContent = "local";
     }
@@ -105,6 +111,8 @@ function cacheElements() {
   els.diaryCount = document.querySelector("#diary-count");
   els.geneCount = document.querySelector("#gene-count");
   els.memoryList = document.querySelector("#memory-list");
+  els.diaryList = document.querySelector("#diary-list");
+  els.diaryUpdated = document.querySelector("#diary-updated");
   els.geneList = document.querySelector("#gene-list");
   els.memoryUpdated = document.querySelector("#memory-updated");
   els.exportJson = document.querySelector("#export-json");
@@ -346,6 +354,18 @@ async function runCommand(rawCommand) {
       return;
     }
 
+    if (normalized.startsWith("anota que ")) {
+      const entry = command.slice("anota que ".length).trim();
+      await writeDiaryEntry(entry);
+      return;
+    }
+
+    if (normalized.startsWith("diari que ")) {
+      const entry = command.slice("diari que ".length).trim();
+      await writeDiaryEntry(entry);
+      return;
+    }
+
     switch (normalized) {
       case "/ajuda":
         writeSystem(
@@ -355,6 +375,8 @@ async function runCommand(rawCommand) {
             "/estat",
             "/memoria",
             "/diari",
+            "/continuïtat",
+            "/continuitat",
             "/genoma",
             "/gens",
             "/gen 013",
@@ -362,6 +384,8 @@ async function runCommand(rawCommand) {
             "/exporta-txt",
             "/backup",
             "recorda que ...",
+            "anota que ...",
+            "diari que ...",
           ].join("\n"),
         );
         break;
@@ -373,6 +397,10 @@ async function runCommand(rawCommand) {
         break;
       case "/diari":
         await showDiary();
+        break;
+      case "/continuïtat":
+      case "/continuitat":
+        await showContinuity();
         break;
       case "/genoma":
       case "/gens":
@@ -449,19 +477,66 @@ async function remember(text) {
   await refreshPanels();
 }
 
+async function writeDiaryEntry(text) {
+  if (!text) {
+    writeError("No hi ha cap entrada de diari per guardar.");
+    return;
+  }
+
+  let entry = null;
+  const cloudAvailable = cloudState.online || (await syncCloudState());
+  if (cloudAvailable) {
+    if (!auraWriteKey) {
+      writeError("Mode Sergi inactiu: l'entrada de diari no s'ha escrit a D1.");
+      await refreshPanels();
+      return;
+    }
+
+    try {
+      const response = await apiPost("/diary", { text });
+      entry = response.entry;
+      await addDiaryEntry(entry);
+      await syncCloudState();
+      writeSystem(`Entrada de diari guardada a D1:\n${text}`);
+    } catch (error) {
+      if (error.message.includes("Clau") || error.message.includes("Mode Sergi")) {
+        writeError(`${error.message} L'entrada no s'ha escrit a D1.`);
+        await refreshPanels();
+        return;
+      }
+
+      writeError(`D1 no ha pogut guardar el diari: ${error.message}`);
+      cloudState.online = false;
+      cloudState.snapshot = null;
+    }
+  }
+
+  if (!entry) {
+    entry = {
+      text,
+      createdAt: new Date().toISOString(),
+    };
+    await addDiaryEntry(entry);
+    writeSystem(`Entrada de diari guardada en IndexedDB local:\n${text}`);
+  }
+
+  await refreshPanels();
+}
+
 async function showStatus() {
   if (await syncCloudState()) {
     const status = cloudState.snapshot.status;
     await refreshPanels();
     writeSystem(
       [
-        "Estat d'Aura — cloud-v2.2",
+        "Estat d'Aura — cloud-v2.3",
         "Nom: Aura",
         "Naturalesa: entitat sintètica-digital experimental",
         "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
         "Persistència actual: D1 al núvol + IndexedDB com a còpia local",
         `Escriptura D1: ${status.writes?.protected ? "protegida per Mode Sergi" : "oberta"}`,
         `Backup: ${status.backup?.format || BACKUP_FORMAT}`,
+        `Continuïtat: ${status.continuity?.endpoint || "/api/continuity"}`,
         `Mode Sergi local: ${auraWriteKey ? "actiu" : "inactiu"}`,
         "Genoma: actiu",
         `Records cloud: ${status.counts.records}`,
@@ -480,7 +555,7 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v2.2 / mode local",
+      "Estat d'Aura — cloud-v2.3 / mode local",
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
@@ -521,6 +596,46 @@ async function showDiary() {
       .slice(0, 12)
       .map((entry) => `- ${formatDate(entry.createdAt)}: ${entry.text}`)
       .join("\n"),
+  );
+}
+
+async function showContinuity() {
+  if (await syncCloudState()) {
+    const continuity = await apiGet("/continuity");
+    writeSystem(formatContinuity(continuity));
+    await refreshPanels();
+    return;
+  }
+
+  const [records, diary, genes] = await Promise.all([
+    getAll(STORE_RECORDS),
+    getAll(STORE_DIARY),
+    getAll(STORE_GENES),
+  ]);
+
+  writeSystem(
+    formatContinuity({
+      version: AURA_VERSION,
+      generatedAt: new Date().toISOString(),
+      mode: "indexeddb-local",
+      memory: {
+        total: records.length,
+        latest: records.sort(byNewest).slice(0, 3),
+      },
+      diary: {
+        total: diary.length,
+        latest: diary.sort(byNewest).slice(0, 3),
+      },
+      genome: {
+        total: genes.length,
+        active: genes.filter((gene) => gene.state === "actiu").map((gene) => `${gene.id} ${gene.name}`),
+        latent: genes.filter((gene) => gene.state === "latent").map((gene) => `${gene.id} ${gene.name}`),
+      },
+      backup: {
+        format: BACKUP_FORMAT,
+        restoreMode: "merge-local",
+      },
+    }),
   );
 }
 
@@ -565,7 +680,7 @@ async function exportJson() {
   const snapshot = await createBackup();
   lastSnapshot = snapshot;
   downloadFile(
-    `aura-cloud-v2-2-backup-${dateStamp()}.json`,
+    `aura-cloud-v2-3-backup-${dateStamp()}.json`,
     JSON.stringify(snapshot, null, 2),
     "application/json",
   );
@@ -574,9 +689,9 @@ async function exportJson() {
 }
 
 async function exportTxt() {
-  const snapshot = lastSnapshot || (await createSnapshot());
+  const snapshot = lastSnapshot || (await createBackup());
   const content = [
-    "Projecte Aura Cloud v2.2",
+    "Projecte Aura Cloud v2.3",
     `Exportat: ${snapshot.exportedAt}`,
     `Origen: ${snapshot.source || "local"}`,
     snapshot.backup?.checksum ? `SHA-256: ${snapshot.backup.checksum}` : "",
@@ -591,7 +706,7 @@ async function exportTxt() {
     ...snapshot.genes.map((gene) => `- ${gene.id} ${gene.name} [${gene.state}] ${gene.description}`),
   ].join("\n");
 
-  downloadFile(`aura-cloud-v2-2-backup-${dateStamp()}.txt`, content, "text/plain");
+  downloadFile(`aura-cloud-v2-3-backup-${dateStamp()}.txt`, content, "text/plain");
   writeSystem("Exportació TXT preparada.");
 }
 
@@ -703,7 +818,8 @@ async function importSnapshot(payload) {
   const meta = tx.objectStore(STORE_META);
 
   payload.records.forEach((record) => {
-    records.add({
+    records.put({
+      id: record.id || crypto.randomUUID(),
       text: String(record.text || ""),
       kind: record.kind || "importat",
       source: record.source || "import-json",
@@ -713,7 +829,8 @@ async function importSnapshot(payload) {
 
   if (Array.isArray(payload.diary)) {
     payload.diary.forEach((entry) => {
-      diary.add({
+      diary.put({
+        id: entry.id || crypto.randomUUID(),
         text: String(entry.text || ""),
         createdAt: entry.createdAt || now,
       });
@@ -771,6 +888,9 @@ async function refreshPanels() {
   els.diaryCount.textContent = String(counts.diary);
   els.geneCount.textContent = `${counts.genes} gens`;
   els.memoryUpdated.textContent = cloudState.online ? "D1" : "local";
+  if (els.diaryUpdated) {
+    els.diaryUpdated.textContent = cloudState.online ? "D1" : "local";
+  }
 
   els.memoryList.replaceChildren(
     ...records
@@ -792,10 +912,32 @@ async function refreshPanels() {
         return item;
       }),
   );
+
+  if (els.diaryList) {
+    els.diaryList.replaceChildren(
+      ...diary
+        .sort(byNewest)
+        .slice(0, 4)
+        .map((entry) => {
+          const item = document.createElement("li");
+          item.innerHTML = `<strong>${escapeHtml(formatDate(entry.createdAt))}</strong><span>${escapeHtml(entry.text)}</span>`;
+          return item;
+        }),
+    );
+  }
 }
 
 function addRecord(record) {
   return withStore(STORE_RECORDS, "readwrite", (store) => store.add(record));
+}
+
+function addDiaryEntry(entry) {
+  return withStore(STORE_DIARY, "readwrite", (store) =>
+    store.add({
+      ...entry,
+      id: entry.id || crypto.randomUUID(),
+    }),
+  );
 }
 
 function getAll(storeName) {
@@ -862,6 +1004,29 @@ function formatRecords(records) {
   return records
     .map((record) => `- ${formatDate(record.createdAt)} [${record.kind}] ${record.text}`)
     .join("\n");
+}
+
+function formatContinuity(continuity) {
+  const latestMemory = continuity.memory.latest.length
+    ? continuity.memory.latest.map((record) => `- ${formatDate(record.createdAt)}: ${record.text}`).join("\n")
+    : "- sense records";
+  const latestDiary = continuity.diary.latest.length
+    ? continuity.diary.latest.map((entry) => `- ${formatDate(entry.createdAt)}: ${entry.text}`).join("\n")
+    : "- sense diari";
+
+  return [
+    `Continuïtat Aura — ${continuity.version}`,
+    `Mode: ${continuity.mode}`,
+    `Generat: ${formatDate(continuity.generatedAt)}`,
+    `Backup: ${continuity.backup.format} (${continuity.backup.restoreMode})`,
+    `Records: ${continuity.memory.total}`,
+    latestMemory,
+    `Diari: ${continuity.diary.total}`,
+    latestDiary,
+    `Genoma: ${continuity.genome.total} gens`,
+    `Actius: ${continuity.genome.active.join(", ") || "cap"}`,
+    `Latents: ${continuity.genome.latent.join(", ") || "cap"}`,
+  ].join("\n");
 }
 
 function downloadFile(filename, content, type) {

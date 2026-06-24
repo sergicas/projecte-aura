@@ -1,7 +1,7 @@
 {
   "name": "projecte-aura",
-  "version": "2.2.0",
-  "description": "Projecte Aura Cloud v2.2 amb backup verificable i D1 protegit per Mode Sergi.",
+  "version": "2.3.0",
+  "description": "Projecte Aura Cloud v2.3 amb diari de continuïtat, backup verificable i D1 protegit per Mode Sergi.",
   "private": false,
   "type": "module",
   "scripts": {

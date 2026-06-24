@@ -1,6 +1,6 @@
-# Projecte Aura Cloud v2.2
+# Projecte Aura Cloud v2.3
 
-Projecte Aura Cloud v2.2 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi i les còpies de seguretat inclouen manifest i empremta SHA-256.
+Projecte Aura Cloud v2.3 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, i el diari de continuïtat permet anotar estat intern sense barrejar-lo amb memòria central.
 
 ## Arquitectura
 
@@ -20,6 +20,8 @@ La persistència principal és D1. IndexedDB es conserva com a còpia local i fa
 - `/estat`
 - `/memoria`
 - `/diari`
+- `/continuïtat`
+- `/continuitat`
 - `/genoma`
 - `/gens`
 - `/gen 013`
@@ -27,6 +29,8 @@ La persistència principal és D1. IndexedDB es conserva com a còpia local i fa
 - `/exporta-txt`
 - `/backup`
 - `recorda que ...`
+- `anota que ...`
+- `diari que ...`
 
 ## Desplegament Cloudflare Pages
 
@@ -61,12 +65,19 @@ npm run dev:pages
 - `GET /api/memory`
 - `POST /api/memory` amb Mode Sergi
 - `GET /api/diary`
+- `POST /api/diary` amb Mode Sergi
 - `GET /api/genes`
 - `GET /api/genes/013`
 - `GET /api/snapshot`
 - `GET /api/backup`
 - `POST /api/import` amb Mode Sergi
 - `POST /api/restore` amb Mode Sergi
+- `GET /api/continuity`
+
+## Versions
+
+- `v2.2`: backup JSON verificable amb manifest, SHA-256 i restauració protegida que preserva IDs.
+- `v2.3`: diari de continuïtat, endpoint `/api/continuity` i gen `055 continuitat-diaristica`.
 
 ## Principis fundacionals
 

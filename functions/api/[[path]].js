@@ -1,5 +1,6 @@
-const AURA_VERSION = "cloud-v2.3";
-const BACKUP_FORMAT = "aura-backup-v2.3";
+const AURA_VERSION = "cloud-v2.4";
+const BACKUP_FORMAT = "aura-backup-v2.4";
+const VAULT_PREFIX = "aura/backups/";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
 
 const FOUNDATION_RECORDS = [
@@ -55,6 +56,12 @@ const GENES = [
     state: "actiu",
     description: "Permet anotar diari i llegir un resum de continuïtat operativa.",
   },
+  {
+    id: "089",
+    name: "vault-backup-kv",
+    state: "actiu",
+    description: "Desa còpies verificables fora de D1 en un vault Workers KV.",
+  },
 ];
 
 export async function onRequest(context) {
@@ -74,15 +81,30 @@ export async function onRequest(context) {
     const route = segments.join("/");
 
     if (method === "GET" && route === "status") {
-      return json(await getStatus(context.env.DB));
+      return json(await getStatus(context.env.DB, context.env.BACKUP_VAULT));
     }
 
     if (method === "GET" && (route === "snapshot" || route === "export")) {
-      return json(await getSnapshot(context.env.DB));
+      return json(await getSnapshot(context.env.DB, context.env.BACKUP_VAULT));
     }
 
     if (method === "GET" && route === "backup") {
       return json(await getBackup(context.env.DB));
+    }
+
+    if (method === "GET" && isVaultListRoute(route)) {
+      await requireWriteAccess(context.request, context.env);
+      return json(await listVaultBackups(context.env.BACKUP_VAULT));
+    }
+
+    if (method === "POST" && isVaultListRoute(route)) {
+      await requireWriteAccess(context.request, context.env);
+      return json(await createVaultBackup(context.request, context.env.DB, context.env.BACKUP_VAULT), 201);
+    }
+
+    if (method === "GET" && isVaultItemRoute(segments)) {
+      await requireWriteAccess(context.request, context.env);
+      return json(await getVaultBackup(context.env.BACKUP_VAULT, segments.at(-1)));
     }
 
     if (method === "GET" && route === "memory") {
@@ -158,6 +180,9 @@ async function ensureSeeded(db) {
     db
       .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
       .bind("diary-cloud-v2-3-continuity", "Aura ha activat el diari de continuïtat Cloud v2.3.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("diary-cloud-v2-4-vault", "Aura ha activat el vault de backups Cloud v2.4 fora de D1.", now),
     ...GENES.map((gene) =>
       db
         .prepare(
@@ -176,7 +201,7 @@ async function ensureSeeded(db) {
   await db.batch(statements);
 }
 
-async function getStatus(db) {
+async function getStatus(db, vault) {
   const [records, diary, genes] = await db.batch([
     db.prepare("SELECT COUNT(*) AS total FROM records"),
     db.prepare("SELECT COUNT(*) AS total FROM diary"),
@@ -200,6 +225,7 @@ async function getStatus(db) {
       checksum: "sha-256",
       restore: "merge-preserve-id",
     },
+    vault: await getVaultSummary(vault),
     continuity: {
       diaryWrites: true,
       endpoint: "/api/continuity",
@@ -209,6 +235,26 @@ async function getStatus(db) {
       diary: readCount(diary),
       genes: readCount(genes),
     },
+  };
+}
+
+async function getVaultSummary(vault) {
+  if (!vault) {
+    return {
+      configured: false,
+      storage: "workers-kv",
+      endpoint: "/api/backups",
+    };
+  }
+
+  const backups = await readVaultIndex(vault, 20);
+  return {
+    configured: true,
+    storage: "workers-kv",
+    endpoint: "/api/backups",
+    protected: true,
+    countVisible: backups.length,
+    latest: backups[0] || null,
   };
 }
 
@@ -247,12 +293,12 @@ async function timingSafeTextEqual(left, right) {
   return crypto.subtle.timingSafeEqual(leftHash, rightHash);
 }
 
-async function getSnapshot(db) {
+async function getSnapshot(db, vault) {
   const [records, diary, genes, status] = await Promise.all([
     getRecords(db, 500),
     getDiary(db, 200),
     getGenes(db),
-    getStatus(db),
+    getStatus(db, vault),
   ]);
 
   return {
@@ -294,6 +340,112 @@ async function getBackup(db) {
       restoreMode: "merge-preserve-id",
     },
   };
+}
+
+function isVaultListRoute(route) {
+  return route === "backups" || route === "vault/backups";
+}
+
+function isVaultItemRoute(segments) {
+  return (
+    (segments.length === 2 && segments[0] === "backups" && segments[1]) ||
+    (segments.length === 3 && segments[0] === "vault" && segments[1] === "backups" && segments[2])
+  );
+}
+
+async function createVaultBackup(request, db, vault) {
+  assertVault(vault);
+  const body = await readJson(request, 32 * 1024);
+  const backup = await getBackup(db);
+  const checksum = backup.backup.checksum;
+  const createdAt = backup.exportedAt;
+  const id = `backup-${createdAt.replaceAll(/[:.]/g, "-")}-${checksum.slice(0, 12)}`;
+  const key = `${VAULT_PREFIX}${id}.json`;
+  const payload = {
+    ...backup,
+    vault: {
+      id,
+      key,
+      storage: "workers-kv",
+      savedAt: new Date().toISOString(),
+      reason: normalizeText(body?.reason, 240) || "manual",
+    },
+  };
+  const content = JSON.stringify(payload, null, 2);
+
+  await vault.put(key, content, {
+    metadata: {
+      id,
+      createdAt,
+      savedAt: payload.vault.savedAt,
+      version: AURA_VERSION,
+      format: BACKUP_FORMAT,
+      checksum,
+      records: String(payload.records.length),
+      diary: String(payload.diary.length),
+      genes: String(payload.genes.length),
+      reason: payload.vault.reason,
+    },
+  });
+
+  return {
+    ok: true,
+    backup: {
+      id,
+      key,
+      savedAt: payload.vault.savedAt,
+      checksum,
+      counts: payload.backup.counts,
+      storage: "workers-kv",
+    },
+  };
+}
+
+async function listVaultBackups(vault) {
+  assertVault(vault);
+  return {
+    ok: true,
+    storage: "workers-kv",
+    prefix: VAULT_PREFIX,
+    backups: await readVaultIndex(vault, 100),
+  };
+}
+
+async function getVaultBackup(vault, id) {
+  assertVault(vault);
+  const key = `${VAULT_PREFIX}${normalizeVaultId(id)}.json`;
+  const content = await vault.get(key, "json");
+  if (!content) throw new HttpError(404, "Backup no trobat al vault.");
+  return content;
+}
+
+async function readVaultIndex(vault, limit) {
+  if (!vault) return [];
+
+  const list = await vault.list({ prefix: VAULT_PREFIX, limit });
+  return list.keys
+    .map((item) => ({
+      id: String(item.metadata?.id || item.name.replace(VAULT_PREFIX, "").replace(/\.json$/, "")),
+      key: item.name,
+      createdAt: item.metadata?.createdAt || item.metadata?.savedAt || null,
+      savedAt: item.metadata?.savedAt || null,
+      version: item.metadata?.version || "unknown",
+      format: item.metadata?.format || BACKUP_FORMAT,
+      checksum: item.metadata?.checksum || null,
+      counts: {
+        records: Number(item.metadata?.records || 0),
+        diary: Number(item.metadata?.diary || 0),
+        genes: Number(item.metadata?.genes || 0),
+      },
+      reason: item.metadata?.reason || "",
+    }))
+    .sort((a, b) => new Date(b.savedAt || b.createdAt || 0).getTime() - new Date(a.savedAt || a.createdAt || 0).getTime());
+}
+
+function assertVault(vault) {
+  if (!vault) {
+    throw new HttpError(503, "El vault de backups no està configurat.");
+  }
 }
 
 async function getRecords(db, limit = 120) {
@@ -546,6 +698,14 @@ function normalizeId(value, fallback) {
     .replaceAll(/[^a-zA-Z0-9_:.@-]/g, "-")
     .slice(0, 120);
   return id || fallback;
+}
+
+function normalizeVaultId(value) {
+  const id = normalizeId(value, "");
+  if (!id.startsWith("backup-")) {
+    throw new HttpError(400, "Identificador de backup no vàlid.");
+  }
+  return id;
 }
 
 function normalizeDate(value, fallback) {

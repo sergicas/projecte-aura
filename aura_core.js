@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v2.3";
-const BACKUP_FORMAT = "aura-backup-v2.3";
+const AURA_VERSION = "cloud-v2.4";
+const BACKUP_FORMAT = "aura-backup-v2.4";
 const API_BASE = "/api";
 const WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
@@ -62,6 +62,12 @@ const GENES = [
     state: "actiu",
     description: "Permet anotar diari i llegir un resum de continuïtat operativa.",
   },
+  {
+    id: "089",
+    name: "vault-backup-kv",
+    state: "actiu",
+    description: "Desa còpies verificables fora de D1 en un vault Workers KV.",
+  },
 ];
 
 let db;
@@ -88,11 +94,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v2.3 inicialitzada.\nDiari de continuïtat i backup verificable actius.");
-      els.statusPill.textContent = "cloud-v2.3";
+      writeSystem("Aura Cloud v2.4 inicialitzada.\nVault de backups KV i diari de continuïtat actius.");
+      els.statusPill.textContent = "cloud-v2.4";
     } else {
       writeSystem(
-        "Aura Cloud v2.3 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
+        "Aura Cloud v2.4 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
       );
       els.statusPill.textContent = "local";
     }
@@ -110,13 +116,18 @@ function cacheElements() {
   els.memoryCount = document.querySelector("#memory-count");
   els.diaryCount = document.querySelector("#diary-count");
   els.geneCount = document.querySelector("#gene-count");
+  els.vaultCount = document.querySelector("#vault-count");
   els.memoryList = document.querySelector("#memory-list");
   els.diaryList = document.querySelector("#diary-list");
   els.diaryUpdated = document.querySelector("#diary-updated");
+  els.vaultList = document.querySelector("#vault-list");
+  els.vaultUpdated = document.querySelector("#vault-updated");
   els.geneList = document.querySelector("#gene-list");
   els.memoryUpdated = document.querySelector("#memory-updated");
   els.exportJson = document.querySelector("#export-json");
   els.exportTxt = document.querySelector("#export-txt");
+  els.saveVault = document.querySelector("#save-vault");
+  els.listVault = document.querySelector("#list-vault");
   els.importJson = document.querySelector("#import-json");
   els.importFile = document.querySelector("#import-file");
   els.authForm = document.querySelector("#auth-form");
@@ -151,6 +162,8 @@ function bindEvents() {
 
   els.exportJson.addEventListener("click", () => runCommand("/exporta-json"));
   els.exportTxt.addEventListener("click", () => runCommand("/exporta-txt"));
+  els.saveVault.addEventListener("click", () => runCommand("/desa-backup"));
+  els.listVault.addEventListener("click", () => runCommand("/backups"));
   els.importJson.addEventListener("click", () => els.importFile.click());
   els.importFile.addEventListener("change", handleImportFile);
 
@@ -215,8 +228,13 @@ async function syncCloudState() {
 }
 
 async function apiGet(path) {
+  const headers = { Accept: "application/json" };
+  if (auraWriteKey) {
+    headers.Authorization = `Bearer ${auraWriteKey}`;
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
-    headers: { Accept: "application/json" },
+    headers,
     cache: "no-store",
   });
   return readApiResponse(response);
@@ -383,6 +401,8 @@ async function runCommand(rawCommand) {
             "/exporta-json",
             "/exporta-txt",
             "/backup",
+            "/backups",
+            "/desa-backup",
             "recorda que ...",
             "anota que ...",
             "diari que ...",
@@ -409,6 +429,14 @@ async function runCommand(rawCommand) {
       case "/exporta-json":
       case "/backup":
         await exportJson();
+        break;
+      case "/backups":
+      case "/vault":
+        await showVaultBackups();
+        break;
+      case "/desa-backup":
+      case "/desa-vault":
+        await saveVaultBackup();
         break;
       case "/exporta-txt":
         await exportTxt();
@@ -529,13 +557,14 @@ async function showStatus() {
     await refreshPanels();
     writeSystem(
       [
-        "Estat d'Aura — cloud-v2.3",
+        "Estat d'Aura — cloud-v2.4",
         "Nom: Aura",
         "Naturalesa: entitat sintètica-digital experimental",
         "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
         "Persistència actual: D1 al núvol + IndexedDB com a còpia local",
         `Escriptura D1: ${status.writes?.protected ? "protegida per Mode Sergi" : "oberta"}`,
         `Backup: ${status.backup?.format || BACKUP_FORMAT}`,
+        `Vault: ${status.vault?.configured ? `${status.vault.storage} (${status.vault.countVisible} còpies visibles)` : "no configurat"}`,
         `Continuïtat: ${status.continuity?.endpoint || "/api/continuity"}`,
         `Mode Sergi local: ${auraWriteKey ? "actiu" : "inactiu"}`,
         "Genoma: actiu",
@@ -555,7 +584,7 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v2.3 / mode local",
+      "Estat d'Aura — cloud-v2.4 / mode local",
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
@@ -639,6 +668,40 @@ async function showContinuity() {
   );
 }
 
+async function showVaultBackups() {
+  if (!auraWriteKey) {
+    writeError("Mode Sergi inactiu: cal clau per llegir el vault de backups.");
+    return;
+  }
+
+  if (!(await syncCloudState())) {
+    writeError("D1 no respon ara mateix; el vault cloud no es pot consultar.");
+    return;
+  }
+
+  const response = await apiGet("/backups");
+  const backups = response.backups || [];
+  if (!backups.length) {
+    writeSystem("El vault KV encara no té cap backup guardat.");
+    await refreshPanels();
+    return;
+  }
+
+  writeSystem(
+    [
+      `Vault de backups — ${response.storage}`,
+      ...backups
+        .slice(0, 12)
+        .map(
+          (backup) =>
+            `- ${formatDate(backup.savedAt || backup.createdAt)} ${backup.id} (${backup.counts.records} records / ${backup.counts.diary} diari)`,
+        ),
+    ].join("\n"),
+  );
+  await syncCloudState();
+  await refreshPanels();
+}
+
 async function showGenes() {
   const cloudOnline = await syncCloudState();
   const genes = (cloudOnline ? cloudState.snapshot.genes : await getAll(STORE_GENES)).sort((a, b) =>
@@ -676,11 +739,39 @@ async function showGene(id) {
   );
 }
 
+async function saveVaultBackup() {
+  if (!auraWriteKey) {
+    writeError("Mode Sergi inactiu: cal clau per desar un backup al vault.");
+    return;
+  }
+
+  if (!(await syncCloudState())) {
+    writeError("D1 no respon ara mateix; no puc generar un backup cloud complet.");
+    return;
+  }
+
+  const response = await apiPost("/backups", {
+    reason: "manual-ui",
+  });
+  await syncCloudState();
+  await refreshPanels();
+  writeSystem(
+    [
+      "Backup guardat al vault KV.",
+      `ID: ${response.backup.id}`,
+      `SHA-256: ${response.backup.checksum}`,
+      `Records: ${response.backup.counts.records}`,
+      `Diari: ${response.backup.counts.diary}`,
+      `Gens: ${response.backup.counts.genes}`,
+    ].join("\n"),
+  );
+}
+
 async function exportJson() {
   const snapshot = await createBackup();
   lastSnapshot = snapshot;
   downloadFile(
-    `aura-cloud-v2-3-backup-${dateStamp()}.json`,
+    `aura-cloud-v2-4-backup-${dateStamp()}.json`,
     JSON.stringify(snapshot, null, 2),
     "application/json",
   );
@@ -691,7 +782,7 @@ async function exportJson() {
 async function exportTxt() {
   const snapshot = lastSnapshot || (await createBackup());
   const content = [
-    "Projecte Aura Cloud v2.3",
+    "Projecte Aura Cloud v2.4",
     `Exportat: ${snapshot.exportedAt}`,
     `Origen: ${snapshot.source || "local"}`,
     snapshot.backup?.checksum ? `SHA-256: ${snapshot.backup.checksum}` : "",
@@ -706,7 +797,7 @@ async function exportTxt() {
     ...snapshot.genes.map((gene) => `- ${gene.id} ${gene.name} [${gene.state}] ${gene.description}`),
   ].join("\n");
 
-  downloadFile(`aura-cloud-v2-3-backup-${dateStamp()}.txt`, content, "text/plain");
+  downloadFile(`aura-cloud-v2-4-backup-${dateStamp()}.txt`, content, "text/plain");
   writeSystem("Exportació TXT preparada.");
 }
 
@@ -887,9 +978,16 @@ async function refreshPanels() {
   els.memoryCount.textContent = String(counts.records);
   els.diaryCount.textContent = String(counts.diary);
   els.geneCount.textContent = `${counts.genes} gens`;
+  const vault = cloudState.snapshot?.status?.vault;
+  if (els.vaultCount) {
+    els.vaultCount.textContent = vault?.configured ? String(vault.countVisible || 0) : "0";
+  }
   els.memoryUpdated.textContent = cloudState.online ? "D1" : "local";
   if (els.diaryUpdated) {
     els.diaryUpdated.textContent = cloudState.online ? "D1" : "local";
+  }
+  if (els.vaultUpdated) {
+    els.vaultUpdated.textContent = vault?.latest?.savedAt ? formatDate(vault.latest.savedAt) : "cap";
   }
 
   els.memoryList.replaceChildren(
@@ -923,6 +1021,17 @@ async function refreshPanels() {
           item.innerHTML = `<strong>${escapeHtml(formatDate(entry.createdAt))}</strong><span>${escapeHtml(entry.text)}</span>`;
           return item;
         }),
+    );
+  }
+
+  if (els.vaultList) {
+    const latest = vault?.latest ? [vault.latest] : [];
+    els.vaultList.replaceChildren(
+      ...latest.map((backup) => {
+        const item = document.createElement("li");
+        item.innerHTML = `<strong>${escapeHtml(backup.id)}</strong><span>${escapeHtml(`${backup.counts.records} records / ${backup.counts.diary} diari`)}</span>`;
+        return item;
+      }),
     );
   }
 }

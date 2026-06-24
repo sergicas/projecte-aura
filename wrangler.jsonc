@@ -12,6 +12,12 @@
       "migrations_dir": "migrations"
     }
   ],
+  "kv_namespaces": [
+    {
+      "binding": "BACKUP_VAULT",
+      "id": "f99db03ccf7d4da291bcfffea2acc905"
+    }
+  ],
   "observability": {
     "enabled": true
   }

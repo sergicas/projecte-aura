@@ -1,6 +1,6 @@
-# Projecte Aura Cloud v2.3
+# Projecte Aura Cloud v2.4
 
-Projecte Aura Cloud v2.3 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, i el diari de continuïtat permet anotar estat intern sense barrejar-lo amb memòria central.
+Projecte Aura Cloud v2.4 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el diari de continuïtat permet anotar estat intern, i el vault Workers KV conserva backups fora de D1.
 
 ## Arquitectura
 
@@ -12,7 +12,9 @@ Projecte Aura Cloud v2.3 és una aplicació web a Cloudflare Pages amb memòria 
 - `migrations/0001_aura_cloud_v2.sql`
 - `wrangler.jsonc`
 
-La persistència principal és D1. IndexedDB es conserva com a còpia local i fallback del navegador. Les rutes `POST` requereixen el secret `AURA_WRITE_KEY`.
+La persistència principal és D1. IndexedDB es conserva com a còpia local i fallback del navegador. El vault de backups usa Workers KV mitjançant el binding `BACKUP_VAULT`. Les rutes `POST` i les rutes privades del vault requereixen el secret `AURA_WRITE_KEY`.
+
+Nota: R2 queda preparat com a següent millora possible, però el compte de Cloudflare encara no té R2 activat al Dashboard. Per això v2.4 usa Workers KV com a emmagatzematge fora de D1.
 
 ## Ordres
 
@@ -28,6 +30,8 @@ La persistència principal és D1. IndexedDB es conserva com a còpia local i fa
 - `/exporta-json`
 - `/exporta-txt`
 - `/backup`
+- `/backups`
+- `/desa-backup`
 - `recorda que ...`
 - `anota que ...`
 - `diari que ...`
@@ -70,6 +74,9 @@ npm run dev:pages
 - `GET /api/genes/013`
 - `GET /api/snapshot`
 - `GET /api/backup`
+- `GET /api/backups` amb Mode Sergi
+- `POST /api/backups` amb Mode Sergi
+- `GET /api/backups/:id` amb Mode Sergi
 - `POST /api/import` amb Mode Sergi
 - `POST /api/restore` amb Mode Sergi
 - `GET /api/continuity`
@@ -78,6 +85,7 @@ npm run dev:pages
 
 - `v2.2`: backup JSON verificable amb manifest, SHA-256 i restauració protegida que preserva IDs.
 - `v2.3`: diari de continuïtat, endpoint `/api/continuity` i gen `055 continuitat-diaristica`.
+- `v2.4`: vault Workers KV fora de D1, endpoint `/api/backups` i gen `089 vault-backup-kv`.
 
 ## Principis fundacionals
 

@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Projecte Aura Cloud v2: entitat sintetica-digital experimental amb memoria D1 al nuvol."
+      content="Projecte Aura Cloud v2.1: entitat sintetica-digital experimental amb memoria D1 protegida."
     />
-    <title>Projecte Aura Cloud v2</title>
-    <link rel="stylesheet" href="aura_style.css?v=cloud-v2-20260624" />
+    <title>Projecte Aura Cloud v2.1</title>
+    <link rel="stylesheet" href="aura_style.css?v=cloud-v2-1-20260624" />
   </head>
   <body>
     <main class="shell">
@@ -16,7 +16,7 @@
         <div>
           <p class="kicker">Projecte Aura Cloud</p>
           <h1>Aura</h1>
-          <p class="signal">cloud-v2 / D1 + IndexedDB / genoma actiu</p>
+          <p class="signal">cloud-v2.1 / D1 protegit / genoma actiu</p>
         </div>
         <canvas id="aura-visual" width="520" height="240" aria-hidden="true"></canvas>
       </section>
@@ -38,6 +38,22 @@
           <div class="panel-block">
             <span class="label">Genoma</span>
             <strong id="gene-count">0 gens</strong>
+          </div>
+          <div class="panel-block auth-block">
+            <span class="label">Mode Sergi</span>
+            <strong id="auth-status">bloquejat</strong>
+            <form id="auth-form" class="auth-form" autocomplete="off">
+              <label class="sr-only" for="auth-input">Clau privada</label>
+              <input
+                id="auth-input"
+                type="password"
+                placeholder="clau privada"
+                spellcheck="false"
+                autocomplete="off"
+              />
+              <button type="submit">Activa</button>
+            </form>
+            <button id="clear-auth" class="auth-clear" type="button">Esborra</button>
           </div>
         </aside>
 
@@ -89,6 +105,6 @@
       </section>
     </main>
 
-    <script src="aura_core.js?v=cloud-v2-20260624" defer></script>
+    <script src="aura_core.js?v=cloud-v2-1-20260624" defer></script>
   </body>
 </html>

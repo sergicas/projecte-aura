@@ -1,5 +1,6 @@
-const AURA_VERSION = "cloud-v2";
+const AURA_VERSION = "cloud-v2.1";
 const API_BASE = "/api";
+const WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
 const DB_VERSION = 1;
 const STORE_RECORDS = "records";
@@ -57,11 +58,13 @@ let cloudState = {
   snapshot: null,
   lastError: null,
 };
+let auraWriteKey = "";
 
 const els = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
   cacheElements();
+  loadWriteKey();
   bindEvents();
   drawAuraVisual();
 
@@ -71,8 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v2 inicialitzada.\nMemòria D1 activa. Escriu /estat per veure la infraestructura actual.");
-      els.statusPill.textContent = "cloud-v2";
+      writeSystem("Aura Cloud v2.1 inicialitzada.\nMemòria D1 activa i escriptura protegida per Mode Sergi.");
+      els.statusPill.textContent = "cloud-v2.1";
     } else {
       writeSystem(
         "Aura Cloud v2 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
@@ -100,6 +103,10 @@ function cacheElements() {
   els.exportTxt = document.querySelector("#export-txt");
   els.importJson = document.querySelector("#import-json");
   els.importFile = document.querySelector("#import-file");
+  els.authForm = document.querySelector("#auth-form");
+  els.authInput = document.querySelector("#auth-input");
+  els.authStatus = document.querySelector("#auth-status");
+  els.clearAuth = document.querySelector("#clear-auth");
   els.visual = document.querySelector("#aura-visual");
 }
 
@@ -130,6 +137,46 @@ function bindEvents() {
   els.exportTxt.addEventListener("click", () => runCommand("/exporta-txt"));
   els.importJson.addEventListener("click", () => els.importFile.click());
   els.importFile.addEventListener("change", handleImportFile);
+
+  els.authForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const nextKey = els.authInput.value.trim();
+    if (!nextKey) {
+      writeError("La clau de Mode Sergi és buida.");
+      return;
+    }
+
+    auraWriteKey = nextKey;
+    localStorage.setItem(WRITE_KEY_STORAGE, auraWriteKey);
+    els.authInput.value = "";
+    updateAuthStatus();
+    writeSystem("Mode Sergi activat en aquest navegador.");
+  });
+
+  els.authInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      els.authForm.requestSubmit();
+    }
+  });
+
+  els.clearAuth.addEventListener("click", () => {
+    auraWriteKey = "";
+    localStorage.removeItem(WRITE_KEY_STORAGE);
+    els.authInput.value = "";
+    updateAuthStatus();
+    writeSystem("Mode Sergi desactivat en aquest navegador.");
+  });
+}
+
+function loadWriteKey() {
+  auraWriteKey = localStorage.getItem(WRITE_KEY_STORAGE) || "";
+  updateAuthStatus();
+}
+
+function updateAuthStatus() {
+  if (!els.authStatus) return;
+  els.authStatus.textContent = auraWriteKey ? "actiu" : "bloquejat";
 }
 
 async function syncCloudState() {
@@ -160,12 +207,18 @@ async function apiGet(path) {
 }
 
 async function apiPost(path, payload) {
+  const headers = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+
+  if (auraWriteKey) {
+    headers.Authorization = `Bearer ${auraWriteKey}`;
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(payload),
     cache: "no-store",
   });
@@ -329,7 +382,14 @@ async function remember(text) {
   }
 
   let record = null;
-  if (cloudState.online || (await syncCloudState())) {
+  const cloudAvailable = cloudState.online || (await syncCloudState());
+  if (cloudAvailable) {
+    if (!auraWriteKey) {
+      writeError("Mode Sergi inactiu: el record no s'ha escrit a D1.");
+      await refreshPanels();
+      return;
+    }
+
     try {
       const response = await apiPost("/memory", {
         text,
@@ -341,8 +401,15 @@ async function remember(text) {
       await syncCloudState();
       writeSystem(`Record guardat a D1:\n${text}`);
     } catch (error) {
-      cloudState.online = false;
+      if (error.message.includes("Clau") || error.message.includes("Mode Sergi")) {
+        writeError(`${error.message} El record no s'ha escrit a D1.`);
+        await refreshPanels();
+        return;
+      }
+
       writeError(`D1 no ha pogut guardar el record: ${error.message}`);
+      cloudState.online = false;
+      cloudState.snapshot = null;
     }
   }
 
@@ -366,11 +433,13 @@ async function showStatus() {
     await refreshPanels();
     writeSystem(
       [
-        "Estat d'Aura — cloud-v2",
+        "Estat d'Aura — cloud-v2.1",
         "Nom: Aura",
         "Naturalesa: entitat sintètica-digital experimental",
         "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
         "Persistència actual: D1 al núvol + IndexedDB com a còpia local",
+        `Escriptura D1: ${status.writes?.protected ? "protegida per Mode Sergi" : "oberta"}`,
+        `Mode Sergi local: ${auraWriteKey ? "actiu" : "inactiu"}`,
         "Genoma: actiu",
         `Records cloud: ${status.counts.records}`,
         `Entrades de diari: ${status.counts.diary}`,
@@ -388,7 +457,7 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v2 / mode local",
+      "Estat d'Aura — cloud-v2.1 / mode local",
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
@@ -508,11 +577,22 @@ async function handleImportFile(event) {
 
   try {
     const payload = JSON.parse(await file.text());
-    await importSnapshot(payload);
-    if (cloudState.online || (await syncCloudState())) {
+    const cloudAvailable = cloudState.online || (await syncCloudState());
+
+    if (cloudAvailable) {
+      if (!auraWriteKey) {
+        writeError("Mode Sergi inactiu: importació no enviada a D1.");
+        await refreshPanels();
+        return;
+      }
+
       await apiPost("/import", payload);
+      await importSnapshot(payload);
       await syncCloudState();
+    } else {
+      await importSnapshot(payload);
     }
+
     await refreshPanels();
     writeSystem(cloudState.online ? "Importació JSON completada a D1 i IndexedDB." : "Importació JSON completada en local.");
   } catch (error) {

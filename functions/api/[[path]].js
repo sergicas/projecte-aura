@@ -1,4 +1,4 @@
-const AURA_VERSION = "cloud-v2";
+const AURA_VERSION = "cloud-v2.1";
 const MAX_JSON_BYTES = 512 * 1024;
 
 const FOUNDATION_RECORDS = [
@@ -73,6 +73,7 @@ export async function onRequest(context) {
     }
 
     if (method === "POST" && route === "memory") {
+      await requireWriteAccess(context.request, context.env);
       return json({ record: await createRecord(context.request, context.env.DB) }, 201);
     }
 
@@ -91,6 +92,7 @@ export async function onRequest(context) {
     }
 
     if (method === "POST" && route === "import") {
+      await requireWriteAccess(context.request, context.env);
       return json(await importSnapshot(context.request, context.env.DB), 201);
     }
 
@@ -160,12 +162,51 @@ async function getStatus(db) {
     infrastructure: "Cloudflare Pages Functions / D1 / navegador web",
     persistence: "D1 al núvol amb IndexedDB com a còpia local",
     genome: "actiu",
+    writes: {
+      protected: true,
+      mode: "sergi",
+    },
     counts: {
       records: readCount(records),
       diary: readCount(diary),
       genes: readCount(genes),
     },
   };
+}
+
+async function requireWriteAccess(request, env) {
+  const expected = normalizeSecret(env.AURA_WRITE_KEY);
+  if (!expected) {
+    throw new HttpError(500, "La clau privada d'escriptura no està configurada.");
+  }
+
+  const provided = normalizeSecret(getWriteKey(request));
+  if (!provided) {
+    throw new HttpError(401, "Cal activar Mode Sergi per escriure a D1.");
+  }
+
+  if (!(await timingSafeTextEqual(provided, expected))) {
+    throw new HttpError(401, "Clau d'escriptura incorrecta.");
+  }
+}
+
+function getWriteKey(request) {
+  const authorization = request.headers.get("Authorization") || "";
+  const bearer = authorization.match(/^Bearer\s+(.+)$/i);
+  return bearer?.[1] || request.headers.get("X-Aura-Write-Key") || "";
+}
+
+function normalizeSecret(value) {
+  return String(value || "").trim();
+}
+
+async function timingSafeTextEqual(left, right) {
+  const encoder = new TextEncoder();
+  const [leftHash, rightHash] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(left)),
+    crypto.subtle.digest("SHA-256", encoder.encode(right)),
+  ]);
+  return crypto.subtle.timingSafeEqual(leftHash, rightHash);
 }
 
 async function getSnapshot(db) {
@@ -389,7 +430,7 @@ function apiHeaders() {
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Aura-Write-Key",
   };
 }
 

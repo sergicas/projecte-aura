@@ -160,6 +160,42 @@ h1 {
   line-height: 1.05;
 }
 
+.auth-block {
+  gap: 10px;
+}
+
+.auth-block strong {
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+}
+
+.auth-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.auth-form input {
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid rgba(29, 35, 32, 0.18);
+  border-radius: 6px;
+  background: var(--paper-strong);
+  color: var(--ink);
+  padding: 0 10px;
+}
+
+.auth-form button,
+.auth-clear {
+  width: 100%;
+  min-height: 38px;
+}
+
+.auth-clear {
+  margin-top: 8px;
+  background: transparent;
+}
+
 .console-panel {
   overflow: hidden;
   background: var(--console);

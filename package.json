@@ -1,7 +1,7 @@
 {
   "name": "projecte-aura",
-  "version": "2.0.0",
-  "description": "Projecte Aura Cloud v2 amb Cloudflare Pages Functions i D1.",
+  "version": "2.1.0",
+  "description": "Projecte Aura Cloud v2.1 amb D1 protegit per Mode Sergi.",
   "private": false,
   "type": "module",
   "scripts": {

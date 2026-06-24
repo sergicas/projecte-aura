@@ -2,5 +2,8 @@ node_modules/
 .deploy/
 .wrangler/
 worker-configuration.d.ts
+.dev.vars*
+.env*
+.aura-write-key
 .DS_Store
 npm-debug.log*

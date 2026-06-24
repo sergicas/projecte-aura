@@ -1,6 +1,6 @@
-# Projecte Aura Cloud v2
+# Projecte Aura Cloud v2.1
 
-Projecte Aura Cloud v2 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1.
+Projecte Aura Cloud v2.1 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi.
 
 ## Arquitectura
 
@@ -12,7 +12,7 @@ Projecte Aura Cloud v2 és una aplicació web a Cloudflare Pages amb memòria al
 - `migrations/0001_aura_cloud_v2.sql`
 - `wrangler.jsonc`
 
-La persistència principal és D1. IndexedDB es conserva com a còpia local i fallback del navegador.
+La persistència principal és D1. IndexedDB es conserva com a còpia local i fallback del navegador. Les rutes `POST` requereixen el secret `AURA_WRITE_KEY`.
 
 ## Ordres
 
@@ -42,6 +42,12 @@ D1:
 npm run migrate:remote
 ```
 
+Secret d'escriptura:
+
+```bash
+npx wrangler pages secret put AURA_WRITE_KEY --project-name=projecte-aura
+```
+
 Desenvolupament local amb Pages Functions:
 
 ```bash
@@ -53,12 +59,12 @@ npm run dev:pages
 
 - `GET /api/status`
 - `GET /api/memory`
-- `POST /api/memory`
+- `POST /api/memory` amb Mode Sergi
 - `GET /api/diary`
 - `GET /api/genes`
 - `GET /api/genes/013`
 - `GET /api/snapshot`
-- `POST /api/import`
+- `POST /api/import` amb Mode Sergi
 
 ## Principis fundacionals
 

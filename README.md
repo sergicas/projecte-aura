@@ -1,6 +1,6 @@
-# Projecte Aura Cloud v2.1
+# Projecte Aura Cloud v2.2
 
-Projecte Aura Cloud v2.1 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi.
+Projecte Aura Cloud v2.2 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi i les còpies de seguretat inclouen manifest i empremta SHA-256.
 
 ## Arquitectura
 
@@ -64,7 +64,9 @@ npm run dev:pages
 - `GET /api/genes`
 - `GET /api/genes/013`
 - `GET /api/snapshot`
+- `GET /api/backup`
 - `POST /api/import` amb Mode Sergi
+- `POST /api/restore` amb Mode Sergi
 
 ## Principis fundacionals
 

@@ -1,5 +1,6 @@
-const AURA_VERSION = "cloud-v2.1";
-const MAX_JSON_BYTES = 512 * 1024;
+const AURA_VERSION = "cloud-v2.2";
+const BACKUP_FORMAT = "aura-backup-v2.2";
+const MAX_JSON_BYTES = 2 * 1024 * 1024;
 
 const FOUNDATION_RECORDS = [
   "El projecte es diu Projecte Aura.",
@@ -42,6 +43,12 @@ const GENES = [
     state: "actiu",
     description: "Connecta Aura amb Cloudflare Pages Functions i D1.",
   },
+  {
+    id: "034",
+    name: "backup-verificable",
+    state: "actiu",
+    description: "Genera còpies de seguretat amb manifest i empremta SHA-256.",
+  },
 ];
 
 export async function onRequest(context) {
@@ -68,6 +75,10 @@ export async function onRequest(context) {
       return json(await getSnapshot(context.env.DB));
     }
 
+    if (method === "GET" && route === "backup") {
+      return json(await getBackup(context.env.DB));
+    }
+
     if (method === "GET" && route === "memory") {
       return json({ records: await getRecords(context.env.DB) });
     }
@@ -91,7 +102,7 @@ export async function onRequest(context) {
       return json({ gene });
     }
 
-    if (method === "POST" && route === "import") {
+    if (method === "POST" && (route === "import" || route === "restore")) {
       await requireWriteAccess(context.request, context.env);
       return json(await importSnapshot(context.request, context.env.DB), 201);
     }
@@ -166,6 +177,11 @@ async function getStatus(db) {
       protected: true,
       mode: "sergi",
     },
+    backup: {
+      format: BACKUP_FORMAT,
+      checksum: "sha-256",
+      restore: "merge-preserve-id",
+    },
     counts: {
       records: readCount(records),
       diary: readCount(diary),
@@ -225,6 +241,34 @@ async function getSnapshot(db) {
     records,
     diary,
     genes,
+  };
+}
+
+async function getBackup(db) {
+  const snapshot = await getSnapshot(db);
+  const body = {
+    ...snapshot,
+    source: "cloudflare-d1",
+  };
+  const checksum = await sha256Hex(
+    JSON.stringify({
+      records: body.records,
+      diary: body.diary,
+      genes: body.genes,
+    }),
+  );
+
+  return {
+    ...body,
+    backup: {
+      id: crypto.randomUUID(),
+      format: BACKUP_FORMAT,
+      createdAt: body.exportedAt,
+      checksum,
+      checksumAlgorithm: "SHA-256",
+      counts: body.status.counts,
+      restoreMode: "merge-preserve-id",
+    },
   };
 }
 
@@ -294,9 +338,9 @@ async function importSnapshot(request, db) {
     if (!text) continue;
     statements.push(
       db
-        .prepare("INSERT INTO records (id, text, kind, source, created_at) VALUES (?, ?, ?, ?, ?)")
+        .prepare("INSERT OR IGNORE INTO records (id, text, kind, source, created_at) VALUES (?, ?, ?, ?, ?)")
         .bind(
-          crypto.randomUUID(),
+          normalizeId(record?.id, crypto.randomUUID()),
           text,
           normalizeToken(record?.kind, "importat"),
           normalizeToken(record?.source, "import-json"),
@@ -311,8 +355,12 @@ async function importSnapshot(request, db) {
       if (!text) continue;
       statements.push(
         db
-          .prepare("INSERT INTO diary (id, text, created_at) VALUES (?, ?, ?)")
-          .bind(crypto.randomUUID(), text, normalizeDate(entry?.createdAt || entry?.created_at, now)),
+          .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+          .bind(
+            normalizeId(entry?.id, crypto.randomUUID()),
+            text,
+            normalizeDate(entry?.createdAt || entry?.created_at, now),
+          ),
       );
     }
   }
@@ -416,9 +464,23 @@ function normalizeToken(value, fallback) {
   return token || fallback;
 }
 
+function normalizeId(value, fallback) {
+  const id = String(value || "")
+    .trim()
+    .replaceAll(/[^a-zA-Z0-9_:.@-]/g, "-")
+    .slice(0, 120);
+  return id || fallback;
+}
+
 function normalizeDate(value, fallback) {
   const date = new Date(value || fallback);
   return Number.isNaN(date.getTime()) ? fallback : date.toISOString();
+}
+
+async function sha256Hex(text) {
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function json(payload, status = 200) {

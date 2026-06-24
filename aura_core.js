@@ -1,4 +1,5 @@
-const AURA_VERSION = "cloud-v2.1";
+const AURA_VERSION = "cloud-v2.2";
+const BACKUP_FORMAT = "aura-backup-v2.2";
 const API_BASE = "/api";
 const WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
@@ -49,6 +50,12 @@ const GENES = [
     state: "actiu",
     description: "Connecta Aura amb Cloudflare Pages Functions i D1.",
   },
+  {
+    id: "034",
+    name: "backup-verificable",
+    state: "actiu",
+    description: "Genera còpies de seguretat amb manifest i empremta SHA-256.",
+  },
 ];
 
 let db;
@@ -71,14 +78,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     db = await openDatabase();
     await seedDatabase();
+    await ensureLocalGenome();
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v2.1 inicialitzada.\nMemòria D1 activa i escriptura protegida per Mode Sergi.");
-      els.statusPill.textContent = "cloud-v2.1";
+      writeSystem("Aura Cloud v2.2 inicialitzada.\nBackup verificable actiu i escriptura protegida per Mode Sergi.");
+      els.statusPill.textContent = "cloud-v2.2";
     } else {
       writeSystem(
-        "Aura Cloud v2 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
+        "Aura Cloud v2.2 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
       );
       els.statusPill.textContent = "local";
     }
@@ -312,6 +320,20 @@ async function seedDatabase() {
   await txDone(tx);
 }
 
+async function ensureLocalGenome() {
+  const now = new Date().toISOString();
+  const tx = db.transaction([STORE_GENES, STORE_META], "readwrite");
+  const genes = tx.objectStore(STORE_GENES);
+  const meta = tx.objectStore(STORE_META);
+
+  GENES.forEach((gene) => {
+    genes.put({ ...gene, createdAt: now, updatedAt: now });
+  });
+
+  meta.put({ key: "version", value: AURA_VERSION, updatedAt: now });
+  await txDone(tx);
+}
+
 async function runCommand(rawCommand) {
   const command = rawCommand.trim();
   const normalized = command.toLowerCase();
@@ -433,12 +455,13 @@ async function showStatus() {
     await refreshPanels();
     writeSystem(
       [
-        "Estat d'Aura — cloud-v2.1",
+        "Estat d'Aura — cloud-v2.2",
         "Nom: Aura",
         "Naturalesa: entitat sintètica-digital experimental",
         "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
         "Persistència actual: D1 al núvol + IndexedDB com a còpia local",
         `Escriptura D1: ${status.writes?.protected ? "protegida per Mode Sergi" : "oberta"}`,
+        `Backup: ${status.backup?.format || BACKUP_FORMAT}`,
         `Mode Sergi local: ${auraWriteKey ? "actiu" : "inactiu"}`,
         "Genoma: actiu",
         `Records cloud: ${status.counts.records}`,
@@ -457,7 +480,7 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v2.1 / mode local",
+      "Estat d'Aura — cloud-v2.2 / mode local",
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
@@ -539,22 +562,24 @@ async function showGene(id) {
 }
 
 async function exportJson() {
-  const snapshot = await createSnapshot();
+  const snapshot = await createBackup();
   lastSnapshot = snapshot;
   downloadFile(
-    `aura-cloud-v2-backup-${dateStamp()}.json`,
+    `aura-cloud-v2-2-backup-${dateStamp()}.json`,
     JSON.stringify(snapshot, null, 2),
     "application/json",
   );
-  writeSystem(`Exportació JSON preparada: ${snapshot.records.length} records.`);
+  const checksum = snapshot.backup?.checksum ? `\nEmpremta SHA-256: ${snapshot.backup.checksum}` : "";
+  writeSystem(`Backup JSON preparat: ${snapshot.records.length} records.${checksum}`);
 }
 
 async function exportTxt() {
   const snapshot = lastSnapshot || (await createSnapshot());
   const content = [
-    "Projecte Aura Cloud v2",
+    "Projecte Aura Cloud v2.2",
     `Exportat: ${snapshot.exportedAt}`,
     `Origen: ${snapshot.source || "local"}`,
+    snapshot.backup?.checksum ? `SHA-256: ${snapshot.backup.checksum}` : "",
     "",
     "== Memoria ==",
     ...snapshot.records.map((record) => `- ${formatDate(record.createdAt)} [${record.kind}] ${record.text}`),
@@ -566,7 +591,7 @@ async function exportTxt() {
     ...snapshot.genes.map((gene) => `- ${gene.id} ${gene.name} [${gene.state}] ${gene.description}`),
   ].join("\n");
 
-  downloadFile(`aura-cloud-v2-backup-${dateStamp()}.txt`, content, "text/plain");
+  downloadFile(`aura-cloud-v2-2-backup-${dateStamp()}.txt`, content, "text/plain");
   writeSystem("Exportació TXT preparada.");
 }
 
@@ -586,7 +611,7 @@ async function handleImportFile(event) {
         return;
       }
 
-      await apiPost("/import", payload);
+      await apiPost("/restore", payload);
       await importSnapshot(payload);
       await syncCloudState();
     } else {
@@ -598,6 +623,41 @@ async function handleImportFile(event) {
   } catch (error) {
     writeError(`Importació fallida: ${error.message}`);
   }
+}
+
+async function createBackup() {
+  if (await syncCloudState()) {
+    try {
+      return await apiGet("/backup");
+    } catch (error) {
+      writeError(`Backup D1 no disponible: ${error.message}. Preparant còpia local.`);
+    }
+  }
+
+  const snapshot = await createSnapshot();
+  const checksum = await sha256Hex(
+    JSON.stringify({
+      records: snapshot.records,
+      diary: snapshot.diary,
+      genes: snapshot.genes,
+    }),
+  );
+
+  return {
+    ...snapshot,
+    backup: {
+      format: BACKUP_FORMAT,
+      createdAt: snapshot.exportedAt,
+      checksum,
+      checksumAlgorithm: "SHA-256",
+      counts: {
+        records: snapshot.records.length,
+        diary: snapshot.diary.length,
+        genes: snapshot.genes.length,
+      },
+      restoreMode: "merge-local",
+    },
+  };
 }
 
 async function createSnapshot() {
@@ -706,7 +766,7 @@ async function refreshPanels() {
     };
   }
 
-  els.statusPill.textContent = cloudState.online ? "cloud-v2" : "local";
+  els.statusPill.textContent = cloudState.online ? cloudState.snapshot.status?.version || AURA_VERSION : "local";
   els.memoryCount.textContent = String(counts.records);
   els.diaryCount.textContent = String(counts.diary);
   els.geneCount.textContent = `${counts.genes} gens`;
@@ -898,6 +958,12 @@ function byOldest(a, b) {
 
 function dateStamp() {
   return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+async function sha256Hex(text) {
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function formatDate(value) {

@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v2.5";
-const BACKUP_FORMAT = "aura-backup-v2.5";
+const AURA_VERSION = "cloud-v3.1";
+const BACKUP_FORMAT = "aura-backup-v3.1";
 const API_BASE = "/api";
 const WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
@@ -74,6 +74,36 @@ const GENES = [
     state: "actiu",
     description: "Sintetitza estat, límits i propera acció sense simular subjectivitat humana.",
   },
+  {
+    id: "233",
+    name: "restauracio-segura",
+    state: "actiu",
+    description: "Previsualitza una restauració abans d'aplicar-la a D1.",
+  },
+  {
+    id: "377",
+    name: "backup-automatic",
+    state: "actiu",
+    description: "Executa backups programats al vault KV amb un Worker cron.",
+  },
+  {
+    id: "610",
+    name: "cerca-memoria",
+    state: "actiu",
+    description: "Permet cercar i filtrar records i diari sense alterar la memòria.",
+  },
+  {
+    id: "987",
+    name: "genoma-editable",
+    state: "actiu",
+    description: "Permet modificar gens explícitament amb Mode Sergi i deixar traça a D1.",
+  },
+  {
+    id: "1597",
+    name: "auditoria-mutacions",
+    state: "actiu",
+    description: "Registra mutacions de genoma i restauracions com a traça consultable.",
+  },
 ];
 
 let db;
@@ -84,6 +114,7 @@ let cloudState = {
   lastError: null,
 };
 let auraWriteKey = "";
+let pendingRestore = null;
 
 const els = {};
 
@@ -100,11 +131,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v2.5 inicialitzada.\nCriteri operatiu, vault KV i diari de continuïtat actius.");
-      els.statusPill.textContent = "cloud-v2.5";
+      writeSystem("Aura Cloud v3.1 inicialitzada.\nAuditoria, genoma editable i criteri ampliat actius.");
+      els.statusPill.textContent = "cloud-v3.1";
     } else {
       writeSystem(
-        "Aura Cloud v2.5 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
+        "Aura Cloud v3.1 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
       );
       els.statusPill.textContent = "local";
     }
@@ -123,6 +154,7 @@ function cacheElements() {
   els.diaryCount = document.querySelector("#diary-count");
   els.geneCount = document.querySelector("#gene-count");
   els.vaultCount = document.querySelector("#vault-count");
+  els.automationCount = document.querySelector("#automation-count");
   els.memoryList = document.querySelector("#memory-list");
   els.diaryList = document.querySelector("#diary-list");
   els.diaryUpdated = document.querySelector("#diary-updated");
@@ -134,6 +166,7 @@ function cacheElements() {
   els.exportTxt = document.querySelector("#export-txt");
   els.saveVault = document.querySelector("#save-vault");
   els.listVault = document.querySelector("#list-vault");
+  els.confirmRestore = document.querySelector("#confirm-restore");
   els.importJson = document.querySelector("#import-json");
   els.importFile = document.querySelector("#import-file");
   els.authForm = document.querySelector("#auth-form");
@@ -170,6 +203,7 @@ function bindEvents() {
   els.exportTxt.addEventListener("click", () => runCommand("/exporta-txt"));
   els.saveVault.addEventListener("click", () => runCommand("/desa-backup"));
   els.listVault.addEventListener("click", () => runCommand("/backups"));
+  els.confirmRestore.addEventListener("click", () => runCommand("/confirma-restauracio"));
   els.importJson.addEventListener("click", () => els.importFile.click());
   els.importFile.addEventListener("change", handleImportFile);
 
@@ -354,12 +388,16 @@ async function seedDatabase() {
 
 async function ensureLocalGenome() {
   const now = new Date().toISOString();
+  const existingGenes = await getAll(STORE_GENES);
+  const existingGeneIds = new Set(existingGenes.map((gene) => gene.id));
   const tx = db.transaction([STORE_GENES, STORE_META], "readwrite");
   const genes = tx.objectStore(STORE_GENES);
   const meta = tx.objectStore(STORE_META);
 
   GENES.forEach((gene) => {
-    genes.put({ ...gene, createdAt: now, updatedAt: now });
+    if (!existingGeneIds.has(gene.id)) {
+      genes.put({ ...gene, createdAt: now, updatedAt: now });
+    }
   });
 
   meta.put({ key: "version", value: AURA_VERSION, updatedAt: now });
@@ -390,6 +428,46 @@ async function runCommand(rawCommand) {
       return;
     }
 
+    if (normalized.startsWith("/cerca") || normalized.startsWith("/search")) {
+      await searchMemoryCommand(command);
+      return;
+    }
+
+    if (normalized.startsWith("/filtra")) {
+      await searchMemoryCommand(command.replace(/^\/filtra/i, "/cerca"));
+      return;
+    }
+
+    if (normalized.startsWith("/audit ") || normalized.startsWith("/auditoria ")) {
+      await showAudit(command.split(/\s+/)[1]);
+      return;
+    }
+
+    if (normalized.startsWith("/gen-activa ")) {
+      await updateGeneState(command.slice("/gen-activa ".length).trim(), "actiu");
+      return;
+    }
+
+    if (normalized.startsWith("/gen-latent ")) {
+      await updateGeneState(command.slice("/gen-latent ".length).trim(), "latent");
+      return;
+    }
+
+    if (normalized.startsWith("/gen-arxiva ")) {
+      await updateGeneState(command.slice("/gen-arxiva ".length).trim(), "arxivat");
+      return;
+    }
+
+    if (normalized.startsWith("/gen-descriu ")) {
+      await updateGeneDescription(command.slice("/gen-descriu ".length).trim());
+      return;
+    }
+
+    if (normalized.startsWith("/gen-crea ")) {
+      await createGeneCommand(command.slice("/gen-crea ".length).trim());
+      return;
+    }
+
     switch (normalized) {
       case "/ajuda":
         writeSystem(
@@ -410,6 +488,19 @@ async function runCommand(rawCommand) {
             "/backup",
             "/backups",
             "/desa-backup",
+            "/auto-backup",
+            "/audit",
+            "/audit genoma",
+            "/cerca aura",
+            "/cerca kind:usuari aura",
+            "/filtra source:consola",
+            "/gen-activa 013",
+            "/gen-latent 013",
+            "/gen-arxiva 013",
+            "/gen-descriu 013 text",
+            "/gen-crea 987 nom estat descripció",
+            "/confirma-restauracio",
+            "/cancella-restauracio",
             "recorda que ...",
             "anota que ...",
             "diari que ...",
@@ -448,6 +539,23 @@ async function runCommand(rawCommand) {
       case "/desa-backup":
       case "/desa-vault":
         await saveVaultBackup();
+        break;
+      case "/auto-backup":
+      case "/backup-auto":
+        await showAutoBackup();
+        break;
+      case "/audit":
+      case "/auditoria":
+        await showAudit();
+        break;
+      case "/confirma-restauracio":
+      case "/confirma-restore":
+        await confirmRestore();
+        break;
+      case "/cancella-restauracio":
+      case "/cancel-restore":
+        pendingRestore = null;
+        writeSystem("Restauració pendent cancel·lada.");
         break;
       case "/exporta-txt":
         await exportTxt();
@@ -568,14 +676,19 @@ async function showStatus() {
     await refreshPanels();
     writeSystem(
       [
-        "Estat d'Aura — cloud-v2.5",
+        "Estat d'Aura — cloud-v3.1",
         "Nom: Aura",
         "Naturalesa: entitat sintètica-digital experimental",
         "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
         "Persistència actual: D1 al núvol + IndexedDB com a còpia local",
         `Escriptura D1: ${status.writes?.protected ? "protegida per Mode Sergi" : "oberta"}`,
         `Backup: ${status.backup?.format || BACKUP_FORMAT}`,
+        `Restauració segura: ${status.backup?.preview || "/api/restore/preview"}`,
         `Vault: ${status.vault?.configured ? `${status.vault.storage} (${status.vault.countVisible} còpies visibles)` : "no configurat"}`,
+        `Backup automàtic: ${formatAutomationStatus(status.automation?.backupWorker)}`,
+        `Cerca: ${status.search?.endpoint || "/api/search"}`,
+        `Auditoria: ${status.audit?.endpoint || "/api/audit"}`,
+        `Genoma editable: ${status.genomeEditable?.enabled ? status.genomeEditable.endpoint : "no"}`,
         `Continuïtat: ${status.continuity?.endpoint || "/api/continuity"}`,
         `Criteri: ${status.criterion?.endpoint || "/api/criterion"}`,
         `Mode Sergi local: ${auraWriteKey ? "actiu" : "inactiu"}`,
@@ -596,11 +709,15 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v2.5 / mode local",
+      "Estat d'Aura — cloud-v3.1 / mode local",
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
       "Persistència actual: IndexedDB del navegador; D1 no disponible en aquesta sessió",
+      "Backup automàtic: no disponible en mode local",
+      "Cerca local: /cerca text",
+      "Auditoria local: /audit",
+      "Genoma editable: requereix D1 i Mode Sergi per ser definitiu",
       "Genoma: actiu",
       `Records locals: ${records.length}`,
       `Entrades de diari: ${diary.length}`,
@@ -623,6 +740,62 @@ async function showMemory() {
   await refreshPanels();
 }
 
+async function searchMemoryCommand(command) {
+  const rawQuery = command.replace(/^\/(cerca|search)\s*/i, "").trim();
+  const query = parseSearchQuery(rawQuery);
+  if (!query.q && !query.kind && !query.source) {
+    writeError("Exemple: /cerca aura, /cerca kind:usuari aura o /filtra source:consola");
+    return;
+  }
+
+  if (await syncCloudState()) {
+    const params = new URLSearchParams();
+    if (query.q) params.set("q", query.q);
+    if (query.kind) params.set("kind", query.kind);
+    if (query.source) params.set("source", query.source);
+    if (query.area) params.set("area", query.area);
+    params.set("limit", "50");
+    const results = await apiGet(`/search?${params.toString()}`);
+    writeSystem(formatSearchResults(results));
+    await refreshPanels();
+    return;
+  }
+
+  const results = await searchLocalMemory(query);
+  writeSystem(formatSearchResults(results));
+  await refreshPanels();
+}
+
+async function searchLocalMemory(query) {
+  const [records, diary] = await Promise.all([getAll(STORE_RECORDS), getAll(STORE_DIARY)]);
+  const needle = query.q.toLowerCase();
+  const includeRecords = query.area === "all" || query.area === "records" || query.area === "memoria";
+  const includeDiary = (query.area === "all" || query.area === "diary" || query.area === "diari") && !query.kind && !query.source;
+  const filteredRecords = includeRecords
+    ? records
+        .filter((record) => !needle || record.text.toLowerCase().includes(needle))
+        .filter((record) => !query.kind || record.kind === query.kind)
+        .filter((record) => !query.source || record.source === query.source)
+        .sort(byNewest)
+        .slice(0, 50)
+    : [];
+  const filteredDiary = includeDiary
+    ? diary
+        .filter((entry) => !needle || entry.text.toLowerCase().includes(needle))
+        .sort(byNewest)
+        .slice(0, 50)
+    : [];
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    query,
+    records: filteredRecords,
+    diary: filteredDiary,
+    total: filteredRecords.length + filteredDiary.length,
+  };
+}
+
 async function showDiary() {
   const cloudOnline = await syncCloudState();
   const diary = (cloudOnline ? cloudState.snapshot.diary : await getAll(STORE_DIARY)).sort(byNewest);
@@ -637,6 +810,37 @@ async function showDiary() {
       .slice(0, 12)
       .map((entry) => `- ${formatDate(entry.createdAt)}: ${entry.text}`)
       .join("\n"),
+  );
+}
+
+async function showAudit(scope = "") {
+  const normalizedScope = normalizeSearchToken(scope);
+  if (await syncCloudState()) {
+    const params = new URLSearchParams({ limit: "40" });
+    if (normalizedScope) params.set("scope", normalizedScope);
+    const response = await apiGet(`/audit?${params.toString()}`);
+    writeSystem(formatAudit(response));
+    await refreshPanels();
+    return;
+  }
+
+  const diary = await getAll(STORE_DIARY);
+  const audit = diary
+    .filter((entry) => {
+      const prefix = normalizedScope ? `[audit:${normalizedScope}]` : "[audit:";
+      return String(entry.text || "").startsWith(prefix);
+    })
+    .sort(byNewest)
+    .slice(0, 40)
+    .map((entry) => parseLocalAuditEntry(entry));
+
+  writeSystem(
+    formatAudit({
+      version: AURA_VERSION,
+      scope: normalizedScope || "all",
+      total: audit.length,
+      audit,
+    }),
   );
 }
 
@@ -795,6 +999,81 @@ async function showGene(id) {
   );
 }
 
+async function updateGeneState(id, state) {
+  const geneId = normalizeGeneCommandId(id);
+  if (!geneId) {
+    writeError("Cal indicar un ID de gen. Exemple: /gen-activa 013");
+    return;
+  }
+
+  await saveGenePatch(geneId, { state });
+}
+
+async function updateGeneDescription(raw) {
+  const [id, ...descriptionParts] = raw.split(/\s+/);
+  const description = descriptionParts.join(" ").trim();
+  if (!id || !description) {
+    writeError("Exemple: /gen-descriu 013 Descripció nova del gen");
+    return;
+  }
+
+  await saveGenePatch(normalizeGeneCommandId(id), { description });
+}
+
+async function createGeneCommand(raw) {
+  const [id, name, maybeState, ...descriptionParts] = raw.split(/\s+/);
+  if (!id || !name) {
+    writeError("Exemple: /gen-crea 987 genoma-editable actiu Descripció del gen");
+    return;
+  }
+
+  const state = ["actiu", "latent", "arxivat", "observacio"].includes(maybeState) ? maybeState : "latent";
+  const description = (["actiu", "latent", "arxivat", "observacio"].includes(maybeState)
+    ? descriptionParts
+    : [maybeState, ...descriptionParts]
+  )
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  await saveGenePatch(normalizeGeneCommandId(id), {
+    id: normalizeGeneCommandId(id),
+    name,
+    state,
+    description,
+  });
+}
+
+async function saveGenePatch(id, patch) {
+  if (!id) {
+    writeError("ID de gen no vàlid.");
+    return;
+  }
+
+  if (!auraWriteKey) {
+    writeError("Mode Sergi inactiu: el genoma no s'ha modificat a D1.");
+    return;
+  }
+
+  if (!(await syncCloudState())) {
+    writeError("D1 no respon ara mateix; el genoma definitiu no es pot editar.");
+    return;
+  }
+
+  const path = patch.id && patch.name ? "/genes" : `/genes/${encodeURIComponent(id)}`;
+  const response = await apiPost(path, patch.id && patch.name ? patch : { ...patch, id });
+  await putGene(response.gene);
+  await syncCloudState();
+  await refreshPanels();
+  writeSystem(
+    [
+      `Gen ${response.gene.id} actualitzat.`,
+      `${response.gene.name} [${response.gene.state}]`,
+      response.gene.description || "sense descripció",
+    ].join("\n"),
+  );
+}
+
 async function saveVaultBackup() {
   if (!auraWriteKey) {
     writeError("Mode Sergi inactiu: cal clau per desar un backup al vault.");
@@ -823,11 +1102,21 @@ async function saveVaultBackup() {
   );
 }
 
+async function showAutoBackup() {
+  if (!(await syncCloudState())) {
+    writeError("D1 no respon ara mateix; l'estat del backup automàtic no es pot consultar.");
+    return;
+  }
+
+  await refreshPanels();
+  writeSystem(formatBackupAutomation(cloudState.snapshot.status?.automation?.backupWorker));
+}
+
 async function exportJson() {
   const snapshot = await createBackup();
   lastSnapshot = snapshot;
   downloadFile(
-    `aura-cloud-v2-5-backup-${dateStamp()}.json`,
+    `aura-cloud-v3-1-backup-${dateStamp()}.json`,
     JSON.stringify(snapshot, null, 2),
     "application/json",
   );
@@ -838,7 +1127,7 @@ async function exportJson() {
 async function exportTxt() {
   const snapshot = lastSnapshot || (await createBackup());
   const content = [
-    "Projecte Aura Cloud v2.5",
+    "Projecte Aura Cloud v3.1",
     `Exportat: ${snapshot.exportedAt}`,
     `Origen: ${snapshot.source || "local"}`,
     snapshot.backup?.checksum ? `SHA-256: ${snapshot.backup.checksum}` : "",
@@ -853,7 +1142,7 @@ async function exportTxt() {
     ...snapshot.genes.map((gene) => `- ${gene.id} ${gene.name} [${gene.state}] ${gene.description}`),
   ].join("\n");
 
-  downloadFile(`aura-cloud-v2-5-backup-${dateStamp()}.txt`, content, "text/plain");
+  downloadFile(`aura-cloud-v3-1-backup-${dateStamp()}.txt`, content, "text/plain");
   writeSystem("Exportació TXT preparada.");
 }
 
@@ -868,23 +1157,92 @@ async function handleImportFile(event) {
 
     if (cloudAvailable) {
       if (!auraWriteKey) {
-        writeError("Mode Sergi inactiu: importació no enviada a D1.");
+        writeError("Mode Sergi inactiu: previsualització/restauració no enviada a D1.");
         await refreshPanels();
         return;
       }
 
-      await apiPost("/restore", payload);
-      await importSnapshot(payload);
-      await syncCloudState();
+      const preview = await apiPost("/restore/preview", payload);
+      pendingRestore = {
+        payload,
+        preview,
+        mode: "cloud",
+        loadedAt: new Date().toISOString(),
+      };
+      writeSystem(formatRestorePreview(preview));
     } else {
-      await importSnapshot(payload);
+      pendingRestore = {
+        payload,
+        preview: buildLocalRestorePreview(payload),
+        mode: "local",
+        loadedAt: new Date().toISOString(),
+      };
+      writeSystem(formatRestorePreview(pendingRestore.preview));
     }
 
     await refreshPanels();
-    writeSystem(cloudState.online ? "Importació JSON completada a D1 i IndexedDB." : "Importació JSON completada en local.");
   } catch (error) {
-    writeError(`Importació fallida: ${error.message}`);
+    writeError(`Previsualització fallida: ${error.message}`);
   }
+}
+
+async function confirmRestore() {
+  if (!pendingRestore) {
+    writeError("No hi ha cap restauració pendent.");
+    return;
+  }
+
+  const { payload, preview, mode } = pendingRestore;
+
+  if (mode === "cloud") {
+    if (!auraWriteKey) {
+      writeError("Mode Sergi inactiu: no puc confirmar la restauració a D1.");
+      return;
+    }
+
+    await apiPost("/restore", payload);
+    await importSnapshot(payload);
+    await syncCloudState();
+  } else {
+    await importSnapshot(payload);
+  }
+
+  pendingRestore = null;
+  await refreshPanels();
+  writeSystem(
+    [
+      mode === "cloud" ? "Restauració confirmada a D1 i IndexedDB." : "Restauració confirmada en IndexedDB local.",
+      `Records aplicables: ${preview.apply.records}`,
+      `Diari aplicable: ${preview.apply.diary}`,
+      `Gens aplicables: ${preview.apply.genes}`,
+    ].join("\n"),
+  );
+}
+
+function buildLocalRestorePreview(payload) {
+  const records = Array.isArray(payload.records) ? payload.records.length : 0;
+  const diary = Array.isArray(payload.diary) ? payload.diary.length : 0;
+  const genes = Array.isArray(payload.genes) ? payload.genes.length : 0;
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    source: {
+      project: payload.project || "desconegut",
+      version: payload.version || "desconeguda",
+      exportedAt: payload.exportedAt || null,
+      checksum: payload.backup?.checksum || null,
+      vaultId: payload.vault?.id || null,
+    },
+    mode: "local-preview-only",
+    records: { total: records, newById: records, newByTextFallback: 0, duplicateIds: 0, duplicateText: 0 },
+    diary: { total: diary, newById: diary, newByTextFallback: 0, duplicateIds: 0, duplicateText: 0 },
+    genes: { total: genes, new: genes, changed: 0, unchanged: 0 },
+    apply: { records, diary, genes },
+    risk: records + diary + genes > 250 ? "alt" : "baix",
+    requiresConfirmation: true,
+    confirmationCommand: "/confirma-restauracio",
+  };
 }
 
 async function createBackup() {
@@ -1035,8 +1393,12 @@ async function refreshPanels() {
   els.diaryCount.textContent = String(counts.diary);
   els.geneCount.textContent = `${counts.genes} gens`;
   const vault = cloudState.snapshot?.status?.vault;
+  const automation = cloudState.snapshot?.status?.automation?.backupWorker;
   if (els.vaultCount) {
     els.vaultCount.textContent = vault?.configured ? String(vault.countVisible || 0) : "0";
+  }
+  if (els.automationCount) {
+    els.automationCount.textContent = automation?.lastRunAt ? "actiu" : "pendent";
   }
   els.memoryUpdated.textContent = cloudState.online ? "D1" : "local";
   if (els.diaryUpdated) {
@@ -1105,6 +1467,10 @@ function addDiaryEntry(entry) {
   );
 }
 
+function putGene(gene) {
+  return withStore(STORE_GENES, "readwrite", (store) => store.put(gene));
+}
+
 function getAll(storeName) {
   return withStore(storeName, "readonly", (store) => store.getAll());
 }
@@ -1171,6 +1537,112 @@ function formatRecords(records) {
     .join("\n");
 }
 
+function parseLocalAuditEntry(entry) {
+  const raw = String(entry.text || "");
+  const match = raw.match(/^\[audit:([^\]]+)\]\s*(.*)$/);
+  return {
+    id: entry.id,
+    scope: match?.[1] || "unknown",
+    text: match?.[2] || raw,
+    raw,
+    createdAt: entry.createdAt,
+  };
+}
+
+function formatAudit(response) {
+  const entries = response.audit.length
+    ? response.audit
+        .map((entry) => `- ${formatDate(entry.createdAt)} [${entry.scope}] ${entry.text}`)
+        .join("\n")
+    : "- cap traça";
+
+  return [
+    `Auditoria Aura — ${response.version}`,
+    `Àmbit: ${response.scope || "all"}`,
+    `Entrades: ${response.total}`,
+    entries,
+  ].join("\n");
+}
+
+function parseSearchQuery(rawQuery) {
+  const query = {
+    q: "",
+    kind: "",
+    source: "",
+    area: "all",
+  };
+  const terms = [];
+
+  rawQuery
+    .split(/\s+/)
+    .filter(Boolean)
+    .forEach((part) => {
+      const match = part.match(/^([a-zA-Z_]+)[:=](.+)$/);
+      if (!match) {
+        terms.push(part);
+        return;
+      }
+
+      const key = match[1].toLowerCase();
+      const value = normalizeSearchToken(match[2]);
+      if (key === "kind" || key === "tipus") {
+        query.kind = value;
+      } else if (key === "source" || key === "origen") {
+        query.source = value;
+      } else if (key === "area" || key === "scope") {
+        query.area = value || "all";
+      } else {
+        terms.push(part);
+      }
+    });
+
+  query.q = terms.join(" ").trim();
+  return query;
+}
+
+function formatSearchResults(results) {
+  const filters = [
+    results.query.q ? `text="${results.query.q}"` : "",
+    results.query.kind ? `kind=${results.query.kind}` : "",
+    results.query.source ? `source=${results.query.source}` : "",
+    results.query.area && results.query.area !== "all" ? `area=${results.query.area}` : "",
+  ].filter(Boolean);
+  const records = results.records.length
+    ? results.records.map((record) => `- ${formatDate(record.createdAt)} [${record.kind}] ${record.text}`).join("\n")
+    : "- cap record";
+  const diary = results.diary.length
+    ? results.diary.map((entry) => `- ${formatDate(entry.createdAt)} ${entry.text}`).join("\n")
+    : "- cap entrada";
+
+  return [
+    `Cerca Aura — ${results.version}`,
+    `Filtres: ${filters.join(" / ") || "cap"}`,
+    `Total: ${results.total}`,
+    "",
+    "Records:",
+    records,
+    "",
+    "Diari:",
+    diary,
+  ].join("\n");
+}
+
+function normalizeSearchToken(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9_-]/g, "-")
+    .slice(0, 40);
+}
+
+function normalizeGeneCommandId(value) {
+  const id = String(value || "")
+    .trim()
+    .replaceAll(/[^a-zA-Z0-9_:.@-]/g, "-")
+    .slice(0, 12);
+  return id ? id.padStart(3, "0") : "";
+}
+
 function formatContinuity(continuity) {
   const latestMemory = continuity.memory.latest.length
     ? continuity.memory.latest.map((record) => `- ${formatDate(record.createdAt)}: ${record.text}`).join("\n")
@@ -1195,7 +1667,7 @@ function formatContinuity(continuity) {
 }
 
 function formatCriterion(criterion) {
-  return [
+  const lines = [
     `Criteri Aura — ${criterion.version}`,
     `Mode: ${criterion.mode}`,
     `Generat: ${formatDate(criterion.generatedAt)}`,
@@ -1207,8 +1679,40 @@ function formatCriterion(criterion) {
     `- Memòria: ${criterion.signals.latestMemory}`,
     `- Diari: ${criterion.signals.latestDiary}`,
     `- Vault: ${criterion.signals.vault}`,
+    criterion.signals.autoBackup ? `- Backup automàtic: ${criterion.signals.autoBackup}` : "",
+    criterion.signals.search ? `- Cerca: ${criterion.signals.search}` : "",
+    criterion.signals.audit ? `- Auditoria: ${criterion.signals.audit}` : "",
     `- Gens actius: ${criterion.signals.activeGenes.join(", ") || "cap"}`,
     `- Gens latents: ${criterion.signals.latentGenes.join(", ") || "cap"}`,
+  ].filter(Boolean);
+
+  if (criterion.integrity) {
+    lines.push(
+      "",
+      "Integritat:",
+      `- Vault: ${criterion.integrity.vault.state} (${criterion.integrity.vault.ageHours ?? "sense"} h)`,
+      `- Auto backup: ${criterion.integrity.autoBackup.state} (${criterion.integrity.autoBackup.lastBackupId || "pendent"})`,
+      `- Cerca: ${criterion.integrity.search.enabled ? "activa" : "inactiva"}`,
+      `- Auditoria: ${criterion.integrity.audit.enabled ? `${criterion.integrity.audit.recent} recents` : "inactiva"}`,
+      `- Genoma editable: ${criterion.integrity.genomeEditable.enabled ? "actiu" : "inactiu"}`,
+      `- Riscos: ${criterion.integrity.risks.join(", ") || "cap"}`,
+    );
+  }
+
+  if (criterion.decisions) {
+    lines.push("", "Decisions:");
+    [
+      `- Escriptura: ${criterion.decisions.writePolicy}`,
+      `- Restauració: ${criterion.decisions.restorePolicy}`,
+      `- Genoma: ${criterion.decisions.genomePolicy}`,
+      criterion.decisions.auditPolicy ? `- Auditoria: ${criterion.decisions.auditPolicy}` : "",
+      `- Memòria: ${criterion.decisions.memoryPolicy}`,
+    ]
+      .filter(Boolean)
+      .forEach((line) => lines.push(line));
+  }
+
+  lines.push(
     "",
     "Prioritats:",
     ...criterion.priorities.map((priority) => `- ${priority}`),
@@ -1217,7 +1721,72 @@ function formatCriterion(criterion) {
     "",
     "Límits:",
     ...criterion.limits.map((limit) => `- ${limit}`),
+  );
+
+  return lines.join("\n");
+}
+
+function formatAutomationStatus(worker) {
+  if (!worker?.configured) return "no configurat";
+  if (!worker.lastRunAt) return `pendent (${worker.cron || "cron actiu"})`;
+  return `${formatDate(worker.lastRunAt)} — ${worker.lastBackupId || "sense ID"}`;
+}
+
+function formatBackupAutomation(worker) {
+  if (!worker?.configured) {
+    return "Backup automàtic no configurat.";
+  }
+
+  return [
+    `Backup automàtic Aura — ${AURA_VERSION}`,
+    `Cron: ${worker.cron || "17 3 * * *"}`,
+    `Última execució: ${worker.lastRunAt ? formatDate(worker.lastRunAt) : "pendent"}`,
+    `Últim backup: ${worker.lastBackupId || "pendent"}`,
+    worker.counts
+      ? `Contingut: ${worker.counts.records} records / ${worker.counts.diary} diari / ${worker.counts.genes} gens`
+      : "Contingut: pendent",
+    worker.latest?.checksum ? `SHA-256: ${worker.latest.checksum}` : "SHA-256: pendent",
+    `Estat tècnic: ${worker.endpoint}`,
   ].join("\n");
+}
+
+function formatRestorePreview(preview) {
+  return [
+    `Previsualització restauració — ${preview.version}`,
+    `Origen: ${preview.source.project} / ${preview.source.version}`,
+    `Exportat: ${preview.source.exportedAt || "sense-data"}`,
+    preview.source.checksum ? `SHA-256: ${preview.source.checksum}` : "SHA-256: no disponible",
+    preview.source.vaultId ? `Vault ID: ${preview.source.vaultId}` : "",
+    `Mode: ${preview.mode}`,
+    `Risc: ${preview.risk}`,
+    "",
+    "Records:",
+    `- Total entrada: ${preview.records.total}`,
+    `- Nous per ID: ${preview.records.newById}`,
+    `- Nous sense ID: ${preview.records.newByTextFallback}`,
+    `- Duplicats per ID: ${preview.records.duplicateIds}`,
+    `- Duplicats per text: ${preview.records.duplicateText}`,
+    "",
+    "Diari:",
+    `- Total entrada: ${preview.diary.total}`,
+    `- Nous per ID: ${preview.diary.newById}`,
+    `- Nous sense ID: ${preview.diary.newByTextFallback}`,
+    `- Duplicats per ID: ${preview.diary.duplicateIds}`,
+    `- Duplicats per text: ${preview.diary.duplicateText}`,
+    "",
+    "Gens:",
+    `- Total entrada: ${preview.genes.total}`,
+    `- Nous: ${preview.genes.new}`,
+    `- Canviaran: ${preview.genes.changed}`,
+    `- Iguals: ${preview.genes.unchanged}`,
+    "",
+    `Aplicables: ${preview.apply.records} records / ${preview.apply.diary} diari / ${preview.apply.genes} gens`,
+    "No s'ha escrit res encara.",
+    `Per aplicar-ho: ${preview.confirmationCommand}`,
+    "Per cancel·lar: /cancella-restauracio",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function downloadFile(filename, content, type) {

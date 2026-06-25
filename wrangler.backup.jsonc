@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "projecte-aura-backup-worker",
+  "main": "workers/aura_backup_worker.js",
+  "compatibility_date": "2026-06-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "projecte-aura-memory",
+      "database_id": "bed319d0-0b23-414a-a5e8-023db1f9812c",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "BACKUP_VAULT",
+      "id": "f99db03ccf7d4da291bcfffea2acc905"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,18 +1,20 @@
 {
   "name": "projecte-aura",
-  "version": "2.5.0",
-  "description": "Projecte Aura Cloud v2.5 amb criteri operatiu, vault KV de backups i D1 protegit per Mode Sergi.",
+  "version": "3.1.0",
+  "description": "Projecte Aura Cloud v3.1 amb auditoria de mutacions, genoma editable, criteri ampliat, cercador de memoria, backups automatics i D1 protegit per Mode Sergi.",
   "private": false,
   "type": "module",
   "scripts": {
-    "check": "node --check aura_core.js && node --check 'functions/api/[[path]].js'",
+    "check": "node --check aura_core.js && node --check 'functions/api/[[path]].js' && node --check workers/aura_backup_worker.js",
     "types": "wrangler types",
     "serve": "python3 -m http.server 8788",
     "prepare:pages": "rm -rf .deploy/projecte-aura && mkdir -p .deploy/projecte-aura && cp index.html aura_core.js aura_style.css _headers .deploy/projecte-aura/",
     "dev:pages": "npm run prepare:pages && wrangler pages dev .deploy/projecte-aura --port=8788",
+    "dev:backup-worker": "wrangler dev --config wrangler.backup.jsonc --port=8789 --test-scheduled",
     "migrate:local": "wrangler d1 migrations apply projecte-aura-memory --local",
     "migrate:remote": "wrangler d1 migrations apply projecte-aura-memory --remote",
-    "deploy": "npm run prepare:pages && wrangler pages deploy .deploy/projecte-aura --project-name=projecte-aura --branch=main"
+    "deploy": "npm run prepare:pages && wrangler pages deploy .deploy/projecte-aura --project-name=projecte-aura --branch=main",
+    "deploy:backup-worker": "wrangler deploy --config wrangler.backup.jsonc"
   },
   "devDependencies": {
     "@types/node": "^26.0.0",

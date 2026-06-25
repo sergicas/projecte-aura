@@ -1,7 +1,9 @@
-const AURA_VERSION = "cloud-v2.5";
-const BACKUP_FORMAT = "aura-backup-v2.5";
+const AURA_VERSION = "cloud-v3.1";
+const BACKUP_FORMAT = "aura-backup-v3.1";
 const VAULT_PREFIX = "aura/backups/";
+const AUTOMATION_META_KEY = "aura/automation/backup-worker";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
+const GENE_STATES = ["actiu", "latent", "arxivat", "observacio"];
 
 const FOUNDATION_RECORDS = [
   "El projecte es diu Projecte Aura.",
@@ -68,6 +70,36 @@ const GENES = [
     state: "actiu",
     description: "Sintetitza estat, límits i propera acció sense simular subjectivitat humana.",
   },
+  {
+    id: "233",
+    name: "restauracio-segura",
+    state: "actiu",
+    description: "Previsualitza una restauració abans d'aplicar-la a D1.",
+  },
+  {
+    id: "377",
+    name: "backup-automatic",
+    state: "actiu",
+    description: "Executa backups programats al vault KV amb un Worker cron.",
+  },
+  {
+    id: "610",
+    name: "cerca-memoria",
+    state: "actiu",
+    description: "Permet cercar i filtrar records i diari sense alterar la memòria.",
+  },
+  {
+    id: "987",
+    name: "genoma-editable",
+    state: "actiu",
+    description: "Permet modificar gens explícitament amb Mode Sergi i deixar traça a D1.",
+  },
+  {
+    id: "1597",
+    name: "auditoria-mutacions",
+    state: "actiu",
+    description: "Registra mutacions de genoma i restauracions com a traça consultable.",
+  },
 ];
 
 export async function onRequest(context) {
@@ -96,6 +128,14 @@ export async function onRequest(context) {
 
     if (method === "GET" && route === "backup") {
       return json(await getBackup(context.env.DB));
+    }
+
+    if (method === "GET" && (route === "audit" || route === "auditoria")) {
+      return json(await getAudit(context.request, context.env.DB));
+    }
+
+    if (method === "GET" && (route === "search" || route === "memory/search")) {
+      return json(await searchMemory(context.request, context.env.DB));
     }
 
     if (method === "GET" && isVaultListRoute(route)) {
@@ -139,6 +179,21 @@ export async function onRequest(context) {
       const gene = await getGene(context.env.DB, segments[1]);
       if (!gene) throw new HttpError(404, "Gen no trobat.");
       return json({ gene });
+    }
+
+    if (method === "POST" && route === "genes") {
+      await requireWriteAccess(context.request, context.env);
+      return json({ gene: await upsertGene(context.request, context.env.DB) }, 201);
+    }
+
+    if (method === "POST" && segments[0] === "genes" && segments[1]) {
+      await requireWriteAccess(context.request, context.env);
+      return json({ gene: await updateGene(context.request, context.env.DB, segments[1]) });
+    }
+
+    if (method === "POST" && (route === "restore/preview" || route === "import/preview")) {
+      await requireWriteAccess(context.request, context.env);
+      return json(await previewRestore(context.request, context.env.DB));
     }
 
     if (method === "POST" && (route === "import" || route === "restore")) {
@@ -196,6 +251,21 @@ async function ensureSeeded(db) {
     db
       .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
       .bind("diary-cloud-v2-5-criterion", "Aura ha activat el criteri operatiu Cloud v2.5.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("diary-cloud-v2-6-safe-restore", "Aura ha activat la restauració segura Cloud v2.6.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("diary-cloud-v2-7-auto-backup", "Aura ha activat backups automàtics Cloud v2.7.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("diary-cloud-v2-8-search", "Aura ha activat cercador i filtres de memòria Cloud v2.8.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("diary-cloud-v3-0-editable-genome", "Aura ha activat genoma editable i criteri ampliat Cloud v3.0.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("audit-cloud-v3-1-mutations", "[audit:sistema] Aura ha activat auditoria de mutacions Cloud v3.1.", now),
     ...GENES.map((gene) =>
       db
         .prepare(
@@ -220,6 +290,10 @@ async function getStatus(db, vault) {
     db.prepare("SELECT COUNT(*) AS total FROM diary"),
     db.prepare("SELECT COUNT(*) AS total FROM genes"),
   ]);
+  const [vaultSummary, backupWorker] = await Promise.all([
+    getVaultSummary(vault),
+    getBackupAutomationSummary(vault),
+  ]);
 
   return {
     ok: true,
@@ -229,6 +303,12 @@ async function getStatus(db, vault) {
     infrastructure: "Cloudflare Pages Functions / D1 / navegador web",
     persistence: "D1 al núvol amb IndexedDB com a còpia local",
     genome: "actiu",
+    genomeEditable: {
+      enabled: true,
+      endpoint: "/api/genes/:id",
+      protected: true,
+      states: GENE_STATES,
+    },
     writes: {
       protected: true,
       mode: "sergi",
@@ -237,8 +317,12 @@ async function getStatus(db, vault) {
       format: BACKUP_FORMAT,
       checksum: "sha-256",
       restore: "merge-preserve-id",
+      preview: "/api/restore/preview",
     },
-    vault: await getVaultSummary(vault),
+    vault: vaultSummary,
+    automation: {
+      backupWorker,
+    },
     continuity: {
       diaryWrites: true,
       endpoint: "/api/continuity",
@@ -246,6 +330,14 @@ async function getStatus(db, vault) {
     criterion: {
       endpoint: "/api/criterion",
       mode: "deterministic",
+    },
+    search: {
+      endpoint: "/api/search",
+      filters: ["q", "kind", "source", "area"],
+    },
+    audit: {
+      endpoint: "/api/audit",
+      scopes: ["sistema", "genoma", "restore"],
     },
     counts: {
       records: readCount(records),
@@ -272,6 +364,29 @@ async function getVaultSummary(vault) {
     protected: true,
     countVisible: backups.length,
     latest: backups[0] || null,
+  };
+}
+
+async function getBackupAutomationSummary(vault) {
+  if (!vault) {
+    return {
+      configured: false,
+      storage: "workers-kv",
+      endpoint: "projecte-aura-backup-worker/status",
+      lastRunAt: null,
+    };
+  }
+
+  const latest = await vault.get(AUTOMATION_META_KEY, "json");
+  return {
+    configured: true,
+    storage: "workers-kv",
+    endpoint: "projecte-aura-backup-worker/status",
+    cron: latest?.cron || "17 3 * * *",
+    lastRunAt: latest?.lastRunAt || null,
+    lastBackupId: latest?.lastBackupId || null,
+    counts: latest?.counts || null,
+    latest,
   };
 }
 
@@ -307,7 +422,13 @@ async function timingSafeTextEqual(left, right) {
     crypto.subtle.digest("SHA-256", encoder.encode(left)),
     crypto.subtle.digest("SHA-256", encoder.encode(right)),
   ]);
-  return crypto.subtle.timingSafeEqual(leftHash, rightHash);
+  const leftBytes = new Uint8Array(leftHash);
+  const rightBytes = new Uint8Array(rightHash);
+  let mismatch = leftBytes.length ^ rightBytes.length;
+  for (let index = 0; index < leftBytes.length && index < rightBytes.length; index += 1) {
+    mismatch |= leftBytes[index] ^ rightBytes[index];
+  }
+  return mismatch === 0;
 }
 
 async function getSnapshot(db, vault) {
@@ -357,6 +478,31 @@ async function getBackup(db) {
       restoreMode: "merge-preserve-id",
     },
   };
+}
+
+async function getAudit(request, db) {
+  const url = new URL(request.url);
+  const scope = normalizeToken(url.searchParams.get("scope"), "");
+  const limit = normalizeLimit(url.searchParams.get("limit"), 40);
+  const audit = await getAuditEntries(db, limit, scope);
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    scope: scope || "all",
+    limit,
+    total: audit.length,
+    audit,
+  };
+}
+
+async function getAuditEntries(db, limit = 20, scope = "") {
+  const pattern = scope ? `[audit:${scope}]%` : "[audit:%";
+  const result = await db
+    .prepare("SELECT id, text, created_at FROM diary WHERE text LIKE ? ORDER BY created_at DESC LIMIT ?")
+    .bind(pattern, limit)
+    .all();
+  return result.results.map(mapAuditEntry);
 }
 
 function isVaultListRoute(route) {
@@ -494,6 +640,71 @@ async function createRecord(request, db) {
   return record;
 }
 
+async function searchMemory(request, db) {
+  const url = new URL(request.url);
+  const q = normalizeText(url.searchParams.get("q"), 400);
+  const kind = normalizeToken(url.searchParams.get("kind"), "");
+  const source = normalizeToken(url.searchParams.get("source"), "");
+  const area = normalizeToken(url.searchParams.get("area") || url.searchParams.get("scope"), "all");
+  const limit = normalizeLimit(url.searchParams.get("limit"), 50);
+
+  const recordWhere = [];
+  const recordBinds = [];
+  if (q) {
+    recordWhere.push("LOWER(text) LIKE ? ESCAPE '\\'");
+    recordBinds.push(`%${escapeLike(q.toLowerCase())}%`);
+  }
+  if (kind) {
+    recordWhere.push("kind = ?");
+    recordBinds.push(kind);
+  }
+  if (source) {
+    recordWhere.push("source = ?");
+    recordBinds.push(source);
+  }
+
+  const includeRecords = area === "all" || area === "records" || area === "memoria";
+  const includeDiary = (area === "all" || area === "diary" || area === "diari") && !kind && !source;
+  const recordSql = `SELECT id, text, kind, source, created_at FROM records ${
+    recordWhere.length ? `WHERE ${recordWhere.join(" AND ")}` : ""
+  } ORDER BY created_at DESC LIMIT ?`;
+  const diarySql = `SELECT id, text, created_at FROM diary ${
+    q ? "WHERE LOWER(text) LIKE ? ESCAPE '\\'" : ""
+  } ORDER BY created_at DESC LIMIT ?`;
+
+  const [recordResult, diaryResult] = await Promise.all([
+    includeRecords
+      ? db
+          .prepare(recordSql)
+          .bind(...recordBinds, limit)
+          .all()
+      : { results: [] },
+    includeDiary
+      ? db
+          .prepare(diarySql)
+          .bind(...(q ? [`%${escapeLike(q.toLowerCase())}%`] : []), limit)
+          .all()
+      : { results: [] },
+  ]);
+
+  const records = recordResult.results.map(mapRecord);
+  const diary = diaryResult.results.map(mapDiary);
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    query: {
+      q,
+      kind: kind || null,
+      source: source || null,
+      area,
+      limit,
+    },
+    records,
+    diary,
+    total: records.length + diary.length,
+  };
+}
+
 async function getDiary(db, limit = 80) {
   const result = await db
     .prepare("SELECT id, text, created_at FROM diary ORDER BY created_at DESC LIMIT ?")
@@ -555,26 +766,46 @@ async function getContinuity(db) {
 }
 
 async function getCriterion(db, vault) {
-  const [records, diary, genes, status] = await Promise.all([
+  const [records, diary, genes, status, auditEntries] = await Promise.all([
     getRecords(db, 10),
     getDiary(db, 8),
     getGenes(db),
     getStatus(db, vault),
+    getAuditEntries(db, 5),
   ]);
   const activeGenes = genes.filter((gene) => gene.state === "actiu");
   const latentGenes = genes.filter((gene) => gene.state === "latent");
+  const archivedGenes = genes.filter((gene) => gene.state === "arxivat");
   const latestRecord = records[0] || null;
   const latestDiary = diary[0] || null;
+  const latestAudit = auditEntries[0] || null;
   const latestVault = status.vault?.latest || null;
+  const backupWorker = status.automation?.backupWorker || null;
+  const vaultAgeHours = ageHours(latestVault?.savedAt || latestVault?.createdAt);
+  const autoAgeHours = ageHours(backupWorker?.lastRunAt);
+  const risks = [];
   const priorities = [];
 
   if (!latestVault) {
+    risks.push("vault-sense-backup");
     priorities.push("Crear una primera còpia al vault KV amb /desa-backup.");
+  } else if (vaultAgeHours !== null && vaultAgeHours > 48) {
+    risks.push("backup-vault-antiga");
+    priorities.push("Executar /desa-backup o confirmar que el Worker cron ha escrit al vault.");
   } else {
     priorities.push("Mantenir el vault KV actualitzat després de canvis importants.");
   }
 
+  if (!backupWorker?.lastRunAt) {
+    risks.push("backup-automatic-pendent");
+    priorities.push("Desplegar o provar projecte-aura-backup-worker fins que registri lastRunAt.");
+  } else if (autoAgeHours !== null && autoAgeHours > 30) {
+    risks.push("backup-automatic-endarrerit");
+    priorities.push("Revisar el cron del Worker de backups automàtics.");
+  }
+
   if (status.counts.diary < 5) {
+    risks.push("diari-curt");
     priorities.push("Anotar més diari de continuïtat per distingir estat intern de memòria central.");
   }
 
@@ -582,8 +813,20 @@ async function getCriterion(db, vault) {
     priorities.push(`Preservar com a latent: ${latentGenes.map((gene) => `${gene.id} ${gene.name}`).join(", ")}.`);
   }
 
-  if (status.counts.records >= 10 && latestVault) {
-    priorities.push("Preparar la següent capa: criteri estable abans d'automatismes.");
+  if (status.search?.endpoint) {
+    priorities.push("Usar /cerca abans de duplicar records o reescriure memòria existent.");
+  }
+
+  if (!latestAudit) {
+    priorities.push("Verificar que les mutacions futures deixin traça a /audit.");
+  }
+
+  if (status.genomeEditable?.enabled) {
+    priorities.push("Editar gens només amb ordres explícites i Mode Sergi actiu.");
+  }
+
+  if (status.counts.records >= 10 && latestVault && backupWorker?.lastRunAt) {
+    priorities.push("Preparar una auditoria curta de coherència entre memòria, diari i genoma.");
   }
 
   return {
@@ -600,8 +843,53 @@ async function getCriterion(db, vault) {
       latestMemory: latestRecord ? summarizeSignal(latestRecord.text) : "sense memòria recent",
       latestDiary: latestDiary ? summarizeSignal(latestDiary.text) : "sense diari recent",
       vault: latestVault ? `últim backup ${latestVault.id}` : "sense backup al vault",
+      autoBackup: backupWorker?.lastRunAt ? `última execució ${backupWorker.lastRunAt}` : "pendent",
+      search: status.search?.endpoint || "sense cercador",
+      audit: latestAudit ? `${latestAudit.scope}: ${summarizeSignal(latestAudit.text)}` : "sense auditoria recent",
       activeGenes: activeGenes.map((gene) => `${gene.id} ${gene.name}`),
       latentGenes: latentGenes.map((gene) => `${gene.id} ${gene.name}`),
+    },
+    integrity: {
+      vault: {
+        state: !latestVault ? "missing" : vaultAgeHours !== null && vaultAgeHours > 48 ? "stale" : "fresh",
+        latestAt: latestVault?.savedAt || latestVault?.createdAt || null,
+        ageHours: roundAge(vaultAgeHours),
+      },
+      autoBackup: {
+        state: !backupWorker?.lastRunAt ? "pending" : autoAgeHours !== null && autoAgeHours > 30 ? "delayed" : "ok",
+        cron: backupWorker?.cron || "17 3 * * *",
+        lastRunAt: backupWorker?.lastRunAt || null,
+        lastBackupId: backupWorker?.lastBackupId || null,
+        ageHours: roundAge(autoAgeHours),
+      },
+      search: {
+        enabled: Boolean(status.search?.endpoint),
+        endpoint: status.search?.endpoint || null,
+        filters: status.search?.filters || [],
+      },
+      audit: {
+        enabled: Boolean(status.audit?.endpoint),
+        endpoint: status.audit?.endpoint || null,
+        latestAt: latestAudit?.createdAt || null,
+        latestScope: latestAudit?.scope || null,
+        recent: auditEntries.length,
+      },
+      genomeEditable: {
+        enabled: Boolean(status.genomeEditable?.enabled),
+        endpoint: status.genomeEditable?.endpoint || null,
+        states: status.genomeEditable?.states || GENE_STATES,
+        active: activeGenes.length,
+        latent: latentGenes.length,
+        archived: archivedGenes.length,
+      },
+      risks,
+    },
+    decisions: {
+      writePolicy: "Qualsevol mutació persistent requereix Mode Sergi.",
+      restorePolicy: "Cap restauració s'aplica sense previsualització i confirmació.",
+      genomePolicy: "Els canvis de genoma són explícits, versionats per updatedAt i visibles a /genoma.",
+      auditPolicy: "Les mutacions estructurals han de deixar una entrada [audit:*] al diari.",
+      memoryPolicy: "Abans d'afegir memòria nova, consultar /cerca quan hi hagi risc de duplicació.",
     },
     priorities,
     nextAction: priorities[0] || "Mantenir observació i continuïtat.",
@@ -626,6 +914,180 @@ async function getGene(db, id) {
     .bind(String(id).padStart(3, "0"))
     .first();
   return gene ? mapGene(gene) : null;
+}
+
+async function upsertGene(request, db) {
+  const body = await readJson(request, 64 * 1024);
+  const id = normalizeGeneId(body?.id);
+  if (!id) throw new HttpError(400, "Cal indicar ID de gen.");
+
+  const now = new Date().toISOString();
+  const existing = await getGene(db, id);
+  const gene = {
+    id,
+    name: normalizeToken(body?.name, existing?.name || "gen-editat"),
+    state: normalizeGeneState(body?.state, existing?.state || "latent"),
+    description: normalizeText(body?.description ?? existing?.description, 1000),
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+  };
+  const auditText = existing
+    ? `Gen ${gene.id} ${gene.name} actualitzat: ${describeGeneChanges(existing, gene)}.`
+    : `Gen ${gene.id} ${gene.name} creat en estat ${gene.state}.`;
+
+  await db.batch([
+    db
+      .prepare("INSERT OR REPLACE INTO genes (id, name, state, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(gene.id, gene.name, gene.state, gene.description, gene.createdAt, gene.updatedAt),
+    createAuditStatement(db, "genoma", auditText, now),
+  ]);
+
+  return gene;
+}
+
+async function updateGene(request, db, id) {
+  const body = await readJson(request, 64 * 1024);
+  const geneId = normalizeGeneId(id);
+  const existing = await getGene(db, geneId);
+  if (!existing) throw new HttpError(404, "Gen no trobat.");
+
+  const updated = {
+    id: existing.id,
+    name: body?.name === undefined ? existing.name : normalizeToken(body.name, existing.name),
+    state: body?.state === undefined ? existing.state : normalizeGeneState(body.state, existing.state),
+    description:
+      body?.description === undefined ? existing.description : normalizeText(body.description, 1000),
+    createdAt: existing.createdAt,
+    updatedAt: new Date().toISOString(),
+  };
+  const auditText = `Gen ${updated.id} ${updated.name} actualitzat: ${describeGeneChanges(existing, updated)}.`;
+
+  await db.batch([
+    db
+      .prepare("UPDATE genes SET name = ?, state = ?, description = ?, updated_at = ? WHERE id = ?")
+      .bind(updated.name, updated.state, updated.description, updated.updatedAt, updated.id),
+    createAuditStatement(db, "genoma", auditText, updated.updatedAt),
+  ]);
+
+  return updated;
+}
+
+async function previewRestore(request, db) {
+  const payload = await readJson(request, MAX_JSON_BYTES);
+  if (!payload || !Array.isArray(payload.records)) {
+    throw new HttpError(400, "El JSON no sembla una còpia d'Aura.");
+  }
+
+  const incomingRecords = payload.records.slice(0, 500).filter((record) => normalizeText(record?.text, 4000));
+  const incomingDiary = Array.isArray(payload.diary)
+    ? payload.diary.slice(0, 200).filter((entry) => normalizeText(entry?.text, 4000))
+    : [];
+  const incomingGenes = Array.isArray(payload.genes) ? payload.genes.slice(0, 50).filter((gene) => gene?.id) : [];
+
+  const [existingRecords, existingDiary, existingGenes] = await Promise.all([
+    getRecords(db, 1000),
+    getDiary(db, 500),
+    getGenes(db),
+  ]);
+
+  const recordIds = new Set(existingRecords.map((record) => record.id));
+  const recordTexts = new Set(existingRecords.map((record) => normalizeComparable(record.text)));
+  const diaryIds = new Set(existingDiary.map((entry) => entry.id));
+  const diaryTexts = new Set(existingDiary.map((entry) => normalizeComparable(entry.text)));
+  const genesById = new Map(existingGenes.map((gene) => [gene.id, gene]));
+
+  const records = summarizeIncomingItems(incomingRecords, recordIds, recordTexts);
+  const diary = summarizeIncomingItems(incomingDiary, diaryIds, diaryTexts);
+  const genes = incomingGenes.reduce(
+    (summary, gene) => {
+      const id = String(gene.id).padStart(3, "0").slice(0, 12);
+      const existing = genesById.get(id);
+      if (!existing) {
+        summary.new += 1;
+        return summary;
+      }
+
+      const changed =
+        normalizeText(gene.name, 80) !== existing.name ||
+        normalizeGeneState(gene.state, existing.state) !== existing.state ||
+        normalizeText(gene.description, 1000) !== existing.description;
+      if (changed) summary.changed += 1;
+      else summary.unchanged += 1;
+      return summary;
+    },
+    { total: incomingGenes.length, new: 0, changed: 0, unchanged: 0 },
+  );
+
+  const apply = {
+    records: records.newById + records.newByTextFallback,
+    diary: diary.newById + diary.newByTextFallback,
+    genes: genes.new + genes.changed,
+  };
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    source: {
+      project: payload.project || "desconegut",
+      version: payload.version || "desconeguda",
+      exportedAt: payload.exportedAt || null,
+      checksum: payload.backup?.checksum || null,
+      vaultId: payload.vault?.id || null,
+    },
+    mode: "preview-only",
+    records,
+    diary,
+    genes,
+    apply,
+    risk: classifyRestoreRisk(records, diary, genes),
+    requiresConfirmation: true,
+    confirmationCommand: "/confirma-restauracio",
+  };
+}
+
+function summarizeIncomingItems(items, existingIds, existingTexts) {
+  return items.reduce(
+    (summary, item) => {
+      const id = normalizeId(item?.id, "");
+      const text = normalizeComparable(item?.text);
+      if (id && existingIds.has(id)) {
+        summary.duplicateIds += 1;
+      } else if (existingTexts.has(text)) {
+        summary.duplicateText += 1;
+      } else if (id) {
+        summary.newById += 1;
+      } else {
+        summary.newByTextFallback += 1;
+      }
+      return summary;
+    },
+    {
+      total: items.length,
+      newById: 0,
+      newByTextFallback: 0,
+      duplicateIds: 0,
+      duplicateText: 0,
+    },
+  );
+}
+
+function classifyRestoreRisk(records, diary, genes) {
+  const incoming = records.total + diary.total + genes.total;
+  const changes = records.newById + records.newByTextFallback + diary.newById + diary.newByTextFallback + genes.new + genes.changed;
+  if (!incoming) return "buit";
+  if (changes === 0) return "sense-canvis";
+  if (changes > 250 || genes.changed > 5) return "alt";
+  if (changes > 50 || genes.changed > 0) return "mitja";
+  return "baix";
+}
+
+function describeGeneChanges(before, after) {
+  const changes = [];
+  if (!before) return `estat inicial ${after.state}`;
+  if (before.name !== after.name) changes.push(`nom ${before.name} -> ${after.name}`);
+  if (before.state !== after.state) changes.push(`estat ${before.state} -> ${after.state}`);
+  if (before.description !== after.description) changes.push("descripció actualitzada");
+  return changes.join(", ") || "sense canvis materials";
 }
 
 async function importSnapshot(request, db) {
@@ -680,7 +1142,7 @@ async function importSnapshot(request, db) {
           .bind(
             String(gene.id).padStart(3, "0").slice(0, 12),
             normalizeText(gene.name, 80) || "gen-importat",
-            normalizeToken(gene.state, "importat"),
+            normalizeGeneState(gene.state, "latent"),
             normalizeText(gene.description, 1000),
             normalizeDate(gene.createdAt || gene.created_at, now),
             now,
@@ -694,12 +1156,23 @@ async function importSnapshot(request, db) {
       .prepare("INSERT OR REPLACE INTO meta (key, value, updated_at) VALUES (?, ?, ?)")
       .bind("lastImport", now, now),
   );
+  const imported = statements.length - 1;
+  statements.push(
+    createAuditStatement(
+      db,
+      "restore",
+      `Restauració aplicada: ${imported} operacions preparades. Origen ${payload.project || "desconegut"} / ${
+        payload.version || "desconeguda"
+      }.`,
+      now,
+    ),
+  );
 
   for (let i = 0; i < statements.length; i += 100) {
     await db.batch(statements.slice(i, i + 100));
   }
 
-  return { ok: true, imported: statements.length - 1, importedAt: now };
+  return { ok: true, imported, importedAt: now, audit: true };
 }
 
 async function readJson(request, maxBytes) {
@@ -744,6 +1217,18 @@ function mapDiary(row) {
   };
 }
 
+function mapAuditEntry(row) {
+  const raw = String(row.text || "");
+  const match = raw.match(/^\[audit:([^\]]+)\]\s*(.*)$/);
+  return {
+    id: row.id,
+    scope: match?.[1] || "unknown",
+    text: match?.[2] || raw,
+    raw,
+    createdAt: row.created_at,
+  };
+}
+
 function mapGene(row) {
   return {
     id: row.id,
@@ -765,6 +1250,29 @@ function summarizeSignal(value) {
   return `${text.slice(0, 177)}...`;
 }
 
+function ageHours(value) {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return null;
+  return (Date.now() - time) / 36e5;
+}
+
+function roundAge(value) {
+  return value === null ? null : Math.round(value * 10) / 10;
+}
+
+function createAuditStatement(db, scope, text, createdAt = new Date().toISOString()) {
+  const normalizedScope = normalizeToken(scope, "sistema");
+  const id = `audit-${normalizedScope}-${createdAt.replaceAll(/[:.]/g, "-")}-${crypto.randomUUID().slice(0, 8)}`;
+  return db
+    .prepare("INSERT INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+    .bind(id, `[audit:${normalizedScope}] ${normalizeText(text, 3500)}`, createdAt);
+}
+
+function normalizeComparable(value) {
+  return String(value || "").trim().replaceAll(/\s+/g, " ").toLowerCase();
+}
+
 function normalizeToken(value, fallback) {
   const token = String(value || fallback)
     .trim()
@@ -780,6 +1288,26 @@ function normalizeId(value, fallback) {
     .replaceAll(/[^a-zA-Z0-9_:.@-]/g, "-")
     .slice(0, 120);
   return id || fallback;
+}
+
+function normalizeGeneId(value) {
+  const id = normalizeId(value, "");
+  return id ? id.padStart(3, "0").slice(0, 12) : "";
+}
+
+function normalizeGeneState(value, fallback) {
+  const state = normalizeToken(value, fallback);
+  return GENE_STATES.includes(state) ? state : fallback;
+}
+
+function normalizeLimit(value, fallback) {
+  const limit = Number.parseInt(value || "", 10);
+  if (!Number.isFinite(limit)) return fallback;
+  return Math.min(Math.max(limit, 1), 100);
+}
+
+function escapeLike(value) {
+  return String(value).replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
 }
 
 function normalizeVaultId(value) {

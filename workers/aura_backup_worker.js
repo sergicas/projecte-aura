@@ -1,7 +1,9 @@
-const AURA_VERSION = "cloud-v3.2";
-const BACKUP_FORMAT = "aura-backup-v3.2";
+const AURA_VERSION = "cloud-v3.3";
+const BACKUP_FORMAT = "aura-backup-v3.3";
 const VAULT_PREFIX = "aura/backups/";
 const AUTOMATION_META_KEY = "aura/automation/backup-worker";
+const INTEGRITY_PREFIX = "aura/integrity/snapshots/";
+const INTEGRITY_LATEST_KEY = "aura/integrity/latest";
 const DEFAULT_CRON = "17 3 * * *";
 
 export default {
@@ -34,6 +36,7 @@ export default {
           storage: "workers-kv",
           cron: DEFAULT_CRON,
           automation: (await env.BACKUP_VAULT.get(AUTOMATION_META_KEY, "json")) || null,
+          integrity: (await env.BACKUP_VAULT.get(INTEGRITY_LATEST_KEY, "json")) || null,
         });
       }
 
@@ -131,6 +134,15 @@ async function createAutomatedBackup(env, automation) {
     counts: payload.backup.counts,
     checksum,
   };
+  const integrity = buildWorkerIntegrity(snapshot, summary);
+  const integritySnapshot = await storeIntegritySnapshot(
+    env.BACKUP_VAULT,
+    integrity,
+    automation.reason,
+    "backup-worker",
+  );
+  summary.integritySnapshotId = integritySnapshot.id;
+  summary.integrity = integritySnapshot;
 
   await env.BACKUP_VAULT.put(AUTOMATION_META_KEY, JSON.stringify(summary, null, 2), {
     metadata: {
@@ -142,6 +154,143 @@ async function createAutomatedBackup(env, automation) {
   });
 
   return summary;
+}
+
+function buildWorkerIntegrity(snapshot, backupSummary) {
+  const latestMemory = snapshot.records[0] || null;
+  const latestDiary = snapshot.diary[0] || null;
+  const latestAudit = snapshot.diary.find((entry) => String(entry.text || "").startsWith("[audit:")) || null;
+  const activeGenes = snapshot.genes.filter((gene) => gene.state === "actiu");
+  const latentGenes = snapshot.genes.filter((gene) => gene.state === "latent");
+  const archivedGenes = snapshot.genes.filter((gene) => gene.state === "arxivat");
+  const risks = [];
+
+  if (!latestAudit) risks.push("auditoria-no-detectada");
+  if (!backupSummary.lastBackupId) risks.push("backup-no-identificat");
+
+  const components = [
+    {
+      id: "vault",
+      label: "Vault KV",
+      state: backupSummary.lastBackupId ? "fresh" : "missing",
+      detail: backupSummary.lastBackupId || "sense backup",
+      action: backupSummary.lastBackupId ? "Backup automàtic guardat." : "Revisar escriptura KV.",
+    },
+    {
+      id: "auto-backup",
+      label: "Backup automàtic",
+      state: "ok",
+      detail: backupSummary.lastRunAt,
+      action: "Cron actiu.",
+    },
+    {
+      id: "audit",
+      label: "Auditoria",
+      state: latestAudit ? "ok" : "pending",
+      detail: latestAudit ? parseAuditSignal(latestAudit.text) : "sense traça recent",
+      action: latestAudit ? "Continuar registrant mutacions." : "Crear una traça [audit:*].",
+    },
+    {
+      id: "search",
+      label: "Cercador",
+      state: "ok",
+      detail: "/api/search",
+      action: "Usar /cerca abans d'escriure records.",
+    },
+    {
+      id: "genome",
+      label: "Genoma editable",
+      state: "ok",
+      detail: `${activeGenes.length} actius / ${latentGenes.length} latents / ${archivedGenes.length} arxivats`,
+      action: "Editar només amb Mode Sergi.",
+    },
+  ];
+  const score = calculateIntegrityScore(components, risks);
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    generatedAt: new Date().toISOString(),
+    source: "backup-worker",
+    overall: risks.length ? "atencio" : "estable",
+    score,
+    summary: {
+      latestMemory: latestMemory ? summarizeSignal(latestMemory.text) : "sense memòria recent",
+      latestDiary: latestDiary ? summarizeSignal(latestDiary.text) : "sense diari recent",
+      latestAudit: latestAudit ? parseAuditSignal(latestAudit.text) : "sense auditoria recent",
+      risks,
+      nextAction: risks.length ? "Revisar auditoria i estat del backup automàtic." : "Mantenir ritme de backups automàtics.",
+      backupId: backupSummary.lastBackupId,
+    },
+    components,
+    actions: [
+      "Confirmar que el cron segueix executant-se.",
+      "Consultar /api/integrity/history abans de canvis estructurals.",
+      "Mantenir Mode Sergi per mutacions persistents.",
+    ],
+    criterionEndpoint: "/api/criterion",
+  };
+}
+
+async function storeIntegritySnapshot(vault, integrity, reason, source) {
+  const savedAt = new Date().toISOString();
+  const riskList = integrity.summary?.risks || [];
+  const id = `integrity-${savedAt.replaceAll(/[:.]/g, "-")}-${String(integrity.score).padStart(3, "0")}`;
+  const key = `${INTEGRITY_PREFIX}${id}.json`;
+  const summary = {
+    id,
+    key,
+    savedAt,
+    generatedAt: integrity.generatedAt,
+    version: AURA_VERSION,
+    score: integrity.score,
+    overall: integrity.overall,
+    riskCount: riskList.length,
+    risks: riskList,
+    reason,
+    source,
+    nextAction: integrity.summary?.nextAction || "",
+    backupId: integrity.summary?.backupId || null,
+  };
+  const payload = {
+    ...integrity,
+    snapshot: summary,
+  };
+  const metadata = {
+    id,
+    savedAt,
+    generatedAt: integrity.generatedAt,
+    version: AURA_VERSION,
+    score: String(integrity.score),
+    overall: integrity.overall,
+    riskCount: String(riskList.length),
+    risks: riskList.join(","),
+    reason,
+    source,
+    backupId: summary.backupId || "",
+  };
+
+  await vault.put(key, JSON.stringify(payload, null, 2), { metadata });
+  await vault.put(INTEGRITY_LATEST_KEY, JSON.stringify(summary, null, 2), { metadata });
+  return summary;
+}
+
+function calculateIntegrityScore(components, risks) {
+  const okStates = new Set(["ok", "fresh"]);
+  const base = Math.round((components.filter((component) => okStates.has(component.state)).length / components.length) * 100);
+  return Math.max(0, Math.min(100, base - risks.length * 8));
+}
+
+function summarizeSignal(value) {
+  const text = String(value || "").trim().slice(0, 180);
+  if (text.length < 180) return text;
+  return `${text.slice(0, 177)}...`;
+}
+
+function parseAuditSignal(value) {
+  const raw = String(value || "");
+  const match = raw.match(/^\[audit:([^\]]+)\]\s*(.*)$/);
+  return match ? `${match[1]}: ${summarizeSignal(match[2])}` : summarizeSignal(raw);
 }
 
 async function createSnapshot(db) {

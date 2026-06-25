@@ -1,7 +1,9 @@
-const AURA_VERSION = "cloud-v3.2";
-const BACKUP_FORMAT = "aura-backup-v3.2";
+const AURA_VERSION = "cloud-v3.3";
+const BACKUP_FORMAT = "aura-backup-v3.3";
 const VAULT_PREFIX = "aura/backups/";
 const AUTOMATION_META_KEY = "aura/automation/backup-worker";
+const INTEGRITY_PREFIX = "aura/integrity/snapshots/";
+const INTEGRITY_LATEST_KEY = "aura/integrity/latest";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
 const GENE_STATES = ["actiu", "latent", "arxivat", "observacio"];
 
@@ -106,6 +108,12 @@ const GENES = [
     state: "actiu",
     description: "Resumeix salut, riscos i propera acció en un panell operatiu.",
   },
+  {
+    id: "4181",
+    name: "historial-integritat",
+    state: "actiu",
+    description: "Conserva snapshots de salut operativa per veure tendència.",
+  },
 ];
 
 export async function onRequest(context) {
@@ -142,6 +150,15 @@ export async function onRequest(context) {
 
     if (method === "GET" && (route === "integrity" || route === "integritat")) {
       return json(await getIntegrity(context.env.DB, context.env.BACKUP_VAULT));
+    }
+
+    if (method === "GET" && (route === "integrity/history" || route === "integritat/historial")) {
+      return json(await getIntegrityHistory(context.env.BACKUP_VAULT, context.request));
+    }
+
+    if (method === "POST" && (route === "integrity/snapshot" || route === "integritat/snapshot")) {
+      await requireWriteAccess(context.request, context.env);
+      return json(await createIntegritySnapshot(context.request, context.env.DB, context.env.BACKUP_VAULT), 201);
     }
 
     if (method === "GET" && (route === "search" || route === "memory/search")) {
@@ -279,6 +296,9 @@ async function ensureSeeded(db) {
     db
       .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
       .bind("audit-cloud-v3-2-integrity-panel", "[audit:sistema] Aura ha activat panell d'integritat Cloud v3.2.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("audit-cloud-v3-3-integrity-history", "[audit:sistema] Aura ha activat historial d'integritat Cloud v3.3.", now),
     ...GENES.map((gene) =>
       db
         .prepare(
@@ -303,9 +323,10 @@ async function getStatus(db, vault) {
     db.prepare("SELECT COUNT(*) AS total FROM diary"),
     db.prepare("SELECT COUNT(*) AS total FROM genes"),
   ]);
-  const [vaultSummary, backupWorker] = await Promise.all([
+  const [vaultSummary, backupWorker, integrityHistory] = await Promise.all([
     getVaultSummary(vault),
     getBackupAutomationSummary(vault),
+    getIntegrityHistorySummary(vault),
   ]);
 
   return {
@@ -346,7 +367,10 @@ async function getStatus(db, vault) {
     },
     integrity: {
       endpoint: "/api/integrity",
-      mode: "operational-panel",
+      historyEndpoint: "/api/integrity/history",
+      snapshotEndpoint: "/api/integrity/snapshot",
+      mode: "operational-panel-history",
+      history: integrityHistory,
     },
     search: {
       endpoint: "/api/search",
@@ -523,7 +547,10 @@ async function getAuditEntries(db, limit = 20, scope = "") {
 }
 
 async function getIntegrity(db, vault) {
-  const criterion = await getCriterion(db, vault);
+  const [criterion, historySummary] = await Promise.all([
+    getCriterion(db, vault),
+    getIntegrityHistorySummary(vault),
+  ]);
   const integrity = criterion.integrity;
   const overall = integrity.risks.length ? "atencio" : "estable";
   const components = [
@@ -582,6 +609,162 @@ async function getIntegrity(db, vault) {
     components,
     actions: criterion.priorities.slice(0, 5),
     criterionEndpoint: "/api/criterion",
+    history: historySummary,
+  };
+}
+
+async function getIntegrityHistory(vault, request) {
+  assertVault(vault);
+  const url = new URL(request.url);
+  const limit = normalizeLimit(url.searchParams.get("limit"), 30);
+  const [history, latest] = await Promise.all([
+    readIntegrityHistory(vault, limit),
+    vault.get(INTEGRITY_LATEST_KEY, "json"),
+  ]);
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    storage: "workers-kv",
+    prefix: INTEGRITY_PREFIX,
+    count: history.length,
+    latest: summarizeIntegritySnapshot(latest || history[0] || null),
+    history,
+  };
+}
+
+async function createIntegritySnapshot(request, db, vault) {
+  assertVault(vault);
+  const body = await readJson(request, 32 * 1024);
+  const reason = normalizeText(body?.reason, 240) || "manual";
+  const integrity = await getIntegrity(db, vault);
+  const snapshot = await storeIntegritySnapshot(vault, integrity, reason, "pages-api");
+
+  await db.batch([
+    createAuditStatement(
+      db,
+      "integritat",
+      `Snapshot d'integritat ${snapshot.id}: ${snapshot.score}/100 ${snapshot.overall}.`,
+      snapshot.savedAt,
+    ),
+  ]);
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    storage: "workers-kv",
+    snapshot,
+  };
+}
+
+async function getIntegrityHistorySummary(vault) {
+  if (!vault) {
+    return {
+      configured: false,
+      storage: "workers-kv",
+      endpoint: "/api/integrity/history",
+      latest: null,
+      countVisible: 0,
+    };
+  }
+
+  const [history, latest] = await Promise.all([
+    readIntegrityHistory(vault, 20),
+    vault.get(INTEGRITY_LATEST_KEY, "json"),
+  ]);
+
+  return {
+    configured: true,
+    storage: "workers-kv",
+    endpoint: "/api/integrity/history",
+    snapshotEndpoint: "/api/integrity/snapshot",
+    countVisible: history.length,
+    latest: summarizeIntegritySnapshot(latest || history[0] || null),
+  };
+}
+
+async function readIntegrityHistory(vault, limit) {
+  if (!vault) return [];
+
+  const list = await vault.list({ prefix: INTEGRITY_PREFIX, limit });
+  return list.keys
+    .map((item) => ({
+      id: String(item.metadata?.id || item.name.replace(INTEGRITY_PREFIX, "").replace(/\.json$/, "")),
+      key: item.name,
+      savedAt: item.metadata?.savedAt || null,
+      generatedAt: item.metadata?.generatedAt || null,
+      version: item.metadata?.version || "unknown",
+      score: Number(item.metadata?.score || 0),
+      overall: item.metadata?.overall || "desconegut",
+      riskCount: Number(item.metadata?.riskCount || 0),
+      risks: item.metadata?.risks ? String(item.metadata.risks).split(",").filter(Boolean) : [],
+      reason: item.metadata?.reason || "",
+      source: item.metadata?.source || "",
+      backupId: item.metadata?.backupId || null,
+    }))
+    .sort((a, b) => new Date(b.savedAt || b.generatedAt || 0).getTime() - new Date(a.savedAt || a.generatedAt || 0).getTime());
+}
+
+async function storeIntegritySnapshot(vault, integrity, reason, source) {
+  assertVault(vault);
+  const savedAt = new Date().toISOString();
+  const riskList = integrity.summary?.risks || [];
+  const id = `integrity-${savedAt.replaceAll(/[:.]/g, "-")}-${String(integrity.score).padStart(3, "0")}`;
+  const key = `${INTEGRITY_PREFIX}${id}.json`;
+  const summary = {
+    id,
+    key,
+    savedAt,
+    generatedAt: integrity.generatedAt,
+    version: AURA_VERSION,
+    score: integrity.score,
+    overall: integrity.overall,
+    riskCount: riskList.length,
+    risks: riskList,
+    reason,
+    source,
+    nextAction: integrity.summary?.nextAction || "",
+    backupId: integrity.summary?.backupId || null,
+  };
+  const payload = {
+    ...integrity,
+    snapshot: summary,
+  };
+  const metadata = {
+    id,
+    savedAt,
+    generatedAt: integrity.generatedAt,
+    version: AURA_VERSION,
+    score: String(integrity.score),
+    overall: integrity.overall,
+    riskCount: String(riskList.length),
+    risks: riskList.join(","),
+    reason,
+    source,
+    backupId: summary.backupId || "",
+  };
+
+  await vault.put(key, JSON.stringify(payload, null, 2), { metadata });
+  await vault.put(INTEGRITY_LATEST_KEY, JSON.stringify(summary, null, 2), { metadata });
+  return summary;
+}
+
+function summarizeIntegritySnapshot(snapshot) {
+  if (!snapshot) return null;
+  return {
+    id: snapshot.id || snapshot.snapshot?.id || null,
+    key: snapshot.key || snapshot.snapshot?.key || null,
+    savedAt: snapshot.savedAt || snapshot.snapshot?.savedAt || null,
+    generatedAt: snapshot.generatedAt || snapshot.snapshot?.generatedAt || null,
+    version: snapshot.version || snapshot.snapshot?.version || "unknown",
+    score: Number(snapshot.score ?? snapshot.snapshot?.score ?? 0),
+    overall: snapshot.overall || snapshot.snapshot?.overall || "desconegut",
+    riskCount: Number(snapshot.riskCount ?? snapshot.snapshot?.riskCount ?? 0),
+    risks: snapshot.risks || snapshot.snapshot?.risks || [],
+    reason: snapshot.reason || snapshot.snapshot?.reason || "",
+    source: snapshot.source || snapshot.snapshot?.source || "",
+    nextAction: snapshot.nextAction || snapshot.snapshot?.nextAction || "",
+    backupId: snapshot.backupId || snapshot.snapshot?.backupId || null,
   };
 }
 

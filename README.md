@@ -1,6 +1,6 @@
-# Projecte Aura Cloud v3.2
+# Projecte Aura Cloud v3.3
 
-Projecte Aura Cloud v3.2 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, la restauració segura obliga a previsualitzar un JSON abans d'aplicar-lo, un Worker cron desa backups automàtics al vault, el cercador filtra records i diari, el genoma editable permet modificar gens amb Mode Sergi, l'auditoria registra mutacions estructurals al diari, i el panell d'integritat resumeix salut, riscos i propera acció.
+Projecte Aura Cloud v3.3 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, la restauració segura obliga a previsualitzar un JSON abans d'aplicar-lo, un Worker cron desa backups automàtics al vault, el cercador filtra records i diari, el genoma editable permet modificar gens amb Mode Sergi, l'auditoria registra mutacions estructurals al diari, el panell d'integritat resumeix salut, riscos i propera acció, i l'historial d'integritat conserva snapshots consultables en KV.
 
 ## Arquitectura
 
@@ -37,6 +37,8 @@ Nota: R2 queda preparat com a següent millora possible, però el compte de Clou
 - `/desa-backup`
 - `/auto-backup`
 - `/integritat`
+- `/historial-integritat`
+- `/desa-integritat`
 - `/audit`
 - `/audit genoma`
 - `/cerca aura`
@@ -107,6 +109,8 @@ npm run dev:backup-worker
 - `GET /api/backup`
 - `GET /api/integrity`
 - `GET /api/integritat`
+- `GET /api/integrity/history`
+- `POST /api/integrity/snapshot` amb Mode Sergi
 - `GET /api/audit`
 - `GET /api/audit?scope=genoma`
 - `GET /api/search?q=aura`
@@ -125,8 +129,8 @@ npm run dev:backup-worker
 ## Worker de backups
 
 - `GET /health`
-- `GET /status`
-- `POST /run` amb Mode Sergi
+- `GET /status` inclou l'últim snapshot d'integritat
+- `POST /run` amb Mode Sergi crea backup i snapshot d'integritat
 
 ## Versions
 
@@ -140,6 +144,7 @@ npm run dev:backup-worker
 - `v3.0`: genoma editable, criteri ampliat d'integritat i gen `987 genoma-editable`.
 - `v3.1`: auditoria de mutacions i restauracions, endpoint `/api/audit` i gen `1597 auditoria-mutacions`.
 - `v3.2`: panell d'integritat, endpoint `/api/integrity` i gen `2584 panell-integritat`.
+- `v3.3`: historial d'integritat en Workers KV, endpoint `/api/integrity/history`, snapshot segur `/api/integrity/snapshot` i gen `4181 historial-integritat`.
 
 ## Principis fundacionals
 

@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v3.1";
-const BACKUP_FORMAT = "aura-backup-v3.1";
+const AURA_VERSION = "cloud-v3.2";
+const BACKUP_FORMAT = "aura-backup-v3.2";
 const VAULT_PREFIX = "aura/backups/";
 const AUTOMATION_META_KEY = "aura/automation/backup-worker";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
@@ -100,6 +100,12 @@ const GENES = [
     state: "actiu",
     description: "Registra mutacions de genoma i restauracions com a traça consultable.",
   },
+  {
+    id: "2584",
+    name: "panell-integritat",
+    state: "actiu",
+    description: "Resumeix salut, riscos i propera acció en un panell operatiu.",
+  },
 ];
 
 export async function onRequest(context) {
@@ -132,6 +138,10 @@ export async function onRequest(context) {
 
     if (method === "GET" && (route === "audit" || route === "auditoria")) {
       return json(await getAudit(context.request, context.env.DB));
+    }
+
+    if (method === "GET" && (route === "integrity" || route === "integritat")) {
+      return json(await getIntegrity(context.env.DB, context.env.BACKUP_VAULT));
     }
 
     if (method === "GET" && (route === "search" || route === "memory/search")) {
@@ -266,6 +276,9 @@ async function ensureSeeded(db) {
     db
       .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
       .bind("audit-cloud-v3-1-mutations", "[audit:sistema] Aura ha activat auditoria de mutacions Cloud v3.1.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("audit-cloud-v3-2-integrity-panel", "[audit:sistema] Aura ha activat panell d'integritat Cloud v3.2.", now),
     ...GENES.map((gene) =>
       db
         .prepare(
@@ -330,6 +343,10 @@ async function getStatus(db, vault) {
     criterion: {
       endpoint: "/api/criterion",
       mode: "deterministic",
+    },
+    integrity: {
+      endpoint: "/api/integrity",
+      mode: "operational-panel",
     },
     search: {
       endpoint: "/api/search",
@@ -503,6 +520,69 @@ async function getAuditEntries(db, limit = 20, scope = "") {
     .bind(pattern, limit)
     .all();
   return result.results.map(mapAuditEntry);
+}
+
+async function getIntegrity(db, vault) {
+  const criterion = await getCriterion(db, vault);
+  const integrity = criterion.integrity;
+  const overall = integrity.risks.length ? "atencio" : "estable";
+  const components = [
+    {
+      id: "vault",
+      label: "Vault KV",
+      state: integrity.vault.state,
+      detail: integrity.vault.latestAt ? `últim backup ${integrity.vault.latestAt}` : "sense backup",
+      action: integrity.vault.state === "fresh" ? "Mantenir ritme de backups." : "Executar /desa-backup.",
+    },
+    {
+      id: "auto-backup",
+      label: "Backup automàtic",
+      state: integrity.autoBackup.state,
+      detail: integrity.autoBackup.lastBackupId || "pendent",
+      action: integrity.autoBackup.state === "ok" ? "Cron actiu." : "Revisar Worker de backups.",
+    },
+    {
+      id: "audit",
+      label: "Auditoria",
+      state: integrity.audit.latestAt ? "ok" : "pending",
+      detail: integrity.audit.latestAt
+        ? `${integrity.audit.latestScope} / ${integrity.audit.latestAt}`
+        : "sense traça recent",
+      action: integrity.audit.latestAt ? "Continuar registrant mutacions." : "Fer una mutació controlada o revisar /audit.",
+    },
+    {
+      id: "search",
+      label: "Cercador",
+      state: integrity.search.enabled ? "ok" : "missing",
+      detail: integrity.search.endpoint || "sense endpoint",
+      action: integrity.search.enabled ? "Usar /cerca abans d'escriure records." : "Restaurar endpoint /api/search.",
+    },
+    {
+      id: "genome",
+      label: "Genoma editable",
+      state: integrity.genomeEditable.enabled ? "ok" : "locked",
+      detail: `${integrity.genomeEditable.active} actius / ${integrity.genomeEditable.latent} latents / ${integrity.genomeEditable.archived} arxivats`,
+      action: integrity.genomeEditable.enabled ? "Editar només amb Mode Sergi." : "Revisar endpoint /api/genes/:id.",
+    },
+  ];
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    generatedAt: criterion.generatedAt,
+    overall,
+    score: calculateIntegrityScore(components, integrity.risks),
+    summary: {
+      latestMemory: criterion.signals.latestMemory,
+      latestDiary: criterion.signals.latestDiary,
+      latestAudit: criterion.signals.audit,
+      risks: integrity.risks,
+      nextAction: criterion.nextAction,
+    },
+    components,
+    actions: criterion.priorities.slice(0, 5),
+    criterionEndpoint: "/api/criterion",
+  };
 }
 
 function isVaultListRoute(route) {
@@ -1079,6 +1159,12 @@ function classifyRestoreRisk(records, diary, genes) {
   if (changes > 250 || genes.changed > 5) return "alt";
   if (changes > 50 || genes.changed > 0) return "mitja";
   return "baix";
+}
+
+function calculateIntegrityScore(components, risks) {
+  const okStates = new Set(["ok", "fresh"]);
+  const base = Math.round((components.filter((component) => okStates.has(component.state)).length / components.length) * 100);
+  return Math.max(0, Math.min(100, base - risks.length * 8));
 }
 
 function describeGeneChanges(before, after) {

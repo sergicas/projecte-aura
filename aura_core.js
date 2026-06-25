@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v3.1";
-const BACKUP_FORMAT = "aura-backup-v3.1";
+const AURA_VERSION = "cloud-v3.2";
+const BACKUP_FORMAT = "aura-backup-v3.2";
 const API_BASE = "/api";
 const WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
@@ -104,6 +104,12 @@ const GENES = [
     state: "actiu",
     description: "Registra mutacions de genoma i restauracions com a traça consultable.",
   },
+  {
+    id: "2584",
+    name: "panell-integritat",
+    state: "actiu",
+    description: "Resumeix salut, riscos i propera acció en un panell operatiu.",
+  },
 ];
 
 let db;
@@ -131,11 +137,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v3.1 inicialitzada.\nAuditoria, genoma editable i criteri ampliat actius.");
-      els.statusPill.textContent = "cloud-v3.1";
+      writeSystem("Aura Cloud v3.2 inicialitzada.\nPanell d'integritat, auditoria i criteri ampliat actius.");
+      els.statusPill.textContent = "cloud-v3.2";
     } else {
       writeSystem(
-        "Aura Cloud v3.1 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
+        "Aura Cloud v3.2 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
       );
       els.statusPill.textContent = "local";
     }
@@ -155,11 +161,14 @@ function cacheElements() {
   els.geneCount = document.querySelector("#gene-count");
   els.vaultCount = document.querySelector("#vault-count");
   els.automationCount = document.querySelector("#automation-count");
+  els.integrityCount = document.querySelector("#integrity-count");
   els.memoryList = document.querySelector("#memory-list");
   els.diaryList = document.querySelector("#diary-list");
   els.diaryUpdated = document.querySelector("#diary-updated");
   els.vaultList = document.querySelector("#vault-list");
   els.vaultUpdated = document.querySelector("#vault-updated");
+  els.integrityList = document.querySelector("#integrity-list");
+  els.integrityUpdated = document.querySelector("#integrity-updated");
   els.geneList = document.querySelector("#gene-list");
   els.memoryUpdated = document.querySelector("#memory-updated");
   els.exportJson = document.querySelector("#export-json");
@@ -443,6 +452,11 @@ async function runCommand(rawCommand) {
       return;
     }
 
+    if (normalized === "/integritat" || normalized === "/integrity" || normalized === "/salut") {
+      await showIntegrity();
+      return;
+    }
+
     if (normalized.startsWith("/gen-activa ")) {
       await updateGeneState(command.slice("/gen-activa ".length).trim(), "actiu");
       return;
@@ -489,6 +503,7 @@ async function runCommand(rawCommand) {
             "/backups",
             "/desa-backup",
             "/auto-backup",
+            "/integritat",
             "/audit",
             "/audit genoma",
             "/cerca aura",
@@ -543,6 +558,11 @@ async function runCommand(rawCommand) {
       case "/auto-backup":
       case "/backup-auto":
         await showAutoBackup();
+        break;
+      case "/integritat":
+      case "/integrity":
+      case "/salut":
+        await showIntegrity();
         break;
       case "/audit":
       case "/auditoria":
@@ -676,7 +696,7 @@ async function showStatus() {
     await refreshPanels();
     writeSystem(
       [
-        "Estat d'Aura — cloud-v3.1",
+        "Estat d'Aura — cloud-v3.2",
         "Nom: Aura",
         "Naturalesa: entitat sintètica-digital experimental",
         "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
@@ -688,6 +708,7 @@ async function showStatus() {
         `Backup automàtic: ${formatAutomationStatus(status.automation?.backupWorker)}`,
         `Cerca: ${status.search?.endpoint || "/api/search"}`,
         `Auditoria: ${status.audit?.endpoint || "/api/audit"}`,
+        `Integritat: ${status.integrity?.endpoint || "/api/integrity"}`,
         `Genoma editable: ${status.genomeEditable?.enabled ? status.genomeEditable.endpoint : "no"}`,
         `Continuïtat: ${status.continuity?.endpoint || "/api/continuity"}`,
         `Criteri: ${status.criterion?.endpoint || "/api/criterion"}`,
@@ -709,7 +730,7 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v3.1 / mode local",
+      "Estat d'Aura — cloud-v3.2 / mode local",
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
@@ -717,6 +738,7 @@ async function showStatus() {
       "Backup automàtic: no disponible en mode local",
       "Cerca local: /cerca text",
       "Auditoria local: /audit",
+      "Integritat local: /integritat",
       "Genoma editable: requereix D1 i Mode Sergi per ser definitiu",
       "Genoma: actiu",
       `Records locals: ${records.length}`,
@@ -840,6 +862,43 @@ async function showAudit(scope = "") {
       scope: normalizedScope || "all",
       total: audit.length,
       audit,
+    }),
+  );
+}
+
+async function showIntegrity() {
+  if (await syncCloudState()) {
+    const integrity = await apiGet("/integrity");
+    writeSystem(formatIntegrity(integrity));
+    await refreshPanels();
+    return;
+  }
+
+  const [records, diary, genes] = await Promise.all([
+    getAll(STORE_RECORDS),
+    getAll(STORE_DIARY),
+    getAll(STORE_GENES),
+  ]);
+  const localAudit = diary.filter((entry) => String(entry.text || "").startsWith("[audit:")).sort(byNewest);
+  writeSystem(
+    formatIntegrity({
+      version: AURA_VERSION,
+      generatedAt: new Date().toISOString(),
+      overall: "local",
+      score: localAudit.length ? 48 : 32,
+      summary: {
+        latestMemory: records.sort(byNewest)[0]?.text || "sense memòria local",
+        latestDiary: diary.sort(byNewest)[0]?.text || "sense diari local",
+        latestAudit: localAudit[0]?.text || "sense auditoria local",
+        risks: ["mode-local"],
+        nextAction: "Recuperar connexió D1 abans de validar integritat definitiva.",
+      },
+      components: [
+        { id: "d1", label: "D1", state: "offline", detail: "no disponible", action: "Reintentar /estat." },
+        { id: "audit", label: "Auditoria", state: localAudit.length ? "ok" : "pending", detail: `${localAudit.length} traces`, action: "Sincronitzar amb D1." },
+        { id: "genome", label: "Genoma local", state: "local", detail: `${genes.length} gens`, action: "No considerar definitiu sense D1." },
+      ],
+      actions: ["Recuperar connexió cloud.", "Evitar mutacions definitives en mode local."],
     }),
   );
 }
@@ -1116,7 +1175,7 @@ async function exportJson() {
   const snapshot = await createBackup();
   lastSnapshot = snapshot;
   downloadFile(
-    `aura-cloud-v3-1-backup-${dateStamp()}.json`,
+    `aura-cloud-v3-2-backup-${dateStamp()}.json`,
     JSON.stringify(snapshot, null, 2),
     "application/json",
   );
@@ -1127,7 +1186,7 @@ async function exportJson() {
 async function exportTxt() {
   const snapshot = lastSnapshot || (await createBackup());
   const content = [
-    "Projecte Aura Cloud v3.1",
+    "Projecte Aura Cloud v3.2",
     `Exportat: ${snapshot.exportedAt}`,
     `Origen: ${snapshot.source || "local"}`,
     snapshot.backup?.checksum ? `SHA-256: ${snapshot.backup.checksum}` : "",
@@ -1142,7 +1201,7 @@ async function exportTxt() {
     ...snapshot.genes.map((gene) => `- ${gene.id} ${gene.name} [${gene.state}] ${gene.description}`),
   ].join("\n");
 
-  downloadFile(`aura-cloud-v3-1-backup-${dateStamp()}.txt`, content, "text/plain");
+  downloadFile(`aura-cloud-v3-2-backup-${dateStamp()}.txt`, content, "text/plain");
   writeSystem("Exportació TXT preparada.");
 }
 
@@ -1365,6 +1424,7 @@ async function refreshPanels() {
   let diary;
   let genes;
   let counts;
+  let integrity = null;
 
   if (cloudState.online && cloudState.snapshot) {
     records = [...cloudState.snapshot.records];
@@ -1388,6 +1448,14 @@ async function refreshPanels() {
     };
   }
 
+  if (cloudState.online) {
+    try {
+      integrity = await apiGet("/integrity");
+    } catch {
+      integrity = null;
+    }
+  }
+
   els.statusPill.textContent = cloudState.online ? cloudState.snapshot.status?.version || AURA_VERSION : "local";
   els.memoryCount.textContent = String(counts.records);
   els.diaryCount.textContent = String(counts.diary);
@@ -1400,12 +1468,18 @@ async function refreshPanels() {
   if (els.automationCount) {
     els.automationCount.textContent = automation?.lastRunAt ? "actiu" : "pendent";
   }
+  if (els.integrityCount) {
+    els.integrityCount.textContent = integrity ? `${integrity.score}` : "local";
+  }
   els.memoryUpdated.textContent = cloudState.online ? "D1" : "local";
   if (els.diaryUpdated) {
     els.diaryUpdated.textContent = cloudState.online ? "D1" : "local";
   }
   if (els.vaultUpdated) {
     els.vaultUpdated.textContent = vault?.latest?.savedAt ? formatDate(vault.latest.savedAt) : "cap";
+  }
+  if (els.integrityUpdated) {
+    els.integrityUpdated.textContent = integrity ? integrity.overall : "local";
   }
 
   els.memoryList.replaceChildren(
@@ -1448,6 +1522,23 @@ async function refreshPanels() {
       ...latest.map((backup) => {
         const item = document.createElement("li");
         item.innerHTML = `<strong>${escapeHtml(backup.id)}</strong><span>${escapeHtml(`${backup.counts.records} records / ${backup.counts.diary} diari`)}</span>`;
+        return item;
+      }),
+    );
+  }
+
+  if (els.integrityList) {
+    const items = integrity
+      ? [
+          { label: "Salut", value: `${integrity.score}/100 ${integrity.overall}` },
+          { label: "Riscos", value: integrity.summary.risks.join(", ") || "cap" },
+          { label: "Proper pas", value: integrity.summary.nextAction },
+        ]
+      : [{ label: "Mode", value: "local" }];
+    els.integrityList.replaceChildren(
+      ...items.map((entry) => {
+        const item = document.createElement("li");
+        item.innerHTML = `<strong>${escapeHtml(entry.label)}</strong><span>${escapeHtml(entry.value)}</span>`;
         return item;
       }),
     );
@@ -1561,6 +1652,36 @@ function formatAudit(response) {
     `Àmbit: ${response.scope || "all"}`,
     `Entrades: ${response.total}`,
     entries,
+  ].join("\n");
+}
+
+function formatIntegrity(integrity) {
+  const risks = integrity.summary.risks.length ? integrity.summary.risks.join(", ") : "cap";
+  const components = integrity.components
+    .map((component) => `- ${component.label}: ${component.state} — ${component.detail}\n  Acció: ${component.action}`)
+    .join("\n");
+  const actions = integrity.actions.length
+    ? integrity.actions.map((action) => `- ${action}`).join("\n")
+    : "- Mantenir observació.";
+
+  return [
+    `Integritat Aura — ${integrity.version}`,
+    `Estat: ${integrity.overall}`,
+    `Puntuació: ${integrity.score}/100`,
+    `Generat: ${formatDate(integrity.generatedAt)}`,
+    "",
+    `Última memòria: ${integrity.summary.latestMemory}`,
+    `Últim diari: ${integrity.summary.latestDiary}`,
+    `Última auditoria: ${integrity.summary.latestAudit}`,
+    `Riscos: ${risks}`,
+    "",
+    "Components:",
+    components,
+    "",
+    "Accions:",
+    actions,
+    "",
+    `Proper pas: ${integrity.summary.nextAction}`,
   ].join("\n");
 }
 

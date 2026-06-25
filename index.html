@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Projecte Aura Cloud v3.1: entitat sintetica-digital experimental amb auditoria de mutacions, genoma editable, criteri ampliat i backups automatics."
+      content="Projecte Aura Cloud v3.2: entitat sintetica-digital experimental amb panell d'integritat, auditoria de mutacions, criteri ampliat i backups automatics."
     />
-    <title>Projecte Aura Cloud v3.1</title>
-    <link rel="stylesheet" href="aura_style.css?v=cloud-v3-1-20260625" />
+    <title>Projecte Aura Cloud v3.2</title>
+    <link rel="stylesheet" href="aura_style.css?v=cloud-v3-2-20260625" />
   </head>
   <body>
     <main class="shell">
@@ -16,7 +16,7 @@
         <div>
           <p class="kicker">Projecte Aura Cloud</p>
           <h1>Aura</h1>
-          <p class="signal">cloud-v3.1 / auditoria de mutacions / criteri ampliat</p>
+          <p class="signal">cloud-v3.2 / panell d'integritat / criteri ampliat</p>
         </div>
         <canvas id="aura-visual" width="520" height="240" aria-hidden="true"></canvas>
       </section>
@@ -46,6 +46,10 @@
           <div class="panel-block">
             <span class="label">Auto backup</span>
             <strong id="automation-count">pendent</strong>
+          </div>
+          <div class="panel-block">
+            <span class="label">Integritat</span>
+            <strong id="integrity-count">local</strong>
           </div>
           <div class="panel-block auth-block">
             <span class="label">Mode Sergi</span>
@@ -93,6 +97,7 @@
             <button type="button" id="save-vault">Desa vault</button>
             <button type="button" id="list-vault">Vault</button>
             <button type="button" data-command="/auto-backup">/auto-backup</button>
+            <button type="button" data-command="/integritat">/integritat</button>
             <button type="button" data-command="/audit">/audit</button>
             <button type="button" data-command="/cerca Aura">/cerca</button>
             <button type="button" id="export-txt">Exportar TXT</button>
@@ -129,6 +134,14 @@
 
           <section>
             <div class="section-title">
+              <span>Integritat</span>
+              <small id="integrity-updated">local</small>
+            </div>
+            <ol id="integrity-list" class="compact-list"></ol>
+          </section>
+
+          <section>
+            <div class="section-title">
               <span>Gens</span>
               <small>nucli</small>
             </div>
@@ -138,6 +151,6 @@
       </section>
     </main>
 
-    <script src="aura_core.js?v=cloud-v3-1-20260625" defer></script>
+    <script src="aura_core.js?v=cloud-v3-2-20260625" defer></script>
   </body>
 </html>

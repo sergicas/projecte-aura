@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v3.3";
-const BACKUP_FORMAT = "aura-backup-v3.3";
+const AURA_VERSION = "cloud-v3.5";
+const BACKUP_FORMAT = "aura-backup-v3.5";
 const API_BASE = "/api";
 const WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
@@ -116,6 +116,18 @@ const GENES = [
     state: "actiu",
     description: "Conserva snapshots de salut operativa per veure tendència.",
   },
+  {
+    id: "6765",
+    name: "tendencia-integritat",
+    state: "actiu",
+    description: "Interpreta l'historial d'integritat com a direcció operativa.",
+  },
+  {
+    id: "10946",
+    name: "assaig-restauracio",
+    state: "actiu",
+    description: "Assaja una restauració des del vault sense aplicar cap canvi a D1.",
+  },
 ];
 
 let db;
@@ -143,11 +155,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v3.3 inicialitzada.\nHistorial d'integritat, auditoria i criteri ampliat actius.");
-      els.statusPill.textContent = "cloud-v3.3";
+      writeSystem("Aura Cloud v3.5 inicialitzada.\nTendència d'integritat i assaig de restauració actius.");
+      els.statusPill.textContent = "cloud-v3.5";
     } else {
       writeSystem(
-        "Aura Cloud v3.3 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
+        "Aura Cloud v3.5 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
       );
       els.statusPill.textContent = "local";
     }
@@ -473,11 +485,29 @@ async function runCommand(rawCommand) {
     }
 
     if (
+      normalized === "/tendencia-integritat" ||
+      normalized === "/tendència-integritat" ||
+      normalized === "/integrity-trend"
+    ) {
+      await showIntegrityTrend();
+      return;
+    }
+
+    if (
       normalized === "/desa-integritat" ||
       normalized === "/snapshot-integritat" ||
       normalized === "/integrity-snapshot"
     ) {
       await saveIntegritySnapshot();
+      return;
+    }
+
+    if (
+      normalized.startsWith("/assaig-restauracio") ||
+      normalized.startsWith("/assaig-restauració") ||
+      normalized.startsWith("/restore-rehearsal")
+    ) {
+      await showRestoreRehearsal(command);
       return;
     }
 
@@ -529,7 +559,9 @@ async function runCommand(rawCommand) {
             "/auto-backup",
             "/integritat",
             "/historial-integritat",
+            "/tendencia-integritat",
             "/desa-integritat",
+            "/assaig-restauracio",
             "/audit",
             "/audit genoma",
             "/cerca aura",
@@ -595,10 +627,20 @@ async function runCommand(rawCommand) {
       case "/integrity-history":
         await showIntegrityHistory();
         break;
+      case "/tendencia-integritat":
+      case "/tendència-integritat":
+      case "/integrity-trend":
+        await showIntegrityTrend();
+        break;
       case "/desa-integritat":
       case "/snapshot-integritat":
       case "/integrity-snapshot":
         await saveIntegritySnapshot();
+        break;
+      case "/assaig-restauracio":
+      case "/assaig-restauració":
+      case "/restore-rehearsal":
+        await showRestoreRehearsal(command);
         break;
       case "/audit":
       case "/auditoria":
@@ -732,7 +774,7 @@ async function showStatus() {
     await refreshPanels();
     writeSystem(
       [
-        "Estat d'Aura — cloud-v3.3",
+        "Estat d'Aura — cloud-v3.5",
         "Nom: Aura",
         "Naturalesa: entitat sintètica-digital experimental",
         "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
@@ -746,6 +788,8 @@ async function showStatus() {
         `Auditoria: ${status.audit?.endpoint || "/api/audit"}`,
         `Integritat: ${status.integrity?.endpoint || "/api/integrity"}`,
         `Historial integritat: ${status.integrity?.historyEndpoint || "/api/integrity/history"}`,
+        `Tendència integritat: ${status.integrity?.trendEndpoint || "/api/integrity/trend"}`,
+        `Assaig restauració: ${status.backup?.rehearsal || "/api/restore/rehearsal"}`,
         `Genoma editable: ${status.genomeEditable?.enabled ? status.genomeEditable.endpoint : "no"}`,
         `Continuïtat: ${status.continuity?.endpoint || "/api/continuity"}`,
         `Criteri: ${status.criterion?.endpoint || "/api/criterion"}`,
@@ -767,7 +811,7 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v3.3 / mode local",
+      "Estat d'Aura — cloud-v3.5 / mode local",
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
@@ -951,6 +995,17 @@ async function showIntegrityHistory() {
   await refreshPanels();
 }
 
+async function showIntegrityTrend() {
+  if (!(await syncCloudState())) {
+    writeError("D1 no respon ara mateix; la tendència d'integritat només viu al KV cloud.");
+    return;
+  }
+
+  const trend = await apiGet("/integrity/trend?limit=30");
+  writeSystem(formatIntegrityTrend(trend));
+  await refreshPanels();
+}
+
 async function saveIntegritySnapshot() {
   if (!auraWriteKey) {
     writeError("Mode Sergi inactiu: cal clau per desar un snapshot d'integritat.");
@@ -976,6 +1031,25 @@ async function saveIntegritySnapshot() {
       `Historial: ${response.snapshot.key}`,
     ].join("\n"),
   );
+}
+
+async function showRestoreRehearsal(command) {
+  if (!auraWriteKey) {
+    writeError("Mode Sergi inactiu: cal clau per assajar una restauració des del vault.");
+    return;
+  }
+
+  if (!(await syncCloudState())) {
+    writeError("D1 no respon ara mateix; no puc comparar el backup amb l'estat cloud.");
+    return;
+  }
+
+  const [, maybeBackupId] = command.trim().split(/\s+/);
+  const response = await apiPost("/restore/rehearsal", {
+    backupId: maybeBackupId?.startsWith("backup-") ? maybeBackupId : undefined,
+  });
+  await refreshPanels();
+  writeSystem(formatRestoreRehearsal(response));
 }
 
 async function showContinuity() {
@@ -1250,7 +1324,7 @@ async function exportJson() {
   const snapshot = await createBackup();
   lastSnapshot = snapshot;
   downloadFile(
-    `aura-cloud-v3-3-backup-${dateStamp()}.json`,
+    `aura-cloud-v3-5-backup-${dateStamp()}.json`,
     JSON.stringify(snapshot, null, 2),
     "application/json",
   );
@@ -1261,7 +1335,7 @@ async function exportJson() {
 async function exportTxt() {
   const snapshot = lastSnapshot || (await createBackup());
   const content = [
-    "Projecte Aura Cloud v3.3",
+    "Projecte Aura Cloud v3.5",
     `Exportat: ${snapshot.exportedAt}`,
     `Origen: ${snapshot.source || "local"}`,
     snapshot.backup?.checksum ? `SHA-256: ${snapshot.backup.checksum}` : "",
@@ -1276,7 +1350,7 @@ async function exportTxt() {
     ...snapshot.genes.map((gene) => `- ${gene.id} ${gene.name} [${gene.state}] ${gene.description}`),
   ].join("\n");
 
-  downloadFile(`aura-cloud-v3-3-backup-${dateStamp()}.txt`, content, "text/plain");
+  downloadFile(`aura-cloud-v3-5-backup-${dateStamp()}.txt`, content, "text/plain");
   writeSystem("Exportació TXT preparada.");
 }
 
@@ -1617,6 +1691,10 @@ async function refreshPanels() {
               ? `${integrity.history.countVisible} snapshots / últim ${formatDate(integrity.history.latest.savedAt)}`
               : "pendent",
           },
+          {
+            label: "Tendència",
+            value: integrity.trend?.direction ? `${integrity.trend.direction} (${formatTrendDelta(integrity.trend.deltaScore)})` : "pendent",
+          },
           { label: "Proper pas", value: integrity.summary.nextAction },
         ]
       : [{ label: "Mode", value: "local" }];
@@ -1745,6 +1823,9 @@ function formatIntegrity(integrity) {
   const history = integrity.history?.latest
     ? `${integrity.history.countVisible} snapshots visibles; últim ${formatDate(integrity.history.latest.savedAt)} (${integrity.history.latest.score}/100 ${integrity.history.latest.overall})`
     : "pendent";
+  const trend = integrity.trend?.direction
+    ? `${integrity.trend.direction}; delta ${formatTrendDelta(integrity.trend.deltaScore)}; ${integrity.trend.assessment}`
+    : "pendent";
   const components = integrity.components
     .map((component) => `- ${component.label}: ${component.state} — ${component.detail}\n  Acció: ${component.action}`)
     .join("\n");
@@ -1763,6 +1844,7 @@ function formatIntegrity(integrity) {
     `Última auditoria: ${integrity.summary.latestAudit}`,
     `Riscos: ${risks}`,
     `Historial: ${history}`,
+    `Tendència: ${trend}`,
     "",
     "Components:",
     components,
@@ -1795,6 +1877,41 @@ function formatIntegrityHistory(response) {
     "",
     entries,
   ].join("\n");
+}
+
+function formatIntegrityTrend(response) {
+  const trend = response.trend;
+  const latest = trend.latest
+    ? `${formatDate(trend.latest.savedAt)} — ${trend.latest.score}/100 ${trend.latest.overall}`
+    : "cap";
+  const previous = trend.previous
+    ? `${formatDate(trend.previous.savedAt)} — ${trend.previous.score}/100 ${trend.previous.overall}`
+    : "cap";
+  const repeatedRisks = trend.repeatedRisks?.length
+    ? trend.repeatedRisks.map((item) => `${item.risk} x${item.count}`).join(", ")
+    : "cap";
+
+  return [
+    `Tendència d'integritat Aura — ${response.version}`,
+    `Mostres: ${trend.samples}`,
+    `Direcció: ${trend.direction}`,
+    `Delta últim: ${formatTrendDelta(trend.deltaScore)}`,
+    `Delta total: ${formatTrendDelta(trend.totalDeltaScore)}`,
+    `Mitjana: ${trend.averageScore ?? "sense-dades"}`,
+    `Rang: ${trend.minScore ?? "?"}/${trend.maxScore ?? "?"}`,
+    `Finestra: ${trend.spanHours ?? "sense"} h`,
+    `Últim: ${latest}`,
+    `Anterior: ${previous}`,
+    `Riscos recurrents: ${repeatedRisks}`,
+    "",
+    trend.assessment,
+    `Acció: ${trend.action}`,
+  ].join("\n");
+}
+
+function formatTrendDelta(value) {
+  if (value === null || value === undefined) return "sense-dades";
+  return value > 0 ? `+${value}` : String(value);
 }
 
 function parseSearchQuery(rawQuery) {
@@ -2020,6 +2137,41 @@ function formatRestorePreview(preview) {
     "No s'ha escrit res encara.",
     `Per aplicar-ho: ${preview.confirmationCommand}`,
     "Per cancel·lar: /cancella-restauracio",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function formatRestoreRehearsal(report) {
+  const preview = report.preview;
+  const verification = report.verification;
+  const actions = report.actions.length ? report.actions.map((action) => `- ${action}`).join("\n") : "- cap";
+
+  return [
+    `Assaig de restauració — ${report.version}`,
+    `Backup: ${report.source.backupId}`,
+    `Guardat: ${formatDate(report.source.savedAt || report.source.createdAt)}`,
+    `Format: ${report.source.format || "desconegut"}`,
+    `Checksum: ${verification.match ? "coherent" : "NO coherent"}`,
+    verification.expected ? `SHA-256 esperat: ${verification.expected}` : "",
+    `SHA-256 calculat: ${verification.actual}`,
+    `Risc: ${report.outcome.risk}`,
+    `Segur per restaurar: ${report.outcome.safeToRestore ? "sí" : "no"}`,
+    "",
+    "Aplicaria:",
+    `- Records: ${report.outcome.wouldApply.records}`,
+    `- Diari: ${report.outcome.wouldApply.diary}`,
+    `- Gens: ${report.outcome.wouldApply.genes}`,
+    "",
+    "Detall preview:",
+    `- Records entrada: ${preview.records.total}, nous: ${preview.apply.records}, duplicats text: ${preview.records.duplicateText}`,
+    `- Diari entrada: ${preview.diary.total}, nous: ${preview.apply.diary}, duplicats text: ${preview.diary.duplicateText}`,
+    `- Gens entrada: ${preview.genes.total}, nous: ${preview.genes.new}, canviaran: ${preview.genes.changed}`,
+    "",
+    "No s'ha escrit res a D1.",
+    "",
+    "Accions:",
+    actions,
   ]
     .filter(Boolean)
     .join("\n");

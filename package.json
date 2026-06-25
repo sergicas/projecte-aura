@@ -1,7 +1,7 @@
 {
   "name": "projecte-aura",
-  "version": "3.3.0",
-  "description": "Projecte Aura Cloud v3.3 amb historial d'integritat, panell d'integritat, auditoria de mutacions, genoma editable, criteri ampliat, cercador de memoria, backups automatics i D1 protegit per Mode Sergi.",
+  "version": "3.5.0",
+  "description": "Projecte Aura Cloud v3.5 amb tendencia d'integritat, assaig de restauracio, historial d'integritat, auditoria de mutacions, genoma editable, criteri ampliat, cercador de memoria, backups automatics i D1 protegit per Mode Sergi.",
   "private": false,
   "type": "module",
   "scripts": {

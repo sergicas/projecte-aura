@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v3.3";
-const BACKUP_FORMAT = "aura-backup-v3.3";
+const AURA_VERSION = "cloud-v3.5";
+const BACKUP_FORMAT = "aura-backup-v3.5";
 const VAULT_PREFIX = "aura/backups/";
 const AUTOMATION_META_KEY = "aura/automation/backup-worker";
 const INTEGRITY_PREFIX = "aura/integrity/snapshots/";

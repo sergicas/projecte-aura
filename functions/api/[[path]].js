@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v3.3";
-const BACKUP_FORMAT = "aura-backup-v3.3";
+const AURA_VERSION = "cloud-v3.5";
+const BACKUP_FORMAT = "aura-backup-v3.5";
 const VAULT_PREFIX = "aura/backups/";
 const AUTOMATION_META_KEY = "aura/automation/backup-worker";
 const INTEGRITY_PREFIX = "aura/integrity/snapshots/";
@@ -114,6 +114,18 @@ const GENES = [
     state: "actiu",
     description: "Conserva snapshots de salut operativa per veure tendència.",
   },
+  {
+    id: "6765",
+    name: "tendencia-integritat",
+    state: "actiu",
+    description: "Interpreta l'historial d'integritat com a direcció operativa.",
+  },
+  {
+    id: "10946",
+    name: "assaig-restauracio",
+    state: "actiu",
+    description: "Assaja una restauració des del vault sense aplicar cap canvi a D1.",
+  },
 ];
 
 export async function onRequest(context) {
@@ -154,6 +166,10 @@ export async function onRequest(context) {
 
     if (method === "GET" && (route === "integrity/history" || route === "integritat/historial")) {
       return json(await getIntegrityHistory(context.env.BACKUP_VAULT, context.request));
+    }
+
+    if (method === "GET" && (route === "integrity/trend" || route === "integritat/tendencia")) {
+      return json(await getIntegrityTrend(context.env.BACKUP_VAULT, context.request));
     }
 
     if (method === "POST" && (route === "integrity/snapshot" || route === "integritat/snapshot")) {
@@ -221,6 +237,14 @@ export async function onRequest(context) {
     if (method === "POST" && (route === "restore/preview" || route === "import/preview")) {
       await requireWriteAccess(context.request, context.env);
       return json(await previewRestore(context.request, context.env.DB));
+    }
+
+    if (
+      method === "POST" &&
+      (route === "restore/rehearsal" || route === "restore/assaig" || route === "assaig/restauracio")
+    ) {
+      await requireWriteAccess(context.request, context.env);
+      return json(await runRestoreRehearsal(context.request, context.env.DB, context.env.BACKUP_VAULT));
     }
 
     if (method === "POST" && (route === "import" || route === "restore")) {
@@ -299,6 +323,12 @@ async function ensureSeeded(db) {
     db
       .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
       .bind("audit-cloud-v3-3-integrity-history", "[audit:sistema] Aura ha activat historial d'integritat Cloud v3.3.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("audit-cloud-v3-4-integrity-trend", "[audit:sistema] Aura ha activat tendència d'integritat Cloud v3.4.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("audit-cloud-v3-5-restore-rehearsal", "[audit:sistema] Aura ha activat assaig de restauració Cloud v3.5.", now),
     ...GENES.map((gene) =>
       db
         .prepare(
@@ -352,6 +382,7 @@ async function getStatus(db, vault) {
       checksum: "sha-256",
       restore: "merge-preserve-id",
       preview: "/api/restore/preview",
+      rehearsal: "/api/restore/rehearsal",
     },
     vault: vaultSummary,
     automation: {
@@ -368,6 +399,7 @@ async function getStatus(db, vault) {
     integrity: {
       endpoint: "/api/integrity",
       historyEndpoint: "/api/integrity/history",
+      trendEndpoint: "/api/integrity/trend",
       snapshotEndpoint: "/api/integrity/snapshot",
       mode: "operational-panel-history",
       history: integrityHistory,
@@ -397,7 +429,7 @@ async function getVaultSummary(vault) {
     };
   }
 
-  const backups = await readVaultIndex(vault, 20);
+  const backups = await readVaultIndex(vault, 100);
   return {
     configured: true,
     storage: "workers-kv",
@@ -547,9 +579,10 @@ async function getAuditEntries(db, limit = 20, scope = "") {
 }
 
 async function getIntegrity(db, vault) {
-  const [criterion, historySummary] = await Promise.all([
+  const [criterion, historySummary, trendSummary] = await Promise.all([
     getCriterion(db, vault),
     getIntegrityHistorySummary(vault),
+    getIntegrityTrendSummary(vault),
   ]);
   const integrity = criterion.integrity;
   const overall = integrity.risks.length ? "atencio" : "estable";
@@ -610,6 +643,7 @@ async function getIntegrity(db, vault) {
     actions: criterion.priorities.slice(0, 5),
     criterionEndpoint: "/api/criterion",
     history: historySummary,
+    trend: trendSummary,
   };
 }
 
@@ -630,6 +664,23 @@ async function getIntegrityHistory(vault, request) {
     count: history.length,
     latest: summarizeIntegritySnapshot(latest || history[0] || null),
     history,
+  };
+}
+
+async function getIntegrityTrend(vault, request) {
+  assertVault(vault);
+  const url = new URL(request.url);
+  const limit = normalizeLimit(url.searchParams.get("limit"), 30);
+  const history = await readIntegrityHistory(vault, limit);
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    storage: "workers-kv",
+    generatedAt: new Date().toISOString(),
+    endpoint: "/api/integrity/trend",
+    trend: buildIntegrityTrend(history),
+    samples: history,
   };
 }
 
@@ -680,6 +731,26 @@ async function getIntegrityHistorySummary(vault) {
     snapshotEndpoint: "/api/integrity/snapshot",
     countVisible: history.length,
     latest: summarizeIntegritySnapshot(latest || history[0] || null),
+  };
+}
+
+async function getIntegrityTrendSummary(vault) {
+  if (!vault) {
+    return {
+      configured: false,
+      storage: "workers-kv",
+      endpoint: "/api/integrity/trend",
+      samples: 0,
+      direction: "sense-vault",
+    };
+  }
+
+  const history = await readIntegrityHistory(vault, 30);
+  return {
+    configured: true,
+    storage: "workers-kv",
+    endpoint: "/api/integrity/trend",
+    ...buildIntegrityTrend(history),
   };
 }
 
@@ -766,6 +837,73 @@ function summarizeIntegritySnapshot(snapshot) {
     nextAction: snapshot.nextAction || snapshot.snapshot?.nextAction || "",
     backupId: snapshot.backupId || snapshot.snapshot?.backupId || null,
   };
+}
+
+function buildIntegrityTrend(history) {
+  const ordered = [...history].sort(
+    (a, b) => new Date(a.savedAt || a.generatedAt || 0).getTime() - new Date(b.savedAt || b.generatedAt || 0).getTime(),
+  );
+  const latest = ordered.at(-1) || null;
+  const previous = ordered.at(-2) || null;
+  const oldest = ordered[0] || null;
+  const scores = ordered.map((snapshot) => Number(snapshot.score || 0));
+  const deltaScore = latest && previous ? latest.score - previous.score : null;
+  const totalDeltaScore = latest && oldest && latest.id !== oldest.id ? latest.score - oldest.score : null;
+  const spanHours = latest && oldest ? roundAge(hoursBetween(oldest.savedAt || oldest.generatedAt, latest.savedAt || latest.generatedAt)) : null;
+  const riskFrequency = {};
+
+  for (const snapshot of ordered) {
+    for (const risk of snapshot.risks || []) {
+      riskFrequency[risk] = (riskFrequency[risk] || 0) + 1;
+    }
+  }
+
+  const repeatedRisks = Object.entries(riskFrequency)
+    .filter(([, count]) => count > 1)
+    .map(([risk, count]) => ({ risk, count }));
+  const direction = classifyIntegrityDirection(deltaScore, ordered.length);
+
+  return {
+    samples: ordered.length,
+    direction,
+    deltaScore,
+    totalDeltaScore,
+    averageScore: scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null,
+    minScore: scores.length ? Math.min(...scores) : null,
+    maxScore: scores.length ? Math.max(...scores) : null,
+    spanHours,
+    latest: summarizeIntegritySnapshot(latest),
+    previous: summarizeIntegritySnapshot(previous),
+    oldest: summarizeIntegritySnapshot(oldest),
+    latestRisks: latest?.risks || [],
+    riskFrequency,
+    repeatedRisks,
+    assessment: describeIntegrityTrend(direction, deltaScore, repeatedRisks),
+    action: recommendIntegrityTrendAction(direction, latest, repeatedRisks),
+  };
+}
+
+function classifyIntegrityDirection(deltaScore, samples) {
+  if (samples < 2 || deltaScore === null) return "insuficient";
+  if (deltaScore > 2) return "millora";
+  if (deltaScore < -2) return "baixa";
+  return "estable";
+}
+
+function describeIntegrityTrend(direction, deltaScore, repeatedRisks) {
+  if (direction === "insuficient") return "Encara calen almenys dos snapshots per llegir tendència.";
+  if (direction === "millora") return `La salut puja ${deltaScore} punts respecte del snapshot anterior.`;
+  if (direction === "baixa") return `La salut baixa ${Math.abs(deltaScore)} punts respecte del snapshot anterior.`;
+  if (repeatedRisks.length) return `La puntuació és estable, però hi ha riscos repetits: ${repeatedRisks.map((item) => item.risk).join(", ")}.`;
+  return "La salut és estable i no mostra degradació recent.";
+}
+
+function recommendIntegrityTrendAction(direction, latest, repeatedRisks) {
+  if (!latest) return "Crear un snapshot d'integritat amb /desa-integritat.";
+  if (direction === "baixa") return "Revisar el darrer backup, auditoria i riscos abans de fer mutacions.";
+  if (repeatedRisks.length) return `Resoldre primer el risc recurrent: ${repeatedRisks[0].risk}.`;
+  if (direction === "insuficient") return "Acumular més snapshots després de cada backup o canvi estructural.";
+  return "Mantenir ritme de snapshots i backups.";
 }
 
 function isVaultListRoute(route) {
@@ -1237,6 +1375,124 @@ async function updateGene(request, db, id) {
 
 async function previewRestore(request, db) {
   const payload = await readJson(request, MAX_JSON_BYTES);
+  return buildRestorePreview(payload, db, "preview-only");
+}
+
+async function runRestoreRehearsal(request, db, vault) {
+  assertVault(vault);
+  const body = await readJson(request, 32 * 1024);
+  const backup = body?.backupId || body?.id ? await getVaultBackup(vault, body.backupId || body.id) : await getLatestVaultBackup(vault);
+  const preview = await buildRestorePreview(backup, db, "rehearsal-only");
+  const verification = await verifyBackupChecksum(backup);
+  const safeRisks = new Set(["baix", "sense-canvis", "buit"]);
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    generatedAt: new Date().toISOString(),
+    mode: "rehearsal-only",
+    storage: "workers-kv",
+    source: {
+      backupId: backup.vault?.id || backup.backup?.id || "desconegut",
+      key: backup.vault?.key || null,
+      savedAt: backup.vault?.savedAt || null,
+      createdAt: backup.backup?.createdAt || backup.exportedAt || null,
+      format: backup.backup?.format || null,
+      version: backup.version || null,
+    },
+    verification,
+    preview,
+    outcome: {
+      writesApplied: false,
+      wouldApply: preview.apply,
+      risk: preview.risk,
+      safeToRestore: verification.match && safeRisks.has(preview.risk),
+    },
+    actions: buildRestoreRehearsalActions(preview, verification),
+  };
+}
+
+async function getLatestVaultBackup(vault) {
+  const [indexedBackups, automation] = await Promise.all([
+    readVaultIndex(vault, 100),
+    vault.get(AUTOMATION_META_KEY, "json"),
+  ]);
+  const candidates = [...indexedBackups];
+
+  if (automation?.lastBackupId && !candidates.some((backup) => backup.id === automation.lastBackupId)) {
+    const directBackup = await readVaultBackupIfExists(vault, automation.lastBackupId);
+    if (directBackup) {
+      candidates.push({
+        id: directBackup.vault?.id || automation.lastBackupId,
+        savedAt: directBackup.vault?.savedAt || automation.lastRunAt || directBackup.exportedAt || null,
+        createdAt: directBackup.backup?.createdAt || directBackup.exportedAt || null,
+        version: directBackup.version || "unknown",
+        directBackup,
+      });
+    }
+  }
+
+  if (!candidates.length) throw new HttpError(404, "No hi ha cap backup al vault per assajar.");
+  candidates.sort(
+    (a, b) =>
+      new Date(b.savedAt || b.createdAt || 0).getTime() -
+      new Date(a.savedAt || a.createdAt || 0).getTime(),
+  );
+
+  return candidates[0].directBackup || getVaultBackup(vault, candidates[0].id);
+}
+
+async function readVaultBackupIfExists(vault, id) {
+  try {
+    return await getVaultBackup(vault, id);
+  } catch (error) {
+    if (error instanceof HttpError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+async function verifyBackupChecksum(payload) {
+  const expected = payload.backup?.checksum || null;
+  const actual = await sha256Hex(
+    JSON.stringify({
+      records: Array.isArray(payload.records) ? payload.records : [],
+      diary: Array.isArray(payload.diary) ? payload.diary : [],
+      genes: Array.isArray(payload.genes) ? payload.genes : [],
+    }),
+  );
+
+  return {
+    algorithm: "SHA-256",
+    expected,
+    actual,
+    match: Boolean(expected && actual === expected),
+  };
+}
+
+function buildRestoreRehearsalActions(preview, verification) {
+  if (!verification.match) {
+    return [
+      "No restaurar aquest backup fins que el checksum sigui coherent.",
+      "Crear un backup nou amb /desa-backup o executar el Worker manualment.",
+    ];
+  }
+
+  if (preview.risk === "alt") {
+    return ["No restaurar directament: revisar diferències i considerar una restauració parcial."];
+  }
+
+  if (preview.risk === "mitja") {
+    return ["Restauració possible, però revisar canvis de genoma i volum abans de confirmar."];
+  }
+
+  if (preview.risk === "sense-canvis") {
+    return ["No cal restaurar: el backup ja coincideix materialment amb D1."];
+  }
+
+  return ["Backup assajat correctament. Si cal restaurar, fer-ho amb previsualització i confirmació explícita."];
+}
+
+async function buildRestorePreview(payload, db, mode) {
   if (!payload || !Array.isArray(payload.records)) {
     throw new HttpError(400, "El JSON no sembla una còpia d'Aura.");
   }
@@ -1303,8 +1559,8 @@ async function previewRestore(request, db) {
     genes,
     apply,
     risk: classifyRestoreRisk(records, diary, genes),
-    requiresConfirmation: true,
-    confirmationCommand: "/confirma-restauracio",
+    requiresConfirmation: mode === "preview-only",
+    confirmationCommand: mode === "preview-only" ? "/confirma-restauracio" : null,
   };
 }
 
@@ -1524,6 +1780,14 @@ function ageHours(value) {
   const time = new Date(value).getTime();
   if (Number.isNaN(time)) return null;
   return (Date.now() - time) / 36e5;
+}
+
+function hoursBetween(start, end) {
+  if (!start || !end) return null;
+  const startTime = new Date(start).getTime();
+  const endTime = new Date(end).getTime();
+  if (Number.isNaN(startTime) || Number.isNaN(endTime)) return null;
+  return (endTime - startTime) / 36e5;
 }
 
 function roundAge(value) {

@@ -1,6 +1,6 @@
-# Projecte Aura Cloud v3.3
+# Projecte Aura Cloud v3.5
 
-Projecte Aura Cloud v3.3 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, la restauració segura obliga a previsualitzar un JSON abans d'aplicar-lo, un Worker cron desa backups automàtics al vault, el cercador filtra records i diari, el genoma editable permet modificar gens amb Mode Sergi, l'auditoria registra mutacions estructurals al diari, el panell d'integritat resumeix salut, riscos i propera acció, i l'historial d'integritat conserva snapshots consultables en KV.
+Projecte Aura Cloud v3.5 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, la restauració segura obliga a previsualitzar un JSON abans d'aplicar-lo, un Worker cron desa backups automàtics al vault, el cercador filtra records i diari, el genoma editable permet modificar gens amb Mode Sergi, l'auditoria registra mutacions estructurals al diari, el panell d'integritat resumeix salut, riscos i propera acció, l'historial d'integritat conserva snapshots consultables en KV, la tendència interpreta aquests snapshots, i l'assaig de restauració valida backups sense aplicar cap canvi a D1.
 
 ## Arquitectura
 
@@ -38,7 +38,9 @@ Nota: R2 queda preparat com a següent millora possible, però el compte de Clou
 - `/auto-backup`
 - `/integritat`
 - `/historial-integritat`
+- `/tendencia-integritat`
 - `/desa-integritat`
+- `/assaig-restauracio`
 - `/audit`
 - `/audit genoma`
 - `/cerca aura`
@@ -110,6 +112,7 @@ npm run dev:backup-worker
 - `GET /api/integrity`
 - `GET /api/integritat`
 - `GET /api/integrity/history`
+- `GET /api/integrity/trend`
 - `POST /api/integrity/snapshot` amb Mode Sergi
 - `GET /api/audit`
 - `GET /api/audit?scope=genoma`
@@ -119,6 +122,7 @@ npm run dev:backup-worker
 - `POST /api/backups` amb Mode Sergi
 - `GET /api/backups/:id` amb Mode Sergi
 - `POST /api/restore/preview` amb Mode Sergi
+- `POST /api/restore/rehearsal` amb Mode Sergi
 - `POST /api/import/preview` amb Mode Sergi
 - `POST /api/import` amb Mode Sergi
 - `POST /api/restore` amb Mode Sergi
@@ -145,6 +149,8 @@ npm run dev:backup-worker
 - `v3.1`: auditoria de mutacions i restauracions, endpoint `/api/audit` i gen `1597 auditoria-mutacions`.
 - `v3.2`: panell d'integritat, endpoint `/api/integrity` i gen `2584 panell-integritat`.
 - `v3.3`: historial d'integritat en Workers KV, endpoint `/api/integrity/history`, snapshot segur `/api/integrity/snapshot` i gen `4181 historial-integritat`.
+- `v3.4`: tendència d'integritat, endpoint `/api/integrity/trend` i gen `6765 tendencia-integritat`.
+- `v3.5`: assaig de restauració des del vault, endpoint `/api/restore/rehearsal` i gen `10946 assaig-restauracio`.
 
 ## Principis fundacionals
 

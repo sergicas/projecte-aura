@@ -1,10 +1,11 @@
-const AURA_VERSION = "cloud-v3.5";
-const BACKUP_FORMAT = "aura-backup-v3.5";
+const AURA_VERSION = "cloud-v3.7";
+const BACKUP_FORMAT = "aura-backup-v3.7";
 const VAULT_PREFIX = "aura/backups/";
 const AUTOMATION_META_KEY = "aura/automation/backup-worker";
 const INTEGRITY_PREFIX = "aura/integrity/snapshots/";
 const INTEGRITY_LATEST_KEY = "aura/integrity/latest";
 const DEFAULT_CRON = "17 3 * * *";
+const MEMORY_STATES = ["actiu", "latent", "arxivat", "observacio"];
 
 export default {
   async scheduled(controller, env, ctx) {
@@ -315,7 +316,9 @@ async function createSnapshot(db) {
 
 async function getRecords(db, limit) {
   const result = await db
-    .prepare("SELECT id, text, kind, source, created_at FROM records ORDER BY created_at DESC LIMIT ?")
+    .prepare(
+      "SELECT id, text, kind, source, created_at, tags, weight, state, related_ids FROM records ORDER BY created_at DESC LIMIT ?",
+    )
     .bind(limit)
     .all();
   return result.results.map((row) => ({
@@ -324,6 +327,10 @@ async function getRecords(db, limit) {
     kind: row.kind,
     source: row.source,
     createdAt: row.created_at,
+    tags: parseJsonList(row.tags),
+    weight: normalizeWeight(row.weight, 1),
+    state: normalizeMemoryState(row.state, "actiu"),
+    relatedIds: parseJsonList(row.related_ids),
   }));
 }
 
@@ -377,6 +384,40 @@ function getWriteKey(request) {
 
 function normalizeSecret(value) {
   return String(value || "").trim();
+}
+
+function normalizeToken(value, fallback) {
+  const token = String(value || fallback)
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9_-]/g, "-")
+    .slice(0, 40);
+  return token || fallback;
+}
+
+function normalizeList(value, maxItems) {
+  const raw = Array.isArray(value) ? value : String(value || "").split(",");
+  return [...new Set(raw.map((item) => normalizeToken(item, "")).filter(Boolean))].slice(0, maxItems);
+}
+
+function parseJsonList(value) {
+  if (Array.isArray(value)) return normalizeList(value, 50);
+  try {
+    return normalizeList(JSON.parse(value || "[]"), 50);
+  } catch {
+    return normalizeList(value, 50);
+  }
+}
+
+function normalizeWeight(value, fallback) {
+  const weight = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(weight)) return fallback;
+  return Math.min(Math.max(weight, 1), 5);
+}
+
+function normalizeMemoryState(value, fallback) {
+  const state = normalizeToken(value, fallback);
+  return MEMORY_STATES.includes(state) ? state : fallback;
 }
 
 async function timingSafeTextEqual(left, right) {

@@ -1,11 +1,24 @@
-const AURA_VERSION = "cloud-v3.5";
-const BACKUP_FORMAT = "aura-backup-v3.5";
+const AURA_VERSION = "cloud-v3.7";
+const BACKUP_FORMAT = "aura-backup-v3.7";
 const VAULT_PREFIX = "aura/backups/";
 const AUTOMATION_META_KEY = "aura/automation/backup-worker";
 const INTEGRITY_PREFIX = "aura/integrity/snapshots/";
 const INTEGRITY_LATEST_KEY = "aura/integrity/latest";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
 const GENE_STATES = ["actiu", "latent", "arxivat", "observacio"];
+const MEMORY_STATES = ["actiu", "latent", "arxivat", "observacio"];
+const RETENTION_POLICY = {
+  backups: {
+    keepLatest: 12,
+    keepDays: 30,
+    preserveReasons: ["manual", "manual-ui"],
+  },
+  integrity: {
+    keepLatest: 30,
+    keepDays: 90,
+    preserveReasons: ["manual", "manual-ui", "deploy-validation"],
+  },
+};
 
 const FOUNDATION_RECORDS = [
   "El projecte es diu Projecte Aura.",
@@ -126,6 +139,18 @@ const GENES = [
     state: "actiu",
     description: "Assaja una restauració des del vault sense aplicar cap canvi a D1.",
   },
+  {
+    id: "17711",
+    name: "retencio-segura",
+    state: "actiu",
+    description: "Calcula una política de retenció sense esborrar dades automàticament.",
+  },
+  {
+    id: "28657",
+    name: "memoria-enriquida",
+    state: "actiu",
+    description: "Afegeix tags, pes, estat i relacions als records.",
+  },
 ];
 
 export async function onRequest(context) {
@@ -177,6 +202,11 @@ export async function onRequest(context) {
       return json(await createIntegritySnapshot(context.request, context.env.DB, context.env.BACKUP_VAULT), 201);
     }
 
+    if (method === "GET" && (route === "retention" || route === "retention/plan" || route === "retencio")) {
+      await requireWriteAccess(context.request, context.env);
+      return json(await getRetentionPlan(context.env.BACKUP_VAULT));
+    }
+
     if (method === "GET" && (route === "search" || route === "memory/search")) {
       return json(await searchMemory(context.request, context.env.DB));
     }
@@ -200,9 +230,18 @@ export async function onRequest(context) {
       return json({ records: await getRecords(context.env.DB) });
     }
 
+    if (method === "GET" && route === "memory/schema") {
+      return json(getMemorySchema());
+    }
+
     if (method === "POST" && route === "memory") {
       await requireWriteAccess(context.request, context.env);
       return json({ record: await createRecord(context.request, context.env.DB) }, 201);
+    }
+
+    if (method === "POST" && segments[0] === "memory" && segments[1]) {
+      await requireWriteAccess(context.request, context.env);
+      return json({ record: await updateRecord(context.request, context.env.DB, segments[1]) });
     }
 
     if (method === "GET" && route === "diary") {
@@ -329,6 +368,12 @@ async function ensureSeeded(db) {
     db
       .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
       .bind("audit-cloud-v3-5-restore-rehearsal", "[audit:sistema] Aura ha activat assaig de restauració Cloud v3.5.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("audit-cloud-v3-6-retention-policy", "[audit:sistema] Aura ha activat política de retenció segura Cloud v3.6.", now),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind("audit-cloud-v3-7-rich-memory", "[audit:sistema] Aura ha activat memòria enriquida Cloud v3.7.", now),
     ...GENES.map((gene) =>
       db
         .prepare(
@@ -384,6 +429,16 @@ async function getStatus(db, vault) {
       preview: "/api/restore/preview",
       rehearsal: "/api/restore/rehearsal",
     },
+    retention: {
+      endpoint: "/api/retention",
+      mode: "plan-only",
+      policy: RETENTION_POLICY,
+    },
+    memory: {
+      schemaEndpoint: "/api/memory/schema",
+      richFields: ["tags", "weight", "state", "relatedIds"],
+      states: MEMORY_STATES,
+    },
     vault: vaultSummary,
     automation: {
       backupWorker,
@@ -406,7 +461,7 @@ async function getStatus(db, vault) {
     },
     search: {
       endpoint: "/api/search",
-      filters: ["q", "kind", "source", "area"],
+      filters: ["q", "kind", "source", "area", "tag", "state", "minWeight"],
     },
     audit: {
       endpoint: "/api/audit",
@@ -1006,6 +1061,90 @@ async function readVaultIndex(vault, limit) {
     .sort((a, b) => new Date(b.savedAt || b.createdAt || 0).getTime() - new Date(a.savedAt || a.createdAt || 0).getTime());
 }
 
+async function getRetentionPlan(vault) {
+  assertVault(vault);
+  const [backups, integrity] = await Promise.all([
+    readVaultIndex(vault, 100),
+    readIntegrityHistory(vault, 100),
+  ]);
+  const backupPlan = buildRetentionCollectionPlan(backups, RETENTION_POLICY.backups, "backup");
+  const integrityPlan = buildRetentionCollectionPlan(integrity, RETENTION_POLICY.integrity, "integrity");
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    generatedAt: new Date().toISOString(),
+    mode: "plan-only",
+    storage: "workers-kv",
+    cleanupEnabled: false,
+    policy: RETENTION_POLICY,
+    backups: backupPlan,
+    integrity: integrityPlan,
+    summary: {
+      keep: backupPlan.keep.length + integrityPlan.keep.length,
+      candidates: backupPlan.candidates.length + integrityPlan.candidates.length,
+      protected: backupPlan.protected.length + integrityPlan.protected.length,
+    },
+    actions: buildRetentionActions(backupPlan, integrityPlan),
+  };
+}
+
+function buildRetentionCollectionPlan(items, policy, type) {
+  const sorted = [...items].sort(
+    (a, b) =>
+      new Date(b.savedAt || b.createdAt || b.generatedAt || 0).getTime() -
+      new Date(a.savedAt || a.createdAt || a.generatedAt || 0).getTime(),
+  );
+  const keep = [];
+  const candidates = [];
+  const protectedItems = [];
+
+  sorted.forEach((item, index) => {
+    const reasons = [];
+    const itemAgeHours = ageHours(item.savedAt || item.createdAt || item.generatedAt);
+    const reason = String(item.reason || "").toLowerCase();
+    const protectedByReason = policy.preserveReasons.some((token) => reason.includes(token));
+
+    if (index < policy.keepLatest) reasons.push(`latest-${policy.keepLatest}`);
+    if (itemAgeHours !== null && itemAgeHours <= policy.keepDays * 24) reasons.push(`within-${policy.keepDays}-days`);
+    if (protectedByReason) reasons.push("protected-reason");
+
+    const entry = {
+      ...item,
+      type,
+      ageHours: roundAge(itemAgeHours),
+      retention: reasons.length ? "keep" : "candidate",
+      reasons: reasons.length ? reasons : ["beyond-policy"],
+    };
+
+    if (protectedByReason) protectedItems.push(entry);
+    if (reasons.length) keep.push(entry);
+    else candidates.push(entry);
+  });
+
+  return {
+    total: sorted.length,
+    keep,
+    candidates,
+    protected: protectedItems,
+  };
+}
+
+function buildRetentionActions(backupPlan, integrityPlan) {
+  const actions = [
+    "Cap element s'esborra automàticament en v3.6.",
+    "Revisar candidats abans d'afegir una ruta de neteja destructiva.",
+  ];
+
+  if (!backupPlan.total) actions.push("Crear almenys un backup al vault abans de definir retenció real.");
+  if (!integrityPlan.total) actions.push("Crear snapshots d'integritat abans de netejar historial.");
+  if (backupPlan.candidates.length || integrityPlan.candidates.length) {
+    actions.push("Si els candidats semblen correctes, implementar neteja manual protegida en una versió futura.");
+  }
+
+  return actions;
+}
+
 function assertVault(vault) {
   if (!vault) {
     throw new HttpError(503, "El vault de backups no està configurat.");
@@ -1014,10 +1153,29 @@ function assertVault(vault) {
 
 async function getRecords(db, limit = 120) {
   const result = await db
-    .prepare("SELECT id, text, kind, source, created_at FROM records ORDER BY created_at DESC LIMIT ?")
+    .prepare(
+      "SELECT id, text, kind, source, created_at, tags, weight, state, related_ids FROM records ORDER BY created_at DESC LIMIT ?",
+    )
     .bind(limit)
     .all();
   return result.results.map(mapRecord);
+}
+
+function getMemorySchema() {
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    fields: {
+      text: { type: "string", required: true, maxLength: 4000 },
+      kind: { type: "token", default: "usuari" },
+      source: { type: "token", default: "cloud-api" },
+      tags: { type: "array", default: [] },
+      weight: { type: "integer", min: 1, max: 5, default: 1 },
+      state: { type: "enum", values: MEMORY_STATES, default: "actiu" },
+      relatedIds: { type: "array", default: [] },
+    },
+    searchFilters: ["q", "kind", "source", "area", "tag", "state", "minWeight"],
+  };
 }
 
 async function createRecord(request, db) {
@@ -1030,15 +1188,78 @@ async function createRecord(request, db) {
     text,
     kind: normalizeToken(body?.kind, "usuari"),
     source: normalizeToken(body?.source, "cloud-api"),
+    tags: normalizeList(body?.tags, 12),
+    weight: normalizeWeight(body?.weight, 1),
+    state: normalizeMemoryState(body?.state, "actiu"),
+    relatedIds: normalizeList(body?.relatedIds || body?.related_ids, 20),
     createdAt: new Date().toISOString(),
   };
 
   await db
-    .prepare("INSERT INTO records (id, text, kind, source, created_at) VALUES (?, ?, ?, ?, ?)")
-    .bind(record.id, record.text, record.kind, record.source, record.createdAt)
+    .prepare(
+      "INSERT INTO records (id, text, kind, source, created_at, tags, weight, state, related_ids) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(
+      record.id,
+      record.text,
+      record.kind,
+      record.source,
+      record.createdAt,
+      JSON.stringify(record.tags),
+      record.weight,
+      record.state,
+      JSON.stringify(record.relatedIds),
+    )
     .run();
 
   return record;
+}
+
+async function updateRecord(request, db, id) {
+  const body = await readJson(request, 64 * 1024);
+  const existing = await getRecord(db, id);
+  if (!existing) throw new HttpError(404, "Record no trobat.");
+
+  const updated = {
+    ...existing,
+    text: body?.text === undefined ? existing.text : normalizeText(body.text, 4000),
+    kind: body?.kind === undefined ? existing.kind : normalizeToken(body.kind, existing.kind),
+    source: body?.source === undefined ? existing.source : normalizeToken(body.source, existing.source),
+    tags: body?.tags === undefined ? existing.tags : normalizeList(body.tags, 12),
+    weight: body?.weight === undefined ? existing.weight : normalizeWeight(body.weight, existing.weight),
+    state: body?.state === undefined ? existing.state : normalizeMemoryState(body.state, existing.state),
+    relatedIds:
+      body?.relatedIds === undefined && body?.related_ids === undefined
+        ? existing.relatedIds
+        : normalizeList(body.relatedIds || body.related_ids, 20),
+  };
+  if (!updated.text) throw new HttpError(400, "El record és buit.");
+
+  await db
+    .prepare(
+      "UPDATE records SET text = ?, kind = ?, source = ?, tags = ?, weight = ?, state = ?, related_ids = ? WHERE id = ?",
+    )
+    .bind(
+      updated.text,
+      updated.kind,
+      updated.source,
+      JSON.stringify(updated.tags),
+      updated.weight,
+      updated.state,
+      JSON.stringify(updated.relatedIds),
+      existing.id,
+    )
+    .run();
+
+  return updated;
+}
+
+async function getRecord(db, id) {
+  const result = await db
+    .prepare("SELECT id, text, kind, source, created_at, tags, weight, state, related_ids FROM records WHERE id = ?")
+    .bind(normalizeId(id, ""))
+    .first();
+  return result ? mapRecord(result) : null;
 }
 
 async function searchMemory(request, db) {
@@ -1047,13 +1268,18 @@ async function searchMemory(request, db) {
   const kind = normalizeToken(url.searchParams.get("kind"), "");
   const source = normalizeToken(url.searchParams.get("source"), "");
   const area = normalizeToken(url.searchParams.get("area") || url.searchParams.get("scope"), "all");
+  const tag = normalizeToken(url.searchParams.get("tag") || url.searchParams.get("tags"), "");
+  const state = normalizeMemoryState(url.searchParams.get("state") || url.searchParams.get("estat"), "");
+  const minWeight = normalizeOptionalWeight(
+    url.searchParams.get("minWeight") || url.searchParams.get("pesMin") || url.searchParams.get("pes"),
+  );
   const limit = normalizeLimit(url.searchParams.get("limit"), 50);
 
   const recordWhere = [];
   const recordBinds = [];
   if (q) {
-    recordWhere.push("LOWER(text) LIKE ? ESCAPE '\\'");
-    recordBinds.push(`%${escapeLike(q.toLowerCase())}%`);
+    recordWhere.push("(LOWER(text) LIKE ? ESCAPE '\\' OR LOWER(tags) LIKE ? ESCAPE '\\')");
+    recordBinds.push(`%${escapeLike(q.toLowerCase())}%`, `%${escapeLike(q.toLowerCase())}%`);
   }
   if (kind) {
     recordWhere.push("kind = ?");
@@ -1063,10 +1289,22 @@ async function searchMemory(request, db) {
     recordWhere.push("source = ?");
     recordBinds.push(source);
   }
+  if (tag) {
+    recordWhere.push("LOWER(tags) LIKE ? ESCAPE '\\'");
+    recordBinds.push(`%${escapeLike(tag)}%`);
+  }
+  if (state) {
+    recordWhere.push("state = ?");
+    recordBinds.push(state);
+  }
+  if (minWeight !== null) {
+    recordWhere.push("weight >= ?");
+    recordBinds.push(minWeight);
+  }
 
   const includeRecords = area === "all" || area === "records" || area === "memoria";
-  const includeDiary = (area === "all" || area === "diary" || area === "diari") && !kind && !source;
-  const recordSql = `SELECT id, text, kind, source, created_at FROM records ${
+  const includeDiary = (area === "all" || area === "diary" || area === "diari") && !kind && !source && !tag && !state && minWeight === null;
+  const recordSql = `SELECT id, text, kind, source, created_at, tags, weight, state, related_ids FROM records ${
     recordWhere.length ? `WHERE ${recordWhere.join(" AND ")}` : ""
   } ORDER BY created_at DESC LIMIT ?`;
   const diarySql = `SELECT id, text, created_at FROM diary ${
@@ -1098,6 +1336,9 @@ async function searchMemory(request, db) {
       kind: kind || null,
       source: source || null,
       area,
+      tag: tag || null,
+      state: state || null,
+      minWeight,
       limit,
     },
     records,
@@ -1629,13 +1870,19 @@ async function importSnapshot(request, db) {
     if (!text) continue;
     statements.push(
       db
-        .prepare("INSERT OR IGNORE INTO records (id, text, kind, source, created_at) VALUES (?, ?, ?, ?, ?)")
+        .prepare(
+          "INSERT OR IGNORE INTO records (id, text, kind, source, created_at, tags, weight, state, related_ids) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
         .bind(
           normalizeId(record?.id, crypto.randomUUID()),
           text,
           normalizeToken(record?.kind, "importat"),
           normalizeToken(record?.source, "import-json"),
           normalizeDate(record?.createdAt || record?.created_at, now),
+          JSON.stringify(normalizeList(record?.tags, 12)),
+          normalizeWeight(record?.weight, 1),
+          normalizeMemoryState(record?.state, "actiu"),
+          JSON.stringify(normalizeList(record?.relatedIds || record?.related_ids, 20)),
         ),
     );
   }
@@ -1731,6 +1978,10 @@ function mapRecord(row) {
     kind: row.kind,
     source: row.source,
     createdAt: row.created_at,
+    tags: parseJsonList(row.tags),
+    weight: normalizeWeight(row.weight, 1),
+    state: normalizeMemoryState(row.state, "actiu"),
+    relatedIds: parseJsonList(row.related_ids),
   };
 }
 
@@ -1831,6 +2082,36 @@ function normalizeGeneId(value) {
 function normalizeGeneState(value, fallback) {
   const state = normalizeToken(value, fallback);
   return GENE_STATES.includes(state) ? state : fallback;
+}
+
+function normalizeMemoryState(value, fallback) {
+  const state = normalizeToken(value, fallback);
+  return MEMORY_STATES.includes(state) ? state : fallback;
+}
+
+function normalizeWeight(value, fallback) {
+  const weight = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(weight)) return fallback;
+  return Math.min(Math.max(weight, 1), 5);
+}
+
+function normalizeOptionalWeight(value) {
+  if (value === null || value === undefined || value === "") return null;
+  return normalizeWeight(value, 1);
+}
+
+function normalizeList(value, maxItems) {
+  const raw = Array.isArray(value) ? value : String(value || "").split(",");
+  return [...new Set(raw.map((item) => normalizeToken(item, "")).filter(Boolean))].slice(0, maxItems);
+}
+
+function parseJsonList(value) {
+  if (Array.isArray(value)) return normalizeList(value, 50);
+  try {
+    return normalizeList(JSON.parse(value || "[]"), 50);
+  } catch {
+    return normalizeList(value, 50);
+  }
 }
 
 function normalizeLimit(value, fallback) {

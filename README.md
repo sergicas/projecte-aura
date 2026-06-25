@@ -1,6 +1,6 @@
-# Projecte Aura Cloud v3.5
+# Projecte Aura Cloud v3.7
 
-Projecte Aura Cloud v3.5 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, la restauració segura obliga a previsualitzar un JSON abans d'aplicar-lo, un Worker cron desa backups automàtics al vault, el cercador filtra records i diari, el genoma editable permet modificar gens amb Mode Sergi, l'auditoria registra mutacions estructurals al diari, el panell d'integritat resumeix salut, riscos i propera acció, l'historial d'integritat conserva snapshots consultables en KV, la tendència interpreta aquests snapshots, i l'assaig de restauració valida backups sense aplicar cap canvi a D1.
+Projecte Aura Cloud v3.7 és una aplicació web a Cloudflare Pages amb memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, la restauració segura obliga a previsualitzar un JSON abans d'aplicar-lo, un Worker cron desa backups automàtics al vault, el cercador filtra records i diari, el genoma editable permet modificar gens amb Mode Sergi, l'auditoria registra mutacions estructurals al diari, el panell d'integritat resumeix salut, riscos i propera acció, l'historial d'integritat conserva snapshots consultables en KV, la tendència interpreta aquests snapshots, l'assaig de restauració valida backups sense aplicar cap canvi a D1, la retenció segura calcula candidats sense esborrar res, i la memòria enriquida afegeix tags, pes, estat i relacions als records.
 
 ## Arquitectura
 
@@ -11,6 +11,7 @@ Projecte Aura Cloud v3.5 és una aplicació web a Cloudflare Pages amb memòria 
 - `functions/api/[[path]].js`
 - `workers/aura_backup_worker.js`
 - `migrations/0001_aura_cloud_v2.sql`
+- `migrations/0002_rich_memory.sql`
 - `wrangler.jsonc`
 - `wrangler.backup.jsonc`
 
@@ -41,11 +42,15 @@ Nota: R2 queda preparat com a següent millora possible, però el compte de Clou
 - `/tendencia-integritat`
 - `/desa-integritat`
 - `/assaig-restauracio`
+- `/retencio`
+- `/memoria-rica`
 - `/audit`
 - `/audit genoma`
 - `/cerca aura`
 - `/cerca kind:usuari aura`
+- `/cerca tag:nucli estat:actiu pes:3`
 - `/filtra source:consola`
+- `/mem-edita id tags:nucli,prova pes:4 estat:observacio rel:id2`
 - `/gen-activa 013`
 - `/gen-latent 013`
 - `/gen-arxiva 013`
@@ -54,10 +59,17 @@ Nota: R2 queda preparat com a següent millora possible, però el compte de Clou
 - `/confirma-restauracio`
 - `/cancella-restauracio`
 - `recorda que ...`
+- `recorda que ... tags:nucli,criteri pes:4 estat:actiu`
 - `anota que ...`
 - `diari que ...`
 
 ## Desplegament Cloudflare Pages
+
+D1 abans de desplegar codi que llegeix columnes noves:
+
+```bash
+npm run migrate:remote
+```
 
 Projecte Pages:
 
@@ -69,12 +81,6 @@ Worker de backups automàtics:
 
 ```bash
 npm run deploy:backup-worker
-```
-
-D1:
-
-```bash
-npm run migrate:remote
 ```
 
 Secret d'escriptura:
@@ -101,6 +107,8 @@ npm run dev:backup-worker
 - `GET /api/status`
 - `GET /api/memory`
 - `POST /api/memory` amb Mode Sergi
+- `GET /api/memory/schema`
+- `POST /api/memory/:id` amb Mode Sergi
 - `GET /api/diary`
 - `POST /api/diary` amb Mode Sergi
 - `GET /api/genes`
@@ -118,6 +126,8 @@ npm run dev:backup-worker
 - `GET /api/audit?scope=genoma`
 - `GET /api/search?q=aura`
 - `GET /api/memory/search?q=aura&kind=usuari`
+- `GET /api/search?tag=nucli&state=actiu&minWeight=3`
+- `GET /api/retention` amb Mode Sergi
 - `GET /api/backups` amb Mode Sergi
 - `POST /api/backups` amb Mode Sergi
 - `GET /api/backups/:id` amb Mode Sergi
@@ -151,6 +161,8 @@ npm run dev:backup-worker
 - `v3.3`: historial d'integritat en Workers KV, endpoint `/api/integrity/history`, snapshot segur `/api/integrity/snapshot` i gen `4181 historial-integritat`.
 - `v3.4`: tendència d'integritat, endpoint `/api/integrity/trend` i gen `6765 tendencia-integritat`.
 - `v3.5`: assaig de restauració des del vault, endpoint `/api/restore/rehearsal` i gen `10946 assaig-restauracio`.
+- `v3.6`: retenció segura plan-only, endpoint `/api/retention` i gen `17711 retencio-segura`.
+- `v3.7`: memòria enriquida amb tags, pes, estat i relacions, endpoint `/api/memory/schema`, filtres nous de cerca i gen `28657 memoria-enriquida`.
 
 ## Principis fundacionals
 

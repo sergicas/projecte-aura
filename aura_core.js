@@ -1,13 +1,14 @@
-const AURA_VERSION = "cloud-v3.5";
-const BACKUP_FORMAT = "aura-backup-v3.5";
+const AURA_VERSION = "cloud-v3.7";
+const BACKUP_FORMAT = "aura-backup-v3.7";
 const API_BASE = "/api";
 const WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_RECORDS = "records";
 const STORE_DIARY = "diary";
 const STORE_GENES = "genes";
 const STORE_META = "meta";
+const MEMORY_STATES = ["actiu", "latent", "arxivat", "observacio"];
 
 const FOUNDATION_RECORDS = [
   "El projecte es diu Projecte Aura.",
@@ -128,6 +129,18 @@ const GENES = [
     state: "actiu",
     description: "Assaja una restauració des del vault sense aplicar cap canvi a D1.",
   },
+  {
+    id: "17711",
+    name: "retencio-segura",
+    state: "actiu",
+    description: "Calcula una política de retenció sense esborrar dades automàticament.",
+  },
+  {
+    id: "28657",
+    name: "memoria-enriquida",
+    state: "actiu",
+    description: "Afegeix tags, pes, estat i relacions als records.",
+  },
 ];
 
 let db;
@@ -155,11 +168,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v3.5 inicialitzada.\nTendència d'integritat i assaig de restauració actius.");
-      els.statusPill.textContent = "cloud-v3.5";
+      writeSystem("Aura Cloud v3.7 inicialitzada.\nRetenció segura i memòria enriquida actives.");
+      els.statusPill.textContent = AURA_VERSION;
     } else {
       writeSystem(
-        "Aura Cloud v3.5 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
+        "Aura Cloud v3.7 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva la còpia d'aquest navegador.",
       );
       els.statusPill.textContent = "local";
     }
@@ -347,14 +360,28 @@ function openDatabase() {
 
     request.onupgradeneeded = () => {
       const nextDb = request.result;
+      const tx = request.transaction;
+      let records;
 
       if (!nextDb.objectStoreNames.contains(STORE_RECORDS)) {
-        const records = nextDb.createObjectStore(STORE_RECORDS, {
+        records = nextDb.createObjectStore(STORE_RECORDS, {
           keyPath: "id",
           autoIncrement: true,
         });
         records.createIndex("createdAt", "createdAt");
         records.createIndex("kind", "kind");
+      } else {
+        records = tx.objectStore(STORE_RECORDS);
+      }
+
+      if (!records.indexNames.contains("source")) {
+        records.createIndex("source", "source");
+      }
+      if (!records.indexNames.contains("state")) {
+        records.createIndex("state", "state");
+      }
+      if (!records.indexNames.contains("weight")) {
+        records.createIndex("weight", "weight");
       }
 
       if (!nextDb.objectStoreNames.contains(STORE_DIARY)) {
@@ -395,6 +422,10 @@ async function seedDatabase() {
       text,
       kind: "fundacional",
       source: "seed-cloud-v1",
+      tags: ["fundacional"],
+      weight: 3,
+      state: "actiu",
+      relatedIds: [],
       createdAt: now,
     });
   });
@@ -511,6 +542,22 @@ async function runCommand(rawCommand) {
       return;
     }
 
+    if (normalized === "/retencio" || normalized === "/retenció" || normalized === "/retention") {
+      await showRetentionPlan();
+      return;
+    }
+
+    if (normalized === "/memoria-rica" || normalized === "/memòria-rica" || normalized === "/rich-memory") {
+      await showRichMemory();
+      return;
+    }
+
+    if (normalized.startsWith("/mem-edita ") || normalized.startsWith("/memory-edit ")) {
+      const rawPatch = command.replace(/^\/(mem-edita|memory-edit)\s+/i, "");
+      await editMemoryCommand(rawPatch);
+      return;
+    }
+
     if (normalized.startsWith("/gen-activa ")) {
       await updateGeneState(command.slice("/gen-activa ".length).trim(), "actiu");
       return;
@@ -562,10 +609,14 @@ async function runCommand(rawCommand) {
             "/tendencia-integritat",
             "/desa-integritat",
             "/assaig-restauracio",
+            "/retencio",
+            "/memoria-rica",
+            "/mem-edita id tags:nucli pes:4 estat:observacio rel:id2",
             "/audit",
             "/audit genoma",
             "/cerca aura",
             "/cerca kind:usuari aura",
+            "/cerca tag:nucli estat:actiu pes:3",
             "/filtra source:consola",
             "/gen-activa 013",
             "/gen-latent 013",
@@ -642,6 +693,16 @@ async function runCommand(rawCommand) {
       case "/restore-rehearsal":
         await showRestoreRehearsal(command);
         break;
+      case "/retencio":
+      case "/retenció":
+      case "/retention":
+        await showRetentionPlan();
+        break;
+      case "/memoria-rica":
+      case "/memòria-rica":
+      case "/rich-memory":
+        await showRichMemory();
+        break;
       case "/audit":
       case "/auditoria":
         await showAudit();
@@ -671,7 +732,8 @@ async function runCommand(rawCommand) {
 }
 
 async function remember(text) {
-  if (!text) {
+  const memory = parseRichMemoryInput(text);
+  if (!memory.text) {
     writeError("No hi ha cap record per guardar.");
     return;
   }
@@ -687,14 +749,18 @@ async function remember(text) {
 
     try {
       const response = await apiPost("/memory", {
-        text,
+        text: memory.text,
         kind: "usuari",
         source: "consola",
+        tags: memory.tags,
+        weight: memory.weight,
+        state: memory.state,
+        relatedIds: memory.relatedIds,
       });
       record = response.record;
       await addRecord(record);
       await syncCloudState();
-      writeSystem(`Record guardat a D1:\n${text}`);
+      writeSystem(`Record guardat a D1:\n${memory.text}${formatRecordMeta(record)}`);
     } catch (error) {
       if (error.message.includes("Clau") || error.message.includes("Mode Sergi")) {
         writeError(`${error.message} El record no s'ha escrit a D1.`);
@@ -710,13 +776,18 @@ async function remember(text) {
 
   if (!record) {
     record = {
-      text,
+      id: crypto.randomUUID(),
+      text: memory.text,
       kind: "usuari",
       source: "consola-local",
+      tags: memory.tags,
+      weight: memory.weight,
+      state: memory.state,
+      relatedIds: memory.relatedIds,
       createdAt: new Date().toISOString(),
     };
     await addRecord(record);
-    writeSystem(`Record guardat en IndexedDB local:\n${text}`);
+    writeSystem(`Record guardat en IndexedDB local:\n${memory.text}${formatRecordMeta(record)}`);
   }
 
   await refreshPanels();
@@ -774,7 +845,7 @@ async function showStatus() {
     await refreshPanels();
     writeSystem(
       [
-        "Estat d'Aura — cloud-v3.5",
+        `Estat d'Aura — ${AURA_VERSION}`,
         "Nom: Aura",
         "Naturalesa: entitat sintètica-digital experimental",
         "Infraestructura: Cloudflare Pages Functions / D1 / navegador web",
@@ -790,6 +861,8 @@ async function showStatus() {
         `Historial integritat: ${status.integrity?.historyEndpoint || "/api/integrity/history"}`,
         `Tendència integritat: ${status.integrity?.trendEndpoint || "/api/integrity/trend"}`,
         `Assaig restauració: ${status.backup?.rehearsal || "/api/restore/rehearsal"}`,
+        `Retenció segura: ${status.retention?.endpoint || "/api/retention"} (${status.retention?.mode || "plan-only"})`,
+        `Memòria enriquida: ${(status.memory?.richFields || ["tags", "weight", "state", "relatedIds"]).join(", ")}`,
         `Genoma editable: ${status.genomeEditable?.enabled ? status.genomeEditable.endpoint : "no"}`,
         `Continuïtat: ${status.continuity?.endpoint || "/api/continuity"}`,
         `Criteri: ${status.criterion?.endpoint || "/api/criterion"}`,
@@ -811,13 +884,14 @@ async function showStatus() {
 
   writeSystem(
     [
-      "Estat d'Aura — cloud-v3.5 / mode local",
+      `Estat d'Aura — ${AURA_VERSION} / mode local`,
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       "Infraestructura: Cloudflare Pages / navegador web",
       "Persistència actual: IndexedDB del navegador; D1 no disponible en aquesta sessió",
       "Backup automàtic: no disponible en mode local",
       "Cerca local: /cerca text",
+      "Memòria enriquida local: tags, pes, estat i relacions",
       "Auditoria local: /audit",
       "Integritat local: /integritat",
       "Genoma editable: requereix D1 i Mode Sergi per ser definitiu",
@@ -846,8 +920,8 @@ async function showMemory() {
 async function searchMemoryCommand(command) {
   const rawQuery = command.replace(/^\/(cerca|search)\s*/i, "").trim();
   const query = parseSearchQuery(rawQuery);
-  if (!query.q && !query.kind && !query.source) {
-    writeError("Exemple: /cerca aura, /cerca kind:usuari aura o /filtra source:consola");
+  if (!query.q && !query.kind && !query.source && !query.tag && !query.state && query.minWeight === null) {
+    writeError("Exemple: /cerca aura, /cerca kind:usuari aura o /cerca tag:nucli estat:actiu pes:3");
     return;
   }
 
@@ -857,6 +931,9 @@ async function searchMemoryCommand(command) {
     if (query.kind) params.set("kind", query.kind);
     if (query.source) params.set("source", query.source);
     if (query.area) params.set("area", query.area);
+    if (query.tag) params.set("tag", query.tag);
+    if (query.state) params.set("state", query.state);
+    if (query.minWeight !== null) params.set("minWeight", String(query.minWeight));
     params.set("limit", "50");
     const results = await apiGet(`/search?${params.toString()}`);
     writeSystem(formatSearchResults(results));
@@ -873,12 +950,24 @@ async function searchLocalMemory(query) {
   const [records, diary] = await Promise.all([getAll(STORE_RECORDS), getAll(STORE_DIARY)]);
   const needle = query.q.toLowerCase();
   const includeRecords = query.area === "all" || query.area === "records" || query.area === "memoria";
-  const includeDiary = (query.area === "all" || query.area === "diary" || query.area === "diari") && !query.kind && !query.source;
+  const includeDiary =
+    (query.area === "all" || query.area === "diary" || query.area === "diari") &&
+    !query.kind &&
+    !query.source &&
+    !query.tag &&
+    !query.state &&
+    query.minWeight === null;
   const filteredRecords = includeRecords
     ? records
-        .filter((record) => !needle || record.text.toLowerCase().includes(needle))
+        .filter((record) => {
+          const tags = normalizeLocalList(record.tags, 12);
+          return !needle || record.text.toLowerCase().includes(needle) || tags.join(" ").includes(needle);
+        })
         .filter((record) => !query.kind || record.kind === query.kind)
         .filter((record) => !query.source || record.source === query.source)
+        .filter((record) => !query.tag || normalizeLocalList(record.tags, 12).includes(query.tag))
+        .filter((record) => !query.state || normalizeLocalMemoryState(record.state, "actiu") === query.state)
+        .filter((record) => query.minWeight === null || normalizeLocalWeight(record.weight, 1) >= query.minWeight)
         .sort(byNewest)
         .slice(0, 50)
     : [];
@@ -1050,6 +1139,69 @@ async function showRestoreRehearsal(command) {
   });
   await refreshPanels();
   writeSystem(formatRestoreRehearsal(response));
+}
+
+async function showRetentionPlan() {
+  if (!auraWriteKey) {
+    writeError("Mode Sergi inactiu: cal clau per llegir el pla de retenció del vault.");
+    return;
+  }
+
+  if (!(await syncCloudState())) {
+    writeError("D1 no respon ara mateix; el pla de retenció viu al vault cloud.");
+    return;
+  }
+
+  const response = await apiGet("/retention");
+  writeSystem(formatRetentionPlan(response));
+  await refreshPanels();
+}
+
+async function showRichMemory() {
+  let schema = null;
+  if (await syncCloudState()) {
+    schema = await apiGet("/memory/schema");
+  } else {
+    schema = {
+      version: AURA_VERSION,
+      fields: {
+        text: { type: "string", required: true },
+        tags: { type: "array", default: [] },
+        weight: { type: "integer", min: 1, max: 5, default: 1 },
+        state: { type: "enum", values: MEMORY_STATES, default: "actiu" },
+        relatedIds: { type: "array", default: [] },
+      },
+      searchFilters: ["q", "kind", "source", "area", "tag", "state", "minWeight"],
+    };
+  }
+
+  writeSystem(formatRichMemorySchema(schema));
+  await refreshPanels();
+}
+
+async function editMemoryCommand(raw) {
+  const [id, ...patchParts] = raw.split(/\s+/);
+  const patch = parseRichMemoryPatch(patchParts.join(" "));
+  if (!id || !Object.keys(patch).length) {
+    writeError("Exemple: /mem-edita id tags:nucli,prova pes:4 estat:observacio rel:id2");
+    return;
+  }
+
+  if (!auraWriteKey) {
+    writeError("Mode Sergi inactiu: la memòria D1 no s'ha modificat.");
+    return;
+  }
+
+  if (!(await syncCloudState())) {
+    writeError("D1 no respon ara mateix; la memòria enriquida definitiva no es pot editar.");
+    return;
+  }
+
+  const response = await apiPost(`/memory/${encodeURIComponent(id)}`, patch);
+  await putRecord(response.record);
+  await syncCloudState();
+  await refreshPanels();
+  writeSystem(`Record actualitzat:\n${formatRecordLine(response.record)}`);
 }
 
 async function showContinuity() {
@@ -1324,7 +1476,7 @@ async function exportJson() {
   const snapshot = await createBackup();
   lastSnapshot = snapshot;
   downloadFile(
-    `aura-cloud-v3-5-backup-${dateStamp()}.json`,
+    `aura-${versionSlug()}-backup-${dateStamp()}.json`,
     JSON.stringify(snapshot, null, 2),
     "application/json",
   );
@@ -1335,13 +1487,13 @@ async function exportJson() {
 async function exportTxt() {
   const snapshot = lastSnapshot || (await createBackup());
   const content = [
-    "Projecte Aura Cloud v3.5",
+    `Projecte Aura ${AURA_VERSION}`,
     `Exportat: ${snapshot.exportedAt}`,
     `Origen: ${snapshot.source || "local"}`,
     snapshot.backup?.checksum ? `SHA-256: ${snapshot.backup.checksum}` : "",
     "",
     "== Memoria ==",
-    ...snapshot.records.map((record) => `- ${formatDate(record.createdAt)} [${record.kind}] ${record.text}`),
+    ...snapshot.records.map(formatRecordLine),
     "",
     "== Diari ==",
     ...snapshot.diary.map((entry) => `- ${formatDate(entry.createdAt)} ${entry.text}`),
@@ -1350,7 +1502,7 @@ async function exportTxt() {
     ...snapshot.genes.map((gene) => `- ${gene.id} ${gene.name} [${gene.state}] ${gene.description}`),
   ].join("\n");
 
-  downloadFile(`aura-cloud-v3-5-backup-${dateStamp()}.txt`, content, "text/plain");
+  downloadFile(`aura-${versionSlug()}-backup-${dateStamp()}.txt`, content, "text/plain");
   writeSystem("Exportació TXT preparada.");
 }
 
@@ -1512,7 +1664,7 @@ async function createSnapshot() {
       diary: STORE_DIARY,
       genes: STORE_GENES,
     },
-    records: records.sort(byOldest),
+    records: records.sort(byOldest).map(normalizeRecordForSnapshot),
     diary: diary.sort(byOldest),
     genes: genes.sort((a, b) => a.id.localeCompare(b.id)),
   };
@@ -1536,6 +1688,10 @@ async function importSnapshot(payload) {
       text: String(record.text || ""),
       kind: record.kind || "importat",
       source: record.source || "import-json",
+      tags: normalizeLocalList(record.tags, 12),
+      weight: normalizeLocalWeight(record.weight, 1),
+      state: normalizeLocalMemoryState(record.state, "actiu"),
+      relatedIds: normalizeLocalList(record.relatedIds || record.related_ids, 20),
       createdAt: record.createdAt || now,
     });
   });
@@ -1641,7 +1797,7 @@ async function refreshPanels() {
       .slice(0, 5)
       .map((record) => {
         const item = document.createElement("li");
-        item.innerHTML = `<strong>${escapeHtml(record.kind)}</strong><span>${escapeHtml(record.text)}</span>`;
+        item.innerHTML = `<strong>${escapeHtml(record.kind)}</strong><span>${escapeHtml(`${record.text}${formatRecordMeta(record)}`)}</span>`;
         return item;
       }),
   );
@@ -1710,6 +1866,10 @@ async function refreshPanels() {
 
 function addRecord(record) {
   return withStore(STORE_RECORDS, "readwrite", (store) => store.add(record));
+}
+
+function putRecord(record) {
+  return withStore(STORE_RECORDS, "readwrite", (store) => store.put(record));
 }
 
 function addDiaryEntry(entry) {
@@ -1786,9 +1946,25 @@ function appendEntry(label, text, type) {
 }
 
 function formatRecords(records) {
-  return records
-    .map((record) => `- ${formatDate(record.createdAt)} [${record.kind}] ${record.text}`)
-    .join("\n");
+  return records.map(formatRecordLine).join("\n");
+}
+
+function formatRecordLine(record) {
+  return `- ${formatDate(record.createdAt)} [${record.kind}] ${record.text}${formatRecordMeta(record)}`;
+}
+
+function formatRecordMeta(record) {
+  const tags = normalizeLocalList(record.tags, 12);
+  const state = normalizeLocalMemoryState(record.state, "actiu");
+  const weight = normalizeLocalWeight(record.weight, 1);
+  const relatedIds = normalizeLocalList(record.relatedIds || record.related_ids, 20);
+  const parts = [
+    tags.length ? `tags:${tags.join(",")}` : "",
+    state !== "actiu" ? `estat:${state}` : "",
+    weight !== 1 ? `pes:${weight}` : "",
+    relatedIds.length ? `rel:${relatedIds.join(",")}` : "",
+  ].filter(Boolean);
+  return parts.length ? ` {${parts.join(" / ")}}` : "";
 }
 
 function parseLocalAuditEntry(entry) {
@@ -1920,6 +2096,9 @@ function parseSearchQuery(rawQuery) {
     kind: "",
     source: "",
     area: "all",
+    tag: "",
+    state: "",
+    minWeight: null,
   };
   const terms = [];
 
@@ -1933,7 +2112,7 @@ function parseSearchQuery(rawQuery) {
         return;
       }
 
-      const key = match[1].toLowerCase();
+      const key = normalizeLocalToken(match[1], "");
       const value = normalizeSearchToken(match[2]);
       if (key === "kind" || key === "tipus") {
         query.kind = value;
@@ -1941,6 +2120,12 @@ function parseSearchQuery(rawQuery) {
         query.source = value;
       } else if (key === "area" || key === "scope") {
         query.area = value || "all";
+      } else if (key === "tag" || key === "tags" || key === "etiqueta" || key === "etiquetes") {
+        query.tag = normalizeLocalToken(match[2], "");
+      } else if (key === "state" || key === "estat") {
+        query.state = normalizeLocalMemoryState(match[2], "");
+      } else if (key === "pes" || key === "weight" || key === "minweight" || key === "pesmin") {
+        query.minWeight = normalizeOptionalLocalWeight(match[2]);
       } else {
         terms.push(part);
       }
@@ -1956,9 +2141,12 @@ function formatSearchResults(results) {
     results.query.kind ? `kind=${results.query.kind}` : "",
     results.query.source ? `source=${results.query.source}` : "",
     results.query.area && results.query.area !== "all" ? `area=${results.query.area}` : "",
+    results.query.tag ? `tag=${results.query.tag}` : "",
+    results.query.state ? `estat=${results.query.state}` : "",
+    results.query.minWeight ? `pes>=${results.query.minWeight}` : "",
   ].filter(Boolean);
   const records = results.records.length
-    ? results.records.map((record) => `- ${formatDate(record.createdAt)} [${record.kind}] ${record.text}`).join("\n")
+    ? results.records.map(formatRecordLine).join("\n")
     : "- cap record";
   const diary = results.diary.length
     ? results.diary.map((entry) => `- ${formatDate(entry.createdAt)} ${entry.text}`).join("\n")
@@ -1983,6 +2171,101 @@ function normalizeSearchToken(value) {
     .toLowerCase()
     .replaceAll(/[^a-z0-9_-]/g, "-")
     .slice(0, 40);
+}
+
+function normalizeLocalToken(value, fallback = "") {
+  const token = String(value || fallback)
+    .normalize("NFD")
+    .replaceAll(/\p{Diacritic}/gu, "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9_-]/g, "-")
+    .slice(0, 40);
+  return token || fallback;
+}
+
+function normalizeLocalList(value, maxItems) {
+  const raw = Array.isArray(value) ? value : String(value || "").split(",");
+  return [...new Set(raw.map((item) => normalizeLocalToken(item, "")).filter(Boolean))].slice(0, maxItems);
+}
+
+function normalizeLocalWeight(value, fallback = 1) {
+  const weight = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(weight)) return fallback;
+  return Math.min(Math.max(weight, 1), 5);
+}
+
+function normalizeOptionalLocalWeight(value) {
+  if (value === null || value === undefined || value === "") return null;
+  return normalizeLocalWeight(value, 1);
+}
+
+function normalizeLocalMemoryState(value, fallback = "actiu") {
+  const state = normalizeLocalToken(value, fallback);
+  return MEMORY_STATES.includes(state) ? state : fallback;
+}
+
+function parseRichMemoryInput(raw) {
+  const memory = {
+    text: "",
+    tags: [],
+    weight: 1,
+    state: "actiu",
+    relatedIds: [],
+  };
+  const textParts = [];
+
+  String(raw || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .forEach((part) => {
+      const match = part.match(/^([^:=\s]+)[:=](.+)$/);
+      if (!match) {
+        textParts.push(part);
+        return;
+      }
+
+      const key = normalizeLocalToken(match[1], "");
+      const value = match[2];
+      if (["tag", "tags", "etiqueta", "etiquetes"].includes(key)) {
+        memory.tags = normalizeLocalList([...memory.tags, ...normalizeLocalList(value, 12)], 12);
+      } else if (["pes", "weight"].includes(key)) {
+        memory.weight = normalizeLocalWeight(value, 1);
+      } else if (["estat", "state"].includes(key)) {
+        memory.state = normalizeLocalMemoryState(value, "actiu");
+      } else if (["rel", "rels", "related", "relatedids", "relacions"].includes(key)) {
+        memory.relatedIds = normalizeLocalList([...memory.relatedIds, ...normalizeLocalList(value, 20)], 20);
+      } else {
+        textParts.push(part);
+      }
+    });
+
+  memory.text = textParts.join(" ").trim();
+  return memory;
+}
+
+function parseRichMemoryPatch(raw) {
+  const patch = {};
+  String(raw || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .forEach((part) => {
+      const match = part.match(/^([^:=\s]+)[:=](.+)$/);
+      if (!match) return;
+
+      const key = normalizeLocalToken(match[1], "");
+      const value = match[2];
+      if (["tag", "tags", "etiqueta", "etiquetes"].includes(key)) {
+        patch.tags = normalizeLocalList(value, 12);
+      } else if (["pes", "weight"].includes(key)) {
+        patch.weight = normalizeLocalWeight(value, 1);
+      } else if (["estat", "state"].includes(key)) {
+        patch.state = normalizeLocalMemoryState(value, "actiu");
+      } else if (["rel", "rels", "related", "relatedids", "relacions"].includes(key)) {
+        patch.relatedIds = normalizeLocalList(value, 20);
+      }
+    });
+  return patch;
 }
 
 function normalizeGeneCommandId(value) {
@@ -2177,6 +2460,57 @@ function formatRestoreRehearsal(report) {
     .join("\n");
 }
 
+function formatRetentionPlan(plan) {
+  const backupCandidates = plan.backups.candidates.length
+    ? plan.backups.candidates
+        .slice(0, 8)
+        .map((item) => `- ${item.id} (${formatDate(item.savedAt || item.createdAt)}; ${item.reasons.join(", ")})`)
+        .join("\n")
+    : "- cap";
+  const integrityCandidates = plan.integrity.candidates.length
+    ? plan.integrity.candidates
+        .slice(0, 8)
+        .map((item) => `- ${item.id} (${formatDate(item.savedAt || item.generatedAt)}; ${item.reasons.join(", ")})`)
+        .join("\n")
+    : "- cap";
+
+  return [
+    `Retenció segura Aura — ${plan.version}`,
+    `Mode: ${plan.mode}`,
+    `Esborrat automàtic: ${plan.cleanupEnabled ? "actiu" : "inactiu"}`,
+    `Generat: ${formatDate(plan.generatedAt)}`,
+    `Backups: ${plan.backups.total} totals / ${plan.backups.keep.length} conservar / ${plan.backups.candidates.length} candidats`,
+    `Integritat: ${plan.integrity.total} totals / ${plan.integrity.keep.length} conservar / ${plan.integrity.candidates.length} candidats`,
+    `Protegits per raó: ${plan.summary.protected}`,
+    "",
+    "Candidats backup:",
+    backupCandidates,
+    "",
+    "Candidats integritat:",
+    integrityCandidates,
+    "",
+    "Accions:",
+    ...plan.actions.map((action) => `- ${action}`),
+  ].join("\n");
+}
+
+function formatRichMemorySchema(schema) {
+  return [
+    `Memòria enriquida Aura — ${schema.version}`,
+    "Camps:",
+    `- text: ${schema.fields.text.type}`,
+    `- tags: ${schema.fields.tags.type}`,
+    `- pes: ${schema.fields.weight.min}-${schema.fields.weight.max}`,
+    `- estat: ${schema.fields.state.values.join(", ")}`,
+    `- relacions: ${schema.fields.relatedIds.type}`,
+    "",
+    "Exemples:",
+    "recorda que Aura conserva criteri operatiu tags:criteri,nucli pes:4 estat:actiu",
+    "/cerca tag:criteri pes:3",
+    "/mem-edita id tags:criteri,memoria pes:5 estat:observacio",
+  ].join("\n");
+}
+
 function downloadFile(filename, content, type) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -2269,8 +2603,22 @@ function byOldest(a, b) {
   return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
 }
 
+function normalizeRecordForSnapshot(record) {
+  return {
+    ...record,
+    tags: normalizeLocalList(record.tags, 12),
+    weight: normalizeLocalWeight(record.weight, 1),
+    state: normalizeLocalMemoryState(record.state, "actiu"),
+    relatedIds: normalizeLocalList(record.relatedIds || record.related_ids, 20),
+  };
+}
+
 function dateStamp() {
   return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+function versionSlug() {
+  return AURA_VERSION.replaceAll(".", "-");
 }
 
 async function sha256Hex(text) {

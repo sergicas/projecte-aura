@@ -2,6 +2,16 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Fase 11 (inici documentat) - 2026-07-04
+
+- S'obre la Fase 11 del Protocol Mestre (coordinació multiagent) **per instrucció explícita de Sergi**, com exigeix `AURA_ORIENTATION.md`.
+- Fixa la raó de ser a `AURA_NORTH_STAR.md` (Aura com a segon cervell: preservar, centralitzar, coordinar).
+- Crea el contracte de fase `AURA_PHASE11_MULTIAGENT.md` i el disseny base `AURA_COORDINATION_ARCHITECTURE.md` (nucli coordinador + agents especialistes).
+- Defineix el roster d'agents amb estat honest: Coordinador, Memòria/Coneixement i Integritat/Backups (reals); Comunicacions (primer agent viu); Llibres i Comerç (connectable); Obra i Veu (aspiració).
+- Activa el primer agent viu: la tasca programada `briefing-diari-aura` (correu + agenda + negoci) que desa un resum diari a `briefings/AAAA-MM-DD.md`. Verificat amb `briefings/2026-07-04.md`.
+- Proposa el gen `39088169 coordinacio-multiagent` com a **proposta no desplegada**.
+- **Sense canvis en producció**: `aura_core.js`, D1, Worker i integritat resten intactes en `cloud-v5.2`. La fase s'inicia en mode documentat, no activa multiagent autònom.
+
 ## cloud-v5.2 - 2026-06-27
 
 - Inicia la subfase d'orientació operativa abans de Fase 11.

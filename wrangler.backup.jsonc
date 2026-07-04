@@ -2,7 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "projecte-aura-backup-worker",
   "main": "workers/aura_backup_worker.js",
-  "compatibility_date": "2026-06-24",
+  "compatibility_date": "2026-06-27",
   "compatibility_flags": ["nodejs_compat"],
   "triggers": {
     "crons": ["17 3 * * *"]

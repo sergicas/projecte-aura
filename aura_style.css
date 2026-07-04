@@ -1,10 +1,10 @@
 :root {
   color-scheme: light;
-  --paper: #f6f3ec;
-  --paper-strong: #fffaf0;
-  --ink: #1d2320;
-  --muted: #6d756c;
-  --line: #d7d0c1;
+  --paper: #eef3f1;
+  --paper-strong: #fbfffc;
+  --ink: #18231f;
+  --muted: #60716b;
+  --line: #cbd8d2;
   --console: #111614;
   --console-soft: #18211e;
   --mint: #6fc9a7;
@@ -56,7 +56,7 @@ button {
 }
 
 button:hover {
-  background: #fff4d8;
+  background: #e9f7ef;
   border-color: rgba(29, 35, 32, 0.32);
   transform: translateY(-1px);
 }
@@ -92,10 +92,73 @@ input:focus-visible {
   text-transform: uppercase;
 }
 
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2vw, 24px);
+}
+
+.aura-mark {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  width: clamp(78px, 10vw, 126px);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(24, 35, 31, 0.18);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 44% 34%, rgba(251, 255, 252, 0.98), rgba(238, 247, 242, 0.72) 34%, rgba(111, 201, 167, 0.2) 61%, rgba(47, 111, 159, 0.12)),
+    linear-gradient(145deg, rgba(251, 255, 252, 0.86), rgba(111, 201, 167, 0.08));
+  box-shadow:
+    0 24px 55px rgba(47, 111, 159, 0.14),
+    inset 0 0 28px rgba(255, 255, 255, 0.68);
+}
+
+.aura-mark::before,
+.aura-mark::after {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(47, 111, 159, 0.28);
+  border-radius: 50%;
+  inset: 10%;
+  transform: rotate(-24deg) scaleX(1.38);
+}
+
+.aura-mark::after {
+  border-color: rgba(201, 151, 47, 0.28);
+  transform: rotate(31deg) scaleX(1.24);
+}
+
+.aura-mark-ring {
+  position: absolute;
+  inset: 18%;
+  border: 2px solid rgba(111, 201, 167, 0.34);
+  border-radius: 50%;
+  box-shadow: 0 0 22px rgba(111, 201, 167, 0.28);
+}
+
+.aura-mark-core {
+  position: relative;
+  display: grid;
+  width: 55%;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(17, 22, 20, 0.92);
+  color: #edf7ee;
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  box-shadow:
+    0 0 22px rgba(111, 201, 167, 0.32),
+    inset 0 0 16px rgba(111, 201, 167, 0.26);
+}
+
 h1 {
   margin: 0;
-  font-size: clamp(4rem, 12vw, 9.6rem);
-  line-height: 0.86;
+  font-size: clamp(4rem, 11vw, 9.2rem);
+  line-height: 0.84;
   font-weight: 800;
 }
 
@@ -104,12 +167,13 @@ h1 {
   margin: 22px 0 0;
   padding: 8px 12px;
   border-left: 4px solid var(--gold);
-  background: rgba(255, 250, 240, 0.78);
+  background: rgba(251, 255, 252, 0.82);
   color: var(--muted);
 }
 
 #aura-visual {
   width: 100%;
+  aspect-ratio: 13 / 6;
   max-height: 240px;
   min-height: 180px;
   border: 1px solid rgba(29, 35, 32, 0.14);
@@ -118,12 +182,97 @@ h1 {
   box-shadow: var(--shadow);
 }
 
-.workspace {
+.module-tabs {
   display: grid;
-  grid-template-columns: minmax(150px, 0.55fr) minmax(360px, 1.45fr) minmax(260px, 0.8fr);
-  gap: clamp(14px, 2vw, 24px);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  padding: clamp(14px, 2vw, 22px) 0 0;
+}
+
+.module-tab {
+  display: grid;
+  gap: 5px;
+  min-height: 66px;
+  padding: 10px 14px;
+  text-align: left;
+  background: rgba(251, 255, 252, 0.76);
+}
+
+.module-tab strong {
+  font-size: 1rem;
+}
+
+.module-tab small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.module-tab.is-active {
+  border-color: rgba(47, 111, 159, 0.48);
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(47, 111, 159, 0.12);
+}
+
+.workspace {
+  display: block;
   align-items: start;
   padding-top: clamp(18px, 2.2vw, 30px);
+}
+
+.simple-workspace {
+  width: min(980px, 100%);
+  margin: 0 auto;
+}
+
+.aura-module {
+  display: none;
+  gap: clamp(14px, 2vw, 24px);
+}
+
+.aura-module.is-active {
+  display: grid;
+}
+
+.aura-module.simple-console.is-active {
+  display: block;
+}
+
+.module-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 50px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+  font-size: clamp(1.25rem, 2vw, 1.9rem);
+  font-weight: 800;
+}
+
+.module-head button {
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 0.86rem;
+}
+
+.module-grid,
+.status-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 24px);
+}
+
+.module-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.module-actions button {
+  min-width: 0;
+  padding: 0 10px;
+  overflow-wrap: anywhere;
 }
 
 .status-panel,
@@ -137,7 +286,7 @@ h1 {
 .console-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 250, 240, 0.72);
+  background: rgba(251, 255, 252, 0.78);
 }
 
 .panel-block {
@@ -252,7 +401,7 @@ h1 {
 
 .command-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 98px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   padding: 14px;
   border-top: 1px solid rgba(237, 247, 238, 0.12);
@@ -283,10 +432,26 @@ h1 {
   border-top: 1px solid rgba(237, 247, 238, 0.1);
 }
 
+.quick-actions.simple-actions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(58px, auto);
+  padding: 16px;
+}
+
 .quick-actions button {
   min-width: 0;
   padding: 0 10px;
+  line-height: 1.2;
+  text-align: center;
   overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.quick-actions.simple-actions button {
+  min-height: 58px;
+  padding: 10px 12px;
+  font-size: 0.98rem;
+  font-weight: 800;
 }
 
 .memory-panel section {
@@ -341,9 +506,14 @@ h1 {
 }
 
 @media (max-width: 1060px) {
-  .identity-band,
-  .workspace {
+  .identity-band {
     grid-template-columns: 1fr;
+  }
+
+  .module-tabs,
+  .module-grid,
+  .status-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .status-panel {
@@ -364,18 +534,37 @@ h1 {
     min-height: 0;
   }
 
+  .brand-lockup {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
   #aura-visual {
     min-height: 150px;
   }
 
   .status-panel,
   .memory-panel,
-  .quick-actions {
+  .module-tabs,
+  .module-grid,
+  .status-layout,
+  .quick-actions,
+  .module-actions {
     grid-template-columns: 1fr;
   }
 
   .command-row {
     grid-template-columns: 1fr;
+  }
+
+  .quick-actions.simple-actions {
+    grid-auto-rows: minmax(50px, auto);
+    padding: 12px;
+  }
+
+  .quick-actions.simple-actions button {
+    min-height: 50px;
   }
 
   .log {

@@ -1,0 +1,30 @@
+0020	1. Une nouvelle rentrée	6
+0021	2. Premiers cours : séduction	15
+0022	3. Anastasia	27
+0023	4. Les Amis de Hari Seldon	39
+0024	5. Contacter les anges	48
+0025	6. Anthropotélie	55
+0026	7. Leo	67
+0027	8. Johnny Brise-Muscles	74
+0028	9. La Transformation	84
+0029	10. Ava	94
+0030	11. La quatrième note	100
+0031	12. Le message d’Ilya	106
+0032	13. Mort	114
+0033	14. Un corps sans tête	120
+0034	15. Le rituel de la Luna	127
+0035	16. L’Aneto	132
+0036	17. Matilde	141
+0037	18. Élia	148
+0038	19. La Porte de Tannhäuser	155
+0039	20. Montoliu	162
+0040	21. Iliouchenka	169
+0041	22. Le Vortex	176
+0042	23. L’Apocalypse	184
+0043	24. Une non-conversation dans un non-lieu	192
+0044	25. La Re-Matérialisation	198
+0045	26. Une voix de l’au-delà	205
+0046	27. Amour salvateur	211
+0047	28. Conscience fractale	216
+0048	29. Un monde nouveau	221
+0049	30. Qui est l’ennemi ?	229

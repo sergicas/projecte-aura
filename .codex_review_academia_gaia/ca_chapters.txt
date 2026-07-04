@@ -1,0 +1,30 @@
+0015	1. Un nou curs
+0104	2. Primeres Classes: Seducció
+0199	3. L'Anastàsia
+0300	4. Amics d'en Hari Seldon
+0409	5. Contactant amb els àngels
+0482	6. Anthropotèlia
+0574	7. En Leo
+0616	8. En Johnny Trencamúsculs
+0738	9. La Transformació
+0823	10. Ava
+0881	11. La quarta nota
+0940	12. El missatge de l'Ilya
+0995	13. Mort
+1054	14. Un cos sense cap
+1114	15. El ritual de la Luna
+1175	16. L'Aneto
+1248	17. La Matilde
+1334	18. L'Èlia
+1387	19. La Porta de Tanhäusser
+1443	20. En Montoliu
+1532	21. En Iliúixenka
+1586	22. El Vórtex
+1683	23. L'Apocalipsi
+1742	24. Una no-conversa en un no-lloc
+1802	25. La Re-Materialització
+1866	26. Una veu del més enllà
+1912	27. Amor salvador
+1951	28. Consciència fractal
+1999	29. Un nou món
+2087	30. Qui és l'enemic?

@@ -5,158 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Projecte Aura Cloud v3.7: entitat sintetica-digital experimental amb retencio segura, memoria enriquida, integritat, auditoria, backups automatics i restauracio segura."
+      content="Projecte Aura Cloud v5.2: interfície simple per orientar la sessió, consultar estat i records, i gravar records només amb Mode Sergi."
     />
-    <title>Projecte Aura Cloud v3.7</title>
-    <link rel="stylesheet" href="aura_style.css?v=cloud-v3-7-20260625" />
+    <title>Projecte Aura Cloud v5.2</title>
+    <link rel="stylesheet" href="aura_style.css?v=cloud-v5-2-buttons-fix-20260704" />
   </head>
   <body>
     <main class="shell">
       <section class="identity-band" aria-label="Identitat d'Aura">
         <div>
           <p class="kicker">Projecte Aura Cloud</p>
-          <h1>Aura</h1>
-          <p class="signal">cloud-v3.7 / retenció segura / memòria enriquida</p>
+          <div class="brand-lockup" aria-label="Aura">
+            <div class="aura-mark" aria-hidden="true">
+              <span class="aura-mark-ring"></span>
+              <span class="aura-mark-core">A</span>
+            </div>
+            <h1>Aura</h1>
+          </div>
+          <p class="signal">cloud-v5.2 / orientació / pols / nucli / records persistents</p>
         </div>
         <canvas id="aura-visual" width="520" height="240" aria-hidden="true"></canvas>
       </section>
 
-      <section class="workspace" aria-label="Consola d'Aura">
-        <aside class="status-panel">
-          <div class="panel-block">
-            <span class="label">Estat</span>
-            <strong id="status-pill">inicialitzant</strong>
-          </div>
-          <div class="panel-block">
-            <span class="label">Records</span>
-            <strong id="memory-count">0</strong>
-          </div>
-          <div class="panel-block">
-            <span class="label">Diari</span>
-            <strong id="diary-count">0</strong>
-          </div>
-          <div class="panel-block">
-            <span class="label">Genoma</span>
-            <strong id="gene-count">0 gens</strong>
-          </div>
-          <div class="panel-block">
-            <span class="label">Vault</span>
-            <strong id="vault-count">0</strong>
-          </div>
-          <div class="panel-block">
-            <span class="label">Auto backup</span>
-            <strong id="automation-count">pendent</strong>
-          </div>
-          <div class="panel-block">
-            <span class="label">Integritat</span>
-            <strong id="integrity-count">local</strong>
-          </div>
-          <div class="panel-block auth-block">
-            <span class="label">Mode Sergi</span>
-            <strong id="auth-status">bloquejat</strong>
-            <form id="auth-form" class="auth-form" autocomplete="off">
-              <label class="sr-only" for="auth-input">Clau privada</label>
+      <section class="workspace simple-workspace" aria-label="Aura simplificada" data-active-module="xat">
+        <section class="aura-module simple-console is-active" data-module-panel="xat" aria-label="Aura simplificada">
+          <section class="console-panel">
+            <div id="aura-log" class="log" role="log" aria-live="polite"></div>
+
+            <div class="quick-actions simple-actions" aria-label="Accions principals">
+              <button type="button" data-action="what-is-aura" title="Explica què és Aura i per a què serveix aquesta pantalla" aria-label="Què és Aura?">Què és Aura?</button>
+              <button type="button" data-action="next-step" title="Mostra què pots fer ara mateix" aria-label="Què faig ara?">Què faig ara?</button>
+              <button type="button" data-action="pulse" title="Mostra l'estat local d'Aura" aria-label="Estat d'Aura">Estat d'Aura</button>
+              <button type="button" data-action="core" title="Mostra la identitat i els límits d'Aura" aria-label="Identitat">Identitat</button>
+              <button type="button" data-action="daily-report">Informe del dia</button>
+              <button type="button" data-action="new-record">Grava record</button>
+              <button type="button" data-action="list-records">Veure records</button>
+              <button type="button" data-action="last-record">Últim record</button>
+            </div>
+
+            <form id="command-form" class="command-row" autocomplete="off">
+              <label class="sr-only" for="command-input">Ordre o record</label>
               <input
-                id="auth-input"
-                type="password"
-                placeholder="clau privada"
+                id="command-input"
+                name="command"
+                type="text"
+                placeholder="Escriu una ordre o un record..."
                 spellcheck="false"
                 autocomplete="off"
               />
-              <button type="submit">Activa</button>
             </form>
-            <button id="clear-auth" class="auth-clear" type="button">Esborra</button>
-          </div>
-        </aside>
-
-        <section class="console-panel">
-          <div id="aura-log" class="log" role="log" aria-live="polite"></div>
-
-          <form id="command-form" class="command-row" autocomplete="off">
-            <label class="sr-only" for="command-input">Ordre</label>
-            <input
-              id="command-input"
-              name="command"
-              type="text"
-              placeholder="/estat"
-              spellcheck="false"
-              autocomplete="off"
-            />
-            <button type="submit">Envia</button>
-          </form>
-
-          <div class="quick-actions" aria-label="Accions">
-            <button type="button" data-command="/ajuda">/ajuda</button>
-            <button type="button" data-command="/estat">/estat</button>
-            <button type="button" data-command="/memoria">/memoria</button>
-            <button type="button" data-command="/diari">/diari</button>
-            <button type="button" data-command="/continuïtat">/continuïtat</button>
-            <button type="button" data-command="/criteri">/criteri</button>
-            <button type="button" data-command="/genoma">/genoma</button>
-            <button type="button" id="export-json">Backup JSON</button>
-            <button type="button" id="save-vault">Desa vault</button>
-            <button type="button" id="list-vault">Vault</button>
-            <button type="button" data-command="/auto-backup">/auto-backup</button>
-            <button type="button" data-command="/integritat">/integritat</button>
-            <button type="button" data-command="/historial-integritat">/historial-integritat</button>
-            <button type="button" data-command="/tendencia-integritat">/tendencia-integritat</button>
-            <button type="button" data-command="/desa-integritat">/desa-integritat</button>
-            <button type="button" data-command="/assaig-restauracio">/assaig-restauracio</button>
-            <button type="button" data-command="/retencio">/retencio</button>
-            <button type="button" data-command="/memoria-rica">/memoria-rica</button>
-            <button type="button" data-command="/audit">/audit</button>
-            <button type="button" data-command="/cerca Aura">/cerca</button>
-            <button type="button" id="export-txt">Exportar TXT</button>
-            <button type="button" id="import-json">Importar JSON</button>
-            <button type="button" id="confirm-restore">Confirma restore</button>
-            <input id="import-file" class="sr-only" type="file" accept="application/json,.json" />
-          </div>
+          </section>
         </section>
-
-        <aside class="memory-panel">
-          <section>
-            <div class="section-title">
-              <span>Memoria</span>
-              <small id="memory-updated">local</small>
-            </div>
-            <ol id="memory-list" class="compact-list"></ol>
-          </section>
-
-          <section>
-            <div class="section-title">
-              <span>Diari</span>
-              <small id="diary-updated">local</small>
-            </div>
-            <ol id="diary-list" class="compact-list"></ol>
-          </section>
-
-          <section>
-            <div class="section-title">
-              <span>Vault</span>
-              <small id="vault-updated">cap</small>
-            </div>
-            <ol id="vault-list" class="compact-list"></ol>
-          </section>
-
-          <section>
-            <div class="section-title">
-              <span>Integritat</span>
-              <small id="integrity-updated">local</small>
-            </div>
-            <ol id="integrity-list" class="compact-list"></ol>
-          </section>
-
-          <section>
-            <div class="section-title">
-              <span>Gens</span>
-              <small>nucli</small>
-            </div>
-            <ol id="gene-list" class="compact-list"></ol>
-          </section>
-        </aside>
       </section>
     </main>
 
-    <script src="aura_core.js?v=cloud-v3-7-20260625" defer></script>
+    <script src="aura_core.js?v=cloud-v5-2-buttons-fix-20260704" defer></script>
   </body>
 </html>

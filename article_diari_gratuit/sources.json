@@ -1,0 +1,98 @@
+{
+  "sources": [
+    {
+      "name": "Aeon",
+      "homepage": "https://aeon.co/",
+      "feeds": ["https://aeon.co/feed.rss"],
+      "priority": 10,
+      "default_area": "filosofia"
+    },
+    {
+      "name": "Psyche",
+      "homepage": "https://psyche.co/",
+      "feeds": ["https://psyche.co/feed.rss"],
+      "priority": 10,
+      "default_area": "salut-neurociencia"
+    },
+    {
+      "name": "Quanta Magazine",
+      "homepage": "https://www.quantamagazine.org/",
+      "feeds": ["https://www.quantamagazine.org/feed/"],
+      "priority": 10,
+      "default_area": "salut-neurociencia"
+    },
+    {
+      "name": "Nautilus",
+      "homepage": "https://nautil.us/",
+      "feeds": ["https://nautil.us/feed/"],
+      "priority": 9,
+      "default_area": "filosofia"
+    },
+    {
+      "name": "The Conversation",
+      "homepage": "https://theconversation.com/us",
+      "feeds": [
+        "https://theconversation.com/us/articles.atom",
+        "https://theconversation.com/global/articles.atom"
+      ],
+      "priority": 7,
+      "default_area": "filosofia"
+    },
+    {
+      "name": "MIT Technology Review",
+      "homepage": "https://www.technologyreview.com/",
+      "feeds": ["https://www.technologyreview.com/feed/"],
+      "priority": 8,
+      "default_area": "IA"
+    },
+    {
+      "name": "Noema Magazine",
+      "homepage": "https://www.noemamag.com/",
+      "feeds": ["https://www.noemamag.com/feed/"],
+      "priority": 9,
+      "default_area": "filosofia"
+    },
+    {
+      "name": "Public Domain Review",
+      "homepage": "https://publicdomainreview.org/",
+      "feeds": ["https://publicdomainreview.org/feed/"],
+      "priority": 8,
+      "default_area": "literatura"
+    },
+    {
+      "name": "Lapham's Quarterly",
+      "homepage": "https://www.laphamsquarterly.org/",
+      "feeds": [
+        "https://www.laphamsquarterly.org/rss.xml",
+        "https://www.laphamsquarterly.org/feed"
+      ],
+      "priority": 7,
+      "default_area": "literatura"
+    },
+    {
+      "name": "Works in Progress",
+      "homepage": "https://worksinprogress.co/",
+      "feeds": [
+        "https://worksinprogress.co/feed",
+        "https://worksinprogress.co/feed/"
+      ],
+      "priority": 9,
+      "default_area": "IA"
+    },
+    {
+      "name": "Edge",
+      "homepage": "https://www.edge.org/",
+      "feeds": ["https://www.edge.org/feed"],
+      "priority": 6,
+      "default_area": "filosofia"
+    },
+    {
+      "name": "MIT Press Reader",
+      "homepage": "https://thereader.mitpress.mit.edu/",
+      "feeds": ["https://thereader.mitpress.mit.edu/feed/"],
+      "priority": 7,
+      "default_area": "filosofia"
+    }
+  ]
+}
+

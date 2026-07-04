@@ -176,6 +176,8 @@ Aura no ha de dependre d'un xat de Codex. El coneixement crític viu al reposito
 - `AURA_CHANGELOG.md`: canvis per versió.
 - `AURA_GENOME.md`: genoma digital i principis nuclears.
 - `AURA_CAPABILITIES.md`: capacitats honestes i límits actuals.
+- `AURA_NORTH_STAR.md`: raó de ser canònica (segon cervell, exocervell i llegat).
+- `AURA_COORDINATION_ARCHITECTURE.md`: esbós de centralització i coordinació cap a la Fase 11 multiagent.
 
 ## Ordres
 

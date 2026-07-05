@@ -29,7 +29,7 @@ Després d'*Acadèmia Gaia*, Sergi va demanar netejar la resta de llibres. S'han
 
 Cada combinació verificada per portada a la pantalla de confirmació de Goodreads.
 
-**Pendent (acció manual de Sergi):** hi ha una fitxa de prova anomenada **"PRUEBA: La vida d'en George"** que **NO** s'ha ajuntat (és un artefacte de prova, no una edició real). Convé **esborrar-la** des de Goodreads; jo no elimino fitxes del catàleg.
+**"PRUEBA: La vida d'en George"** — resulta que era una edició real publicada a Amazon (ASIN B0CLBL7Q6Y) mal titulada "PRUEBA", no un fantasma de Goodreads. Amb el vistiplau de Sergi (opció A) s'ha **ajuntat dins del work de *La vida d'en George*** el 2026-07-05, així deixa de ser una fitxa solta. Per eliminar-la del tot caldria **despublicar-la a Amazon (KDP)**; això ho fa Sergi, no l'agent.
 
 ---
 

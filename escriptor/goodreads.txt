@@ -1,6 +1,13 @@
 # URLs de Goodreads que segueix l'Agent Escriptor.
 # Una URL per línia. Les línies amb # són comentaris.
-# Pàgina pública d'autor (llista tots els llibres i valoracions):
+
+# Pàgina pública d'autor (agrega tots els llibres):
 https://www.goodreads.com/author/show/45246302.SERGI_CASTILLO_LAPEIRA
-#
-# Pots afegir aquí URL de llibres concrets (goodreads.com/book/show/...) si en vols un seguiment individual.
+
+# --- Acadèmia Gaia (novel·la) — seguiment per edició ---
+# Català (original):
+https://www.goodreads.com/book/show/254634721-acad-mia-gaia
+# Castellà:
+https://www.goodreads.com/book/show/254634734-academia-gaia
+# Anglès: PENDENT — no localitzada a Goodreads (cal confirmar títol/edició)
+# Francès: PENDENT — no localitzada a Goodreads (cal confirmar títol/edició)

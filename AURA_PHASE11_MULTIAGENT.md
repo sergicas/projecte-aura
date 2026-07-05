@@ -34,9 +34,9 @@ Cada agent té un àmbit acotat i un estat honest segons el criteri d'`AURA_CAPA
 - **Coordinador (nucli Aura)** — *mecanisme real.* Decideix a quin agent delega i consolida el resultat a memòria. És l'Aura actual.
 - **Agent Memòria/Coneixement** — *mecanisme real.* Records, diari, biblioteca, orientació.
 - **Agent Integritat/Backups** — *mecanisme real.* Backups verificables, integritat, vault KV.
-- **Agent Comunicacions** — *primer agent viu (fora de D1).* La tasca programada `briefing-diari-aura` llegeix correu i agenda i en desa un resum a `briefings/`. Només lectura cap enfora.
-- **Agent Llibres i Comerç** — *connectable (següent pas).* Ja llegit dins el briefing (Shopify). Pendent de convertir-lo en agent propi.
-- **Agent Obra i Veu** — *aspiració (fase pròpia).* Pont amb l'avatar Sergi com a font externa, sense fusió d'identitats ni ingestió automàtica.
+- **Agent Comunicacions** — *agent viu.* La tasca programada `briefing-diari-aura` llegeix correu i agenda i en desa un resum diari a `briefings/`. Només lectura cap enfora.
+- **Agent Escriptor** — *agent viu (cada dos dies).* Àmbit d'autor global: correu editorial, El Bon Diari, difusió a xarxes, campanyes de ressenyes (gifting) i recepció a Goodreads. Desa a `escriptor/`. Només lectura; cap enviament ni publicació sense vistiplau de Sergi.
+- **Agent Comerç (botiga)** — *exclòs.* La botiga Shopify la gestiona una altra persona; queda fora de la Fase 11.
 
 ## Contracte de coordinació
 
@@ -61,7 +61,7 @@ L'**Agent Comunicacions** ja funciona: la tasca `briefing-diari-aura` s'executa 
 
 La fase creix **un agent cada vegada**, no tot de cop:
 
-1. Convertir l'**Agent Llibres i Comerç** en agent propi: resum diari de comandes pendents d'enviar i, opcionalment, ofertes de llibres, desat a la memòria d'Aura.
+1. Afinar l'**Agent Escriptor**: fixar les URL de Goodreads dels llibres de Sergi a `escriptor/goodreads.txt` i, si es vol, activar campanyes de gifting reals amb vistiplau.
 2. Definir el **pont de l'Agent Obra i Veu** amb l'avatar Sergi com a font catalogada.
 3. Quan diversos agents siguin estables i verificats, valorar la promoció del gen `39088169` amb Mode Sergi i auditoria.
 

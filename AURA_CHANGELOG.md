@@ -11,6 +11,7 @@ Canvis rellevants del Projecte Aura.
 - Activa el primer agent viu: la tasca programada `briefing-diari-aura` (correu + agenda + negoci) que desa un resum diari a `briefings/AAAA-MM-DD.md`. Verificat amb `briefings/2026-07-04.md`.
 - Proposa el gen `39088169 coordinacio-multiagent` com a **proposta no desplegada**.
 - **Sense canvis en producció**: `aura_core.js`, D1, Worker i integritat resten intactes en `cloud-v5.2`. La fase s'inicia en mode documentat, no activa multiagent autònom.
+- 2026-07-04: pivot d'agents — s'exclou la botiga Shopify (la gestiona una altra persona) i es crea l'**Agent Escriptor** (àmbit d'autor: editorial, El Bon Diari, xarxes, campanyes de ressenyes i recepció a Goodreads), programat cada dos dies amb sortida a `escriptor/`. Es treu la lectura de botiga del briefing diari.
 
 ## cloud-v5.2 - 2026-06-27
 

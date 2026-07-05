@@ -1,0 +1,6 @@
+# URLs de Goodreads dels llibres de Sergi
+# Enganxa aquí una URL per línia: la teva pàgina d'autor o la pàgina de cada llibre a Goodreads.
+# L'Agent Escriptor llegirà aquest fitxer per seguir valoracions i ressenyes noves.
+# Exemple: https://www.goodreads.com/book/show/XXXXXXXX-titol-del-llibre
+#
+# (buit de moment — afegeix-hi les teves URL)

@@ -11,6 +11,26 @@ Amb el vistiplau de Sergi, s'ha executat la neteja directament amb l'eina **Comb
 
 Goodreads ha encuat el procés ("Enqueued job to combine works"); es completa en pocs minuts. No hi ha edició francesa a Goodreads encara (traducció FR en preparació). La resta del document es conserva com a registre del pla original.
 
+### Neteja ampliada a TOT el catàleg — 2026-07-05
+
+Després d'*Acadèmia Gaia*, Sergi va demanar netejar la resta de llibres. S'han ajuntat les fitxes duplicades de tots els títols, cada llibre en un sol *work* (tots els idiomes i formats junts):
+
+- **Acadèmia Gaia / Gaia Academy** — 12 edicions (CA+ES+EN).
+- **Una Història Sentimental** — 7 edicions (CA+ES).
+- **Contes a la vora del gel / Cuentos a la orilla del hielo** — 7 edicions (CA+ES).
+- **Ètica i estètica de l'instant en l'era digital / Ethics and Aesthetics…** — 14 edicions (CA+ES+EN).
+- **Gina, la girafa que volia ser lliure** — 5 edicions (CA+ES+EN).
+- **Gully, el tauró que es volia conèixer a si mateix** — 3 edicions (CA+ES).
+- **Diálogos filosóficos con mi amigo Pi / Philosophical dialogues…** — 12 edicions (ES+EN).
+- **Nara** — 10 edicions (CA+ES+EN).
+- **Inspector Montoliu / El caso del doble desconocido** — 13 edicions (CA+ES+EN, incloses les fitxes soltes "El caso…").
+- **La vida d'en George / La vida de George / George's life** — 18 edicions (CA+ES+EN).
+- **Ànima Material** — ja estava unificada; res a fer.
+
+Cada combinació verificada per portada a la pantalla de confirmació de Goodreads.
+
+**Pendent (acció manual de Sergi):** hi ha una fitxa de prova anomenada **"PRUEBA: La vida d'en George"** que **NO** s'ha ajuntat (és un artefacte de prova, no una edició real). Convé **esborrar-la** des de Goodreads; jo no elimino fitxes del catàleg.
+
 ---
 
 ## Problema

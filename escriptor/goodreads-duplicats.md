@@ -2,6 +2,17 @@
 
 _Preparat per l'Agent Escriptor · 2026-07-04_
 
+## ✅ RESOLT — 2026-07-05
+
+Amb el vistiplau de Sergi, s'ha executat la neteja directament amb l'eina **Combine Editions** de Goodreads (Sergi identificat i membre del Goodreads Librarians Group; no calia demanar-ho a tercers). S'han seleccionat i ajuntat en **una sola fitxa** les **12 edicions** del llibre:
+
+- 4 en castellà (*Academia Gaia*), 4 en català (*Acadèmia Gaia*) i 4 en anglès (*Gaia Academy* — l'edició anglesa que constava com a "pendent de localitzar").
+- Decisió de Sergi: **una única fitxa per a tots els idiomes**, seguint la política de Goodreads per a traduccions, perquè totes les valoracions i ressenyes sumin juntes.
+
+Goodreads ha encuat el procés ("Enqueued job to combine works"); es completa en pocs minuts. No hi ha edició francesa a Goodreads encara (traducció FR en preparació). La resta del document es conserva com a registre del pla original.
+
+---
+
 ## Problema
 
 *Acadèmia Gaia* té ~8 entrades separades al catàleg de Goodreads (edicions en català i castellà), totes a nom de Sergi Castillo Lapeira. Com que són **works** diferents, les valoracions i ressenyes **queden repartides** en comptes de sumar-se en una sola fitxa.

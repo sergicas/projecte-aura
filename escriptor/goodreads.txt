@@ -9,5 +9,9 @@ https://www.goodreads.com/author/show/45246302.SERGI_CASTILLO_LAPEIRA
 https://www.goodreads.com/book/show/254634721-acad-mia-gaia
 # Castellà:
 https://www.goodreads.com/book/show/254634734-academia-gaia
-# Anglès: PENDENT — no localitzada a Goodreads (cal confirmar títol/edició)
-# Francès: PENDENT — no localitzada a Goodreads (cal confirmar títol/edició)
+# Anglès: LOCALITZADA — a Goodreads surt amb el títol "Gaia Academy" (4 edicions: Kindle, Paperback x2, Hardcover).
+# Francès: PENDENT — encara no publicada a Goodreads (traducció FR en preparació al Drive).
+#
+# 2026-07-05: totes les edicions (català + castellà + anglès "Gaia Academy") s'han
+# ajuntat en una sola fitxa via l'eina Combine Editions. Un cop Goodreads processi el
+# lot, les valoracions i ressenyes sumaran en una única pàgina del llibre.

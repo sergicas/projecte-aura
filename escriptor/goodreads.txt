@@ -1,6 +1,6 @@
-# URLs de Goodreads dels llibres de Sergi
-# Enganxa aquí una URL per línia: la teva pàgina d'autor o la pàgina de cada llibre a Goodreads.
-# L'Agent Escriptor llegirà aquest fitxer per seguir valoracions i ressenyes noves.
-# Exemple: https://www.goodreads.com/book/show/XXXXXXXX-titol-del-llibre
+# URLs de Goodreads que segueix l'Agent Escriptor.
+# Una URL per línia. Les línies amb # són comentaris.
+# Pàgina pública d'autor (llista tots els llibres i valoracions):
+https://www.goodreads.com/author/show/45246302.SERGI_CASTILLO_LAPEIRA
 #
-# (buit de moment — afegeix-hi les teves URL)
+# Pots afegir aquí URL de llibres concrets (goodreads.com/book/show/...) si en vols un seguiment individual.

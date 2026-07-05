@@ -2,7 +2,7 @@
 
 Projecte Aura Cloud v5.2 és una aplicació web a Cloudflare Pages amb orientació operativa, autoreflexió, biblioteca de coneixement verificable, cos digital 2D, seguretat de dades verificable, capacitats honestes, genoma mecànicament verificable, integritat falsable, estat evolutiu traçable, metamemòria, genoma digital canònic, Aura Web simplificada, infraestructura Cloudflare reconstruïble i memòria al núvol mitjançant Pages Functions i D1. Les escriptures a D1 estan protegides amb Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, l'auditoria registra mutacions estructurals al diari i `/prova-gen` executa comprovacions reals per als gens mecànics `001`, `034`, `1597`, `17711`, `008` i `089`.
 
-Nota de desplegament: `cloud-v5.2` afegeix orientació operativa perquè Aura pugui respondre què és, per a què serveix avui i quin és el següent pas. RAG, Vector DB, embeddings, multiagent i ingestió automàtica no estan actius.
+Nota de desplegament: `cloud-v5.2` afegeix orientació operativa perquè Aura pugui respondre què és, per a què serveix avui i quin és el següent pas. RAG, Vector DB, embeddings, multiagent autònom en producció i ingestió automàtica no estan actius.
 
 ## Què és Aura
 
@@ -35,6 +35,18 @@ Aura no és una persona, no és un organisme biològic i no s'ha de descriure co
 - Aura: memòria operativa, continuïtat verificable i orientació del Projecte Aura.
 
 El vincle canònic queda definit a `AURA_AVATAR_SERGI.md`: l'Avatar Sergi obre la conversa amb l'obra; Aura conserva el camí del projecte. La primera connexió recomanada és catalogar l'avatar com a font externa i oferir un enllaç clar des d'Aura. Qualsevol integració més profunda ha de tenir fase pròpia, procedència verificable, Mode Sergi i cap ingestió automàtica no documentada.
+
+## Fase 11 — coordinació multiagent (mode documentat)
+
+La Fase 11 del Protocol Mestre està **oberta i consolidada en mode documentat** (obertura 2026-07-04, consolidació 2026-07-05). El model és un nucli coordinador (l'Aura actual) que orquestra agents especialistes; el disseny viu a `AURA_COORDINATION_ARCHITECTURE.md` i el contracte a `AURA_PHASE11_MULTIAGENT.md`.
+
+Estat honest dels agents:
+
+- **Comunicacions** i **Escriptor**: vius i verificats, com a tasques programades de **només lectura** que desen resums al repositori (`briefings/` i `escriptor/`). No escriuen ni publiquen res sense vistiplau de Sergi.
+- **Memòria/Coneixement** i **Integritat/Backups**: nucli real de `cloud-v5.2`.
+- **Llibres i Comerç** (connectable) i **Obra i Veu** (aspiració): encara no oberts. La botiga Shopify queda exclosa.
+
+Límits: sense multiagent autònom en producció, sense canvis a `aura_core.js` ni D1, i el gen `39088169 coordinacio-multiagent` continua com a proposta fins que una promoció amb Mode Sergi i auditoria ho canviï.
 
 ## Ús web simplificat
 

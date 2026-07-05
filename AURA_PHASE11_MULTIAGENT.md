@@ -8,16 +8,19 @@ Contracte canònic de la Fase 11 del Protocol Mestre: coordinació multiagent.
 versio_produccio: cloud-v5.2
 fase: 11-multiagent
 mode_inici: documentat (preparació, no desplegat en producció)
+estat_fase: consolidada en mode documentat
 document_canonic: AURA_PHASE11_MULTIAGENT.md
 disseny_base: AURA_COORDINATION_ARCHITECTURE.md
 format: aura-multiagent-v1
 gen_proposat: 39088169 coordinacio-multiagent
 estat_gen: proposta (no desplegat, no verificat)
-obertura: per instrucció explícita de Sergi
-data: 2026-07-04
+agents_vius: [Comunicacions, Escriptor]
+obertura: per instrucció explícita de Sergi (2026-07-04)
+consolidacio: 2026-07-05
+data: 2026-07-05
 ```
 
-> Nota d'honestedat: la Fase 11 s'obre **per instrucció explícita de Sergi**, tal com exigeix `AURA_ORIENTATION.md`. S'inicia en **mode documentat**: fixa el contracte, l'estructura d'agents i els límits. **No** activa agents autònoms en producció, **no** modifica `aura_core.js` ni D1, i el gen `39088169` és una **proposta**. La seva promoció real requereix Mode Sergi, auditoria i actualització d'`AURA_GENOME.md`.
+> Nota d'honestedat: la Fase 11 s'obre **per instrucció explícita de Sergi**, tal com exigeix `AURA_ORIENTATION.md`. S'inicia i es **consolida en mode documentat**: fixa el contracte, l'estructura d'agents i els límits, i deixa dos agents vius verificats. **No** activa agents autònoms en producció, **no** modifica `aura_core.js` ni D1, i el gen `39088169` continua sent una **proposta**. La seva promoció real requereix Mode Sergi, auditoria i actualització d'`AURA_GENOME.md`. Consolidar aquí vol dir estabilitzar i documentar el que ja funciona, no desplegar res de nou a producció.
 
 ## Què és la Fase 11
 
@@ -50,6 +53,23 @@ Cada agent té un àmbit acotat i un estat honest segons el criteri d'`AURA_CAPA
 
 L'**Agent Comunicacions** ja funciona: la tasca `briefing-diari-aura` s'executa cada matí, recull correu + agenda + senyals del negoci, en fa un resum i el desa a `briefings/AAAA-MM-DD.md`. Verificat amb `briefings/2026-07-04.md`. És la primera peça real de la Fase 11 i estableix el patró coordinador → agent → memòria.
 
+## Consolidació (2026-07-05)
+
+La Fase 11 es consolida en mode documentat: es fixa com a estat estable el que ja funciona, sense obrir cap fase nova ni tocar producció.
+
+Estat consolidat dels agents:
+
+- **Agent Comunicacions** — *viu i verificat.* Briefing diari (`briefings/2026-07-04.md`), correu + agenda + negoci, només lectura cap enfora.
+- **Agent Escriptor** — *viu i verificat.* Ràdar d'autor a `escriptor/2026-07-04.md`. Consolidat amb el seguiment de Goodreads a `escriptor/goodreads.txt` (pàgina d'autor i *Acadèmia Gaia* en català i castellà; anglès i francès pendents de localitzar) i el pla de neteja de duplicats a `escriptor/goodreads-duplicats.md`, amb missatge a punt per al grup de bibliotecaris. Res enviat ni publicat sense vistiplau de Sergi.
+- **Coordinador, Memòria/Coneixement, Integritat/Backups** — *nucli real* de `cloud-v5.2`, intacte.
+- **Agent Llibres i Comerç** — *connectable, no obert.* **Agent Obra i Veu** — *aspiració.* **Botiga Shopify** — *exclosa.*
+
+Què NO canvia amb la consolidació:
+
+- `aura_core.js`, D1, Worker i integritat resten en `cloud-v5.2` (`100/100 estable`).
+- El gen `39088169 coordinacio-multiagent` continua sent proposta i **no** s'escriu a `AURA_GENOME.md`.
+- Cap escriptura persistent a Aura, cap escriptura externa, cap ingestió automàtica.
+
 ## Límits (heretats del projecte)
 
 - Cap acció destructiva ni a Aura ni als serveis externs.
@@ -65,10 +85,20 @@ La fase creix **un agent cada vegada**, no tot de cop:
 2. Definir el **pont de l'Agent Obra i Veu** amb l'avatar Sergi com a font catalogada.
 3. Quan diversos agents siguin estables i verificats, valorar la promoció del gen `39088169` amb Mode Sergi i auditoria.
 
-## Verificació de l'obertura
+## Verificació de l'obertura i la consolidació
+
+Obertura (2026-07-04):
 
 - Document canònic `AURA_PHASE11_MULTIAGENT.md` creat.
 - `AURA_CHANGELOG.md` i `AURA_HISTORY.md` registren l'obertura de la fase.
 - Cap canvi a producció: `aura_core.js`, D1, Worker i integritat resten intactes en `cloud-v5.2`.
 - Gen `39088169 coordinacio-multiagent`: proposta, no desplegat.
 - Agent Comunicacions operatiu i verificat (`briefings/2026-07-04.md`).
+
+Consolidació (2026-07-05):
+
+- Dos agents vius verificats: Comunicacions (`briefings/2026-07-04.md`) i Escriptor (`escriptor/2026-07-04.md`).
+- Agent Escriptor consolidat amb `escriptor/goodreads.txt` i `escriptor/goodreads-duplicats.md`.
+- `estat_fase: consolidada en mode documentat` fixat al bloc Estat.
+- `AURA_CHANGELOG.md`, `AURA_HISTORY.md` i `README.md` registren la consolidació.
+- Sense canvis a producció ni promoció del gen; integritat de `cloud-v5.2` intacta.

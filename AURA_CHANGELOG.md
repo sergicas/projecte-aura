@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Fase 11 (consolidació) - 2026-07-05
+
+- Consolida la Fase 11 **en mode documentat**: fixa com a estat estable el que ja funciona, sense obrir cap fase nova ni tocar producció.
+- Marca `estat_fase: consolidada en mode documentat` al bloc Estat d'`AURA_PHASE11_MULTIAGENT.md` i hi afegeix la secció "Consolidació (2026-07-05)".
+- Deixa **dos agents vius verificats**: Agent Comunicacions (`briefings/2026-07-04.md`) i Agent Escriptor (`escriptor/2026-07-04.md`).
+- Consolida l'Agent Escriptor amb el seguiment de Goodreads a `escriptor/goodreads.txt` (pàgina d'autor i *Acadèmia Gaia* en català i castellà; anglès i francès pendents de localitzar) i el pla de neteja de duplicats a `escriptor/goodreads-duplicats.md`, amb missatge a punt per al grup de bibliotecaris. Res enviat ni publicat sense vistiplau de Sergi.
+- **Sense canvis en producció**: `aura_core.js`, D1, Worker i integritat resten intactes en `cloud-v5.2` (`100/100 estable`). El gen `39088169 coordinacio-multiagent` continua com a proposta i no s'escriu a `AURA_GENOME.md`.
+- Cap escriptura persistent a Aura, cap escriptura externa i cap ingestió automàtica.
+
 ## Fase 11 (inici documentat) - 2026-07-04
 
 - S'obre la Fase 11 del Protocol Mestre (coordinació multiagent) **per instrucció explícita de Sergi**, com exigeix `AURA_ORIENTATION.md`.

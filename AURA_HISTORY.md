@@ -2,6 +2,17 @@
 
 Història viva del Projecte Aura.
 
+## 2026-07-05
+
+Es consolida la Fase 11 (coordinació multiagent) en mode documentat.
+
+- Fita de fase: la Fase 11, oberta el 2026-07-04 per instrucció explícita de Sergi, passa a estat **consolidat en mode documentat**.
+- Queden dos agents vius verificats: Agent Comunicacions (briefing diari, `briefings/2026-07-04.md`) i Agent Escriptor (ràdar d'autor, `escriptor/2026-07-04.md`).
+- L'Agent Escriptor es consolida amb el seguiment de Goodreads (`escriptor/goodreads.txt`) i el pla de neteja de duplicats d'*Acadèmia Gaia* (`escriptor/goodreads-duplicats.md`).
+- Sense canvis a producció: `aura_core.js`, D1, Worker i integritat resten en `cloud-v5.2`, `100/100 estable`.
+- El gen `39088169 coordinacio-multiagent` continua sent proposta; cap promoció, cap escriptura persistent, cap acció externa.
+- Documentat a `AURA_PHASE11_MULTIAGENT.md`, `AURA_CHANGELOG.md` i `README.md`.
+
 ## 2026-07-04
 
 Aura Web corregeix localment l'ampliació de botons.

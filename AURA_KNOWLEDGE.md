@@ -72,6 +72,8 @@ Taula: `knowledge_items`
 
 - `AURA_ALIFE_AVIDA_TIERRA.md`: recerca sobre Tierra, Avida, vida artificial digital, evolucio computacional i paral.lelismes amb un possible `Aura EvoLab` futur.
 - `AURA_AVATAR_SERGI.md`: definicio del vincle entre Aura i l'Avatar Sergi com a pont entre corpus public, veu literaria i continuïtat operativa.
+- `AURA_AGENT_OBRA_VEU.md`: contracte de l'Agent Obra i Veu de la Fase 11 (corpus literari, avatar i canals publics com a fonts catalogades, sense ingestio del corpus).
+- `obra/cataleg-obra.md`: cataleg verificat de l'obra de Sergi (llibres, edicions, enllacos de compra, avatar i projectes), font de referencia del domini Obra i Veu.
 
 Fonts externes principals consultades:
 

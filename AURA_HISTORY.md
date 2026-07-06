@@ -4,6 +4,16 @@ Història viva del Projecte Aura.
 
 ## 2026-07-05
 
+S'obre l'Agent Obra i Veu de la Fase 11 (mode documentat).
+
+- Pas 1 cap a la implementació completa de la Fase 11: estabilitzar tots els agents definits.
+- Es crea el contracte `AURA_AGENT_OBRA_VEU.md` i el primer artefacte `obra/cataleg-obra.md` (catàleg verificat de l'obra de Sergi: novel·la, conte, poesia, assaig; edicions i enllaços; avatar i canals).
+- L'agent cataloga i enllaça el corpus, l'avatar i els canals públics com a fonts; cap ingestió del corpus ni fusió d'identitats.
+- Sense canvis a producció: `cloud-v5.2` intacte, gen `39088169` encara proposta.
+- Pendent: decidir l'estat de l'Agent Llibres i Comerç.
+
+## 2026-07-05
+
 Es consolida la Fase 11 (coordinació multiagent) en mode documentat.
 
 - Fita de fase: la Fase 11, oberta el 2026-07-04 per instrucció explícita de Sergi, passa a estat **consolidat en mode documentat**.

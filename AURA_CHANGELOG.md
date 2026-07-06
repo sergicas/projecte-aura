@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Fase 11 — Agent Obra i Veu obert (mode documentat) - 2026-07-05
+
+- Obre l'**Agent Obra i Veu** de la Fase 11 en mode documentat, com a pas 1 cap a la implementació completa (estabilitzar tots els agents definits).
+- Crea el contracte canònic `AURA_AGENT_OBRA_VEU.md`: àmbit obra + veu (corpus literari, avatar de `sergicastillo.com`, canals i projectes públics) com a **fonts catalogades**, amb estat honest (referència real; consulta d'API de l'avatar i ingestió del corpus queden com a fases futures).
+- Genera el primer artefacte `obra/cataleg-obra.md`: catàleg verificat de l'obra (5 novel·les, conte, poesia i 2 assajos amb edicions CA/ES/EN i enllaços, avatar, projectes i canals), extret de `sergicastillo.com`.
+- Actualitza `AURA_PHASE11_MULTIAGENT.md` (Obra i Veu passa d'*aspiració* a *obert en mode documentat*; `agents_vius: [Comunicacions, Escriptor, Obra i Veu]`) i cataloga els docs nous a `AURA_KNOWLEDGE.md`.
+- **Sense canvis a producció**: `aura_core.js`, D1, Worker i integritat resten en `cloud-v5.2`. Cap fusió d'identitats, cap ingestió del corpus, gen `39088169` encara proposta.
+- Pendent del pas 1: decidir l'estat de l'**Agent Llibres i Comerç** (obrir-lo o excloure'l explícitament).
+
 ## Fase 11 (consolidació) - 2026-07-05
 
 - Consolida la Fase 11 **en mode documentat**: fixa com a estat estable el que ja funciona, sense obrir cap fase nova ni tocar producció.

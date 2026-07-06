@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Fase 11 — Agent Llibres i Comerç obert · pas 1 complet - 2026-07-05
+
+- Obre l'**Agent Llibres i Comerç** de la Fase 11 en mode documentat (decisió de Sergi: obrir-lo).
+- Crea el contracte `AURA_AGENT_LLIBRES_COMERC.md`: revenda de filosofia (AbeBooks/IberLibro, Todocolección), caça d'ofertes, publicació de catàleg (amb vistiplau), mètriques de vendes i backups. Formalitza sota l'agent les tasques ja actives (`metriques-vendes-setmanals`, `health-check-publicacio`, `backup-llibreria-setmanal`, caça d'ofertes) i les skills de publicació. **Botiga Shopify exclosa.**
+- Estat honest: només lectura/informe per defecte; cap venda, canvi de preu o publicació sense vistiplau explícit; cap decisió financera automàtica.
+- Actualitza `AURA_PHASE11_MULTIAGENT.md` (`agents_vius: [Comunicacions, Escriptor, Obra i Veu, Llibres i Comerç]`) i cataloga el doc a `AURA_KNOWLEDGE.md`.
+- Amb això el **pas 1 de la implementació completa (estabilitzar tots els agents definits) queda complet**. Següents: pas 2 (mecanisme coordinador + records a D1) i pas 3 (promoció del gen `39088169`).
+- **Sense canvis a producció**: `cloud-v5.2` intacte; gen `39088169` encara proposta.
+
 ## Fase 11 — Agent Obra i Veu obert (mode documentat) - 2026-07-05
 
 - Obre l'**Agent Obra i Veu** de la Fase 11 en mode documentat, com a pas 1 cap a la implementació completa (estabilitzar tots els agents definits).

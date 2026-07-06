@@ -4,6 +4,15 @@ Història viva del Projecte Aura.
 
 ## 2026-07-05
 
+S'obre l'Agent Llibres i Comerç i es completa el pas 1 de la Fase 11.
+
+- Per decisió de Sergi, s'obre en mode documentat l'**Agent Llibres i Comerç** (`AURA_AGENT_LLIBRES_COMERC.md`): revenda de filosofia, caça d'ofertes, publicació de catàleg (amb vistiplau), mètriques i backups; Shopify exclosa. Només lectura/informe per defecte.
+- Amb això queda **complet el pas 1** de la implementació completa de la Fase 11: tots els agents definits estabilitzats (Comunicacions, Escriptor, Obra i Veu, Llibres i Comerç).
+- Sense canvis a producció: `cloud-v5.2` intacte, gen `39088169` encara proposta.
+- Següents passos: mecanisme coordinador + records a D1 (pas 2) i promoció del gen (pas 3).
+
+## 2026-07-05
+
 S'obre l'Agent Obra i Veu de la Fase 11 (mode documentat).
 
 - Pas 1 cap a la implementació completa de la Fase 11: estabilitzar tots els agents definits.

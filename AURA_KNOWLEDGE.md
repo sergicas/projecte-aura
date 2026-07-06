@@ -74,6 +74,7 @@ Taula: `knowledge_items`
 - `AURA_AVATAR_SERGI.md`: definicio del vincle entre Aura i l'Avatar Sergi com a pont entre corpus public, veu literaria i continuïtat operativa.
 - `AURA_AGENT_OBRA_VEU.md`: contracte de l'Agent Obra i Veu de la Fase 11 (corpus literari, avatar i canals publics com a fonts catalogades, sense ingestio del corpus).
 - `obra/cataleg-obra.md`: cataleg verificat de l'obra de Sergi (llibres, edicions, enllacos de compra, avatar i projectes), font de referencia del domini Obra i Veu.
+- `AURA_AGENT_LLIBRES_COMERC.md`: contracte de l'Agent Llibres i Comerç de la Fase 11 (revenda a AbeBooks/Todocoleccion, caça d'ofertes, publicacio, metriques i backups; nomes lectura/informe per defecte, Shopify exclosa).
 
 Fonts externes principals consultades:
 

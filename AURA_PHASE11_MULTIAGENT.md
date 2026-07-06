@@ -14,7 +14,7 @@ disseny_base: AURA_COORDINATION_ARCHITECTURE.md
 format: aura-multiagent-v1
 gen_proposat: 39088169 coordinacio-multiagent
 estat_gen: proposta (no desplegat, no verificat)
-agents_vius: [Comunicacions, Escriptor, Obra i Veu]
+agents_vius: [Comunicacions, Escriptor, Obra i Veu, Llibres i Comerç]
 obertura: per instrucció explícita de Sergi (2026-07-04)
 consolidacio: 2026-07-05
 data: 2026-07-05
@@ -40,7 +40,8 @@ Cada agent té un àmbit acotat i un estat honest segons el criteri d'`AURA_CAPA
 - **Agent Comunicacions** — *agent viu.* La tasca programada `briefing-diari-aura` llegeix correu i agenda i en desa un resum diari a `briefings/`. Només lectura cap enfora.
 - **Agent Escriptor** — *agent viu (cada dos dies).* Àmbit d'autor global: correu editorial, El Bon Diari, difusió a xarxes, campanyes de ressenyes (gifting) i recepció a Goodreads. Desa a `escriptor/`. Només lectura; cap enviament ni publicació sense vistiplau de Sergi.
 - **Agent Obra i Veu** — *agent obert (mode documentat).* Corpus literari, avatar de `sergicastillo.com` i canals públics com a fonts catalogades. Contracte a `AURA_AGENT_OBRA_VEU.md`, primer artefacte `obra/cataleg-obra.md`. Referència i enllaç, sense ingestió del corpus.
-- **Agent Comerç (botiga)** — *exclòs.* La botiga Shopify la gestiona una altra persona; queda fora de la Fase 11.
+- **Agent Llibres i Comerç** — *agent obert (mode documentat).* Revenda de filosofia (AbeBooks/IberLibro, Todocolección), caça d'ofertes, publicació de catàleg (amb vistiplau), mètriques de vendes i backups. Contracte a `AURA_AGENT_LLIBRES_COMERC.md`. Només lectura/informe per defecte; cap venda ni publicació sense vistiplau.
+- **Botiga Shopify (Fils i Patrons Carme Espriu)** — *exclosa.* La gestiona una altra persona; queda fora de la Fase 11.
 
 ## Contracte de coordinació
 
@@ -63,7 +64,7 @@ Estat consolidat dels agents:
 - **Agent Comunicacions** — *viu i verificat.* Briefing diari (`briefings/2026-07-04.md`), correu + agenda + negoci, només lectura cap enfora.
 - **Agent Escriptor** — *viu i verificat.* Ràdar d'autor a `escriptor/2026-07-04.md`. Consolidat amb el seguiment de Goodreads a `escriptor/goodreads.txt` (pàgina d'autor i *Acadèmia Gaia* en català i castellà; anglès i francès pendents de localitzar) i el pla de neteja de duplicats a `escriptor/goodreads-duplicats.md`, amb missatge a punt per al grup de bibliotecaris. Res enviat ni publicat sense vistiplau de Sergi.
 - **Coordinador, Memòria/Coneixement, Integritat/Backups** — *nucli real* de `cloud-v5.2`, intacte.
-- **Agent Obra i Veu** — *obert en mode documentat* (2026-07-05; `AURA_AGENT_OBRA_VEU.md`, `obra/cataleg-obra.md`). **Agent Llibres i Comerç** — *connectable, pendent de decisió.* **Botiga Shopify** — *exclosa.*
+- **Agent Obra i Veu** — *obert en mode documentat* (2026-07-05; `AURA_AGENT_OBRA_VEU.md`, `obra/cataleg-obra.md`). **Agent Llibres i Comerç** — *obert en mode documentat* (2026-07-05; `AURA_AGENT_LLIBRES_COMERC.md`). **Botiga Shopify** — *exclosa.*
 
 Què NO canvia amb la consolidació:
 
@@ -83,8 +84,9 @@ Què NO canvia amb la consolidació:
 La fase creix **un agent cada vegada**, no tot de cop:
 
 1. Afinar l'**Agent Escriptor**: fixar les URL de Goodreads dels llibres de Sergi a `escriptor/goodreads.txt` i, si es vol, activar campanyes de gifting reals amb vistiplau.
-2. ✅ Fet (2026-07-05): **Agent Obra i Veu** obert en mode documentat (`AURA_AGENT_OBRA_VEU.md`, `obra/cataleg-obra.md`). Pendent: decidir l'estat de l'**Agent Llibres i Comerç** (obrir-lo o excloure'l explícitament).
-3. Quan diversos agents siguin estables i verificats, valorar la promoció del gen `39088169` amb Mode Sergi i auditoria.
+2. ✅ Fet (2026-07-05): oberts en mode documentat l'**Agent Obra i Veu** (`AURA_AGENT_OBRA_VEU.md`, `obra/cataleg-obra.md`) i l'**Agent Llibres i Comerç** (`AURA_AGENT_LLIBRES_COMERC.md`). Amb això el **pas 1 (estabilitzar tots els agents definits) queda complet**: Comunicacions, Escriptor, Obra i Veu i Llibres i Comerç oberts; Shopify exclosa.
+3. **Pas 2**: fer real el mecanisme coordinador (patró coordinador → agent → memòria) i que els resums dels agents es desin com a records a D1 amb Mode Sergi.
+4. **Pas 3**: quan els agents siguin estables i verificats, valorar la promoció del gen `39088169` amb Mode Sergi, auditoria, backup i integritat.
 
 ## Verificació de l'obertura i la consolidació
 

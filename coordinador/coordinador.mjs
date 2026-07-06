@@ -26,7 +26,13 @@ const AGENTS = [
 ];
 
 const MAX_HIGHLIGHT = 700; // caràcters per agent
+const MAX_SIGNAL = 280; // caràcters per senyal d'atenció
+const MAX_SIGNALS = 6; // senyals màxims al record diari
 const RECORD_TAG = "coordinador-diari"; // marca d'idempotència
+
+// Marques que els agents fan servir per assenyalar el que crema. Mecànic:
+// no interpreta res, només recull les línies que ja porten aquestes marques.
+const ATTENTION_MARKERS = /⚠|🚨|❗|‼|(?:novetat|urgent|alerta|atenci[oó]|rebutj|rebuig)/i;
 
 function parseArgs(argv) {
   const args = { write: false, force: false, date: null };
@@ -104,13 +110,33 @@ function extractHighlights(markdown) {
   return { title, highlight };
 }
 
+// Recull les línies que els agents han marcat com a importants (⚠️, NOVETAT…).
+// Extracció mecànica: busca marques, no decideix importància.
+function extractSignals(markdown) {
+  const out = [];
+  for (const raw of markdown.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || /^#/.test(line)) continue; // salta buits i títols
+    if (!ATTENTION_MARKERS.test(line)) continue;
+    let s = line
+      .replace(/^[-*]\s+/, "")
+      .replace(/\*\*/g, "")
+      .replace(/`/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (s.length > MAX_SIGNAL) s = s.slice(0, MAX_SIGNAL - 1).trimEnd() + "…";
+    out.push(s);
+  }
+  return out;
+}
+
 async function loadAgentFiles(date) {
   const found = [];
   for (const agent of AGENTS) {
     const rel = `${agent.carpeta}/${date}.md`;
     try {
       const md = await readFile(join(REPO, rel), "utf8");
-      found.push({ agent, rel, ...extractHighlights(md) });
+      found.push({ agent, rel, ...extractHighlights(md), signals: extractSignals(md) });
     } catch {
       // Agent sense fitxer avui: se salta (no és un error).
     }
@@ -124,6 +150,20 @@ function buildRecord(date, agentFiles) {
     const cap = f.title ? `${f.agent.nom}: ${f.title}.` : `${f.agent.nom}:`;
     parts.push(`${cap} ${f.highlight}`.trim());
   }
+
+  // Senyals d'atenció: el que els agents han marcat com a important, sense duplicats.
+  const signals = [];
+  for (const f of agentFiles) {
+    for (const s of f.signals || []) {
+      if (!signals.includes(s)) signals.push(s);
+    }
+  }
+  if (signals.length) {
+    parts.push("");
+    parts.push("⚠️ Senyals d'atenció (marcats pels agents):");
+    for (const s of signals.slice(0, MAX_SIGNALS)) parts.push(`- ${s}`);
+  }
+
   parts.push("");
   const fonts = agentFiles.map((f) => f.rel).join(", ");
   parts.push(`Consolidació mecànica de fitxers d'agents locals (procedència: ${fonts}). Només lectura cap enfora.`);
@@ -138,27 +178,32 @@ function buildRecord(date, agentFiles) {
   };
 }
 
-async function alreadyExists(date) {
+// Retorna el record coordinador que ja existeix per aquell dia, o null.
+async function findExisting(date) {
   const res = await fetch(`${API_BASE}/api/memory`);
   if (!res.ok) throw new Error(`GET /api/memory ha fallat: ${res.status}`);
   const data = await res.json();
   const records = data.records || [];
-  return records.some(
-    (r) =>
-      r.source === "coordinador-fase-11" &&
-      Array.isArray(r.tags) &&
-      r.tags.includes(date),
+  return (
+    records.find(
+      (r) =>
+        r.source === "coordinador-fase-11" &&
+        Array.isArray(r.tags) &&
+        r.tags.includes(date),
+    ) || null
   );
 }
 
-async function writeRecord(record) {
+// Crea el record, o l'actualitza si es passa un id existent (evita duplicats).
+async function writeRecord(record, existingId = null) {
   let key;
   try {
     key = (await readFile(WRITE_KEY_PATH, "utf8")).trim();
   } catch {
     throw new Error(`No s'ha pogut llegir la clau Mode Sergi a ${WRITE_KEY_PATH}`);
   }
-  const res = await fetch(`${API_BASE}/api/memory`, {
+  const url = existingId ? `${API_BASE}/api/memory/${existingId}` : `${API_BASE}/api/memory`;
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -168,7 +213,7 @@ async function writeRecord(record) {
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(`POST /api/memory ha fallat: ${res.status} ${body?.error || ""}`);
+    throw new Error(`POST ${url} ha fallat: ${res.status} ${body?.error || ""}`);
   }
   return body.record;
 }
@@ -203,9 +248,9 @@ async function main() {
   console.log(`\ntags: ${record.tags.join(", ")} · kind: ${record.kind} · source: ${record.source} · weight: ${record.weight}`);
   console.log("-----------------------------\n");
 
-  const exists = await alreadyExists(date);
-  if (exists && !args.force) {
-    console.log(`Ja existeix el record coordinador del ${date}. No es duplica (usa --force per reescriure).`);
+  const existing = await findExisting(date);
+  if (existing && !args.force) {
+    console.log(`Ja existeix el record coordinador del ${date} (id ${existing.id}). No es duplica (usa --force per actualitzar-lo).`);
     return;
   }
 
@@ -214,8 +259,12 @@ async function main() {
     return;
   }
 
-  console.log("Escrivint a la memòria de l'Aura (D1) amb Mode Sergi…");
-  const saved = await writeRecord(record);
+  if (existing) {
+    console.log(`Actualitzant el record del ${date} (id ${existing.id}) amb Mode Sergi…`);
+  } else {
+    console.log("Escrivint a la memòria de l'Aura (D1) amb Mode Sergi…");
+  }
+  const saved = await writeRecord(record, existing?.id || null);
   console.log(`✔ Record desat. id: ${saved.id}`);
   console.log(`  createdAt: ${saved.createdAt}`);
   const score = await integrityScore();

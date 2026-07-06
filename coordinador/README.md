@@ -20,8 +20,11 @@ estat: viu (dry-run per defecte; escriu amb --write i Mode Sergi)
 
 1. Llegeix els **fitxers d'agents del dia** a les carpetes locals (`briefings/AAAA-MM-DD.md`, `escriptor/AAAA-MM-DD.md`).
 2. N'extreu mecànicament el titular i la secció de prioritats o resum.
-3. Consolida un **únic record diari** amb data i procedència (quins agents, quins fitxers).
-4. El desa a la memòria de l'Aura (D1) via `POST /api/memory` amb **Mode Sergi**.
+3. Recull els **senyals d'atenció**: línies que els agents han marcat amb `⚠️`, `🚨`, `NOVETAT`, `URGENT`, `ALERTA`, `ATENCIÓ` o `rebuig/rebutjat`. Així el record diari no es perd mai el que crema, encara que no sigui el titular.
+4. Consolida un **únic record diari** amb data i procedència (quins agents, quins fitxers).
+5. El desa a la memòria de l'Aura (D1) via `POST /api/memory` amb **Mode Sergi**.
+
+Els senyals són extracció mecànica pura: el coordinador no decideix què és important, només recull el que els agents ja han marcat. Es capturen fins a 6 senyals per record.
 
 Amb això, per primera vegada, la informació de la vida real de Sergi (que avui viu en fitxers dispersos) **entra a la memòria persistent de l'Aura** de manera traçable.
 
@@ -30,7 +33,7 @@ Amb això, per primera vegada, la informació de la vida real de Sergi (que avui
 - **Additiu:** només afegeix un record; no esborra ni modifica res existent.
 - **Només lectura cap enfora:** llegeix fitxers locals; l'única escriptura és a la D1 de l'Aura.
 - **Mode Sergi obligatori:** l'escriptura usa la clau local `.aura-write-key` (mai s'imprimeix ni es documenta el valor).
-- **Idempotent:** si ja existeix el record coordinador d'aquell dia, no en crea un de duplicat (llevat de `--force`).
+- **Idempotent:** si ja existeix el record coordinador d'aquell dia, no en crea un de duplicat. Amb `--force`, **actualitza** el record existent en lloc de crear-ne un de nou (mai duplica).
 - **Dry-run per defecte:** sense `--write`, mostra el record que crearia però no escriu res.
 - **Extracció honesta:** cap afirmació de comprensió; el record diu explícitament que és una consolidació mecànica de procedència.
 

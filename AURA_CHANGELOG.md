@@ -10,6 +10,7 @@ Canvis rellevants del Projecte Aura.
 - **Primera escriptura real a producció** d'aquest mecanisme: record `e075bc4f-edfb-4367-b67b-35c27fea09a3` (Coordinació Fase 11 — 6 de juliol de 2026), consolidant `briefings/2026-07-06.md` i `escriptor/2026-07-06.md`. Només lectura cap enfora; només escriu a la D1 de l'Aura.
 - **Recompte nou**: 20 records (abans 19), 71 entrades de diari, 39 gens, 8 fonts de coneixement.
 - Post-escriptura: la integritat va baixar a `76/100` per desfasament temporal del vault KV (gen `089 vault-backup-kv`); es va resoldre amb backup final `backup-2026-07-06T14-33-44-795Z-30af22273dd6` (20/71/39/8). **Integritat final `100/100 estable`**, gen `089 passa`, cap risc.
+- **Millora (mateix dia)**: el coordinador ara recull **senyals d'atenció** — línies marcades pels agents amb `⚠️`, `NOVETAT`, `URGENT`, `ALERTA`, `ATENCIÓ` o `rebuig/rebutjat` — perquè el record diari no es perdi el que crema encara que no sigui el titular (mecànic, fins a 6 senyals). A més, `--force` ara **actualitza** el record del dia en lloc de duplicar-lo. Record `e075bc4f` actualitzat amb el senyal del rebuig d'Apple a l'app El Bon Diari; integritat `100/100 estable`; segueix havent-hi un sol record coordinador del dia (20 records totals).
 - **Sense canvis a `aura_core.js` ni al Worker**: el nucli resta en `cloud-v5.2`. El gen `39088169 coordinacio-multiagent` continua sent **proposta** (la seva promoció és el pas 3).
 
 ## Fase 11 — Agent Llibres i Comerç obert · pas 1 complet - 2026-07-05

@@ -2,6 +2,16 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Fase 11 — Pas 2: mecanisme coordinador viu - 2026-07-06
+
+- Obre el **Pas 2 de la Fase 11**: fa real el patró **coordinador → agent → memòria**. Fins ara els agents deixaven fitxers locals (`briefings/`, `escriptor/`); ara un coordinador els consolida i els desa com a **record a la memòria de l'Aura (D1)**.
+- Nou mecanisme a `coordinador/coordinador.mjs` amb contracte a `coordinador/README.md` (format `aura-coordinador-v1`): llegeix els fitxers d'agents del dia, n'extreu mecànicament titular + prioritats/resum i en desa **un únic record diari** amb data i procedència. Additiu, idempotent, dry-run per defecte, escriptura amb `--write` i **Mode Sergi**.
+- Honestedat: el coordinador **no interpreta**; fa una extracció mecànica i apunta la procedència (camí dels fitxers). Cap ingestió, cap afirmació de comprensió.
+- **Primera escriptura real a producció** d'aquest mecanisme: record `e075bc4f-edfb-4367-b67b-35c27fea09a3` (Coordinació Fase 11 — 6 de juliol de 2026), consolidant `briefings/2026-07-06.md` i `escriptor/2026-07-06.md`. Només lectura cap enfora; només escriu a la D1 de l'Aura.
+- **Recompte nou**: 20 records (abans 19), 71 entrades de diari, 39 gens, 8 fonts de coneixement.
+- Post-escriptura: la integritat va baixar a `76/100` per desfasament temporal del vault KV (gen `089 vault-backup-kv`); es va resoldre amb backup final `backup-2026-07-06T14-33-44-795Z-30af22273dd6` (20/71/39/8). **Integritat final `100/100 estable`**, gen `089 passa`, cap risc.
+- **Sense canvis a `aura_core.js` ni al Worker**: el nucli resta en `cloud-v5.2`. El gen `39088169 coordinacio-multiagent` continua sent **proposta** (la seva promoció és el pas 3).
+
 ## Fase 11 — Agent Llibres i Comerç obert · pas 1 complet - 2026-07-05
 
 - Obre l'**Agent Llibres i Comerç** de la Fase 11 en mode documentat (decisió de Sergi: obrir-lo).

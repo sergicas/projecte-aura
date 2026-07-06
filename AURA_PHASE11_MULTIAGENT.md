@@ -8,7 +8,8 @@ Contracte canònic de la Fase 11 del Protocol Mestre: coordinació multiagent.
 versio_produccio: cloud-v5.2
 fase: 11-multiagent
 mode_inici: documentat (preparació, no desplegat en producció)
-estat_fase: consolidada en mode documentat
+estat_fase: consolidada en mode documentat + pas 2 coordinador viu (2026-07-06)
+coordinador: coordinador/coordinador.mjs (aura-coordinador-v1); escriu records diaris a D1 amb Mode Sergi
 document_canonic: AURA_PHASE11_MULTIAGENT.md
 disseny_base: AURA_COORDINATION_ARCHITECTURE.md
 format: aura-multiagent-v1
@@ -85,7 +86,7 @@ La fase creix **un agent cada vegada**, no tot de cop:
 
 1. Afinar l'**Agent Escriptor**: fixar les URL de Goodreads dels llibres de Sergi a `escriptor/goodreads.txt` i, si es vol, activar campanyes de gifting reals amb vistiplau.
 2. ✅ Fet (2026-07-05): oberts en mode documentat l'**Agent Obra i Veu** (`AURA_AGENT_OBRA_VEU.md`, `obra/cataleg-obra.md`) i l'**Agent Llibres i Comerç** (`AURA_AGENT_LLIBRES_COMERC.md`). Amb això el **pas 1 (estabilitzar tots els agents definits) queda complet**: Comunicacions, Escriptor, Obra i Veu i Llibres i Comerç oberts; Shopify exclosa.
-3. **Pas 2**: fer real el mecanisme coordinador (patró coordinador → agent → memòria) i que els resums dels agents es desin com a records a D1 amb Mode Sergi.
+3. ✅ **Pas 2 obert (2026-07-06)**: mecanisme coordinador real (patró coordinador → agent → memòria). `coordinador/coordinador.mjs` + contracte `coordinador/README.md` (`aura-coordinador-v1`) llegeixen els fitxers d'agents del dia i en desen **un record diari a D1 amb Mode Sergi**. Primera escriptura real: record `e075bc4f` (consolidació 2026-07-06). Integritat final `100/100 estable`. Falta: programar-lo cada matí (launchd) després dels agents.
 4. **Pas 3**: quan els agents siguin estables i verificats, valorar la promoció del gen `39088169` amb Mode Sergi, auditoria, backup i integritat.
 
 ## Verificació de l'obertura i la consolidació

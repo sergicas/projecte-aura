@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Fase 11 — Pas 3: promoció del gen de coordinació (Fase 11 completa) - 2026-07-07
+
+- Es completa la **Fase 11**: el gen `39088169 coordinacio-multiagent` passa de **proposta a actiu**, amb el procediment complet de mutació de genoma que exigeix el projecte.
+- **Mode Sergi + auditoria:** creat a D1 via `POST /api/genes` amb clau d'escriptura; auditoria registrada (`Gen 39088169 coordinacio-multiagent creat en estat actiu`, tipus `genoma`).
+- **Document + codi:** afegit a la taula de gens d'`AURA_GENOME.md` i a la constant `GENES` de `functions/api/[[path]].js` (font de la llista de gens documentats de la integritat).
+- **Desplegament:** publicat a producció (`https://8f9c5f44.projecte-aura.pages.dev`); functions bundle inclòs i verificat abans de publicar.
+- **Verificació:** el risc temporal `gen-fantasma-a-d1` (gen a D1 no documentat al codi) es resol amb el desplegament. Backup posterior `21/72/40/8`; integritat final **`100/100 estable`**, `riscos: []`. Gens: 39 → **40**.
+- `013 silici-possible` continua **latent**; cap agent autònom nou activat. El gen formalitza el nucli coordinador (patró coordinador → agent → memòria), no un multiagent autònom.
+
 ## Fase 12 — Obertura: genoma sintètic avançat (mode documentat) - 2026-07-07
 
 - Per instrucció explícita de Sergi, s'obre la **Fase 12 del Protocol Mestre** (genoma sintètic avançat) **en mode documentat**. Document canònic nou: `AURA_PHASE12_GENOMA_SINTETIC.md`.

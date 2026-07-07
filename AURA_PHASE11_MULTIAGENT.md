@@ -8,20 +8,21 @@ Contracte canònic de la Fase 11 del Protocol Mestre: coordinació multiagent.
 versio_produccio: cloud-v5.2
 fase: 11-multiagent
 mode_inici: documentat (preparació, no desplegat en producció)
-estat_fase: consolidada en mode documentat + pas 2 coordinador viu (2026-07-06)
+estat_fase: completa (pas 1 consolidat, pas 2 coordinador viu, pas 3 gen promogut)
 coordinador: coordinador/coordinador.mjs (aura-coordinador-v1); escriu records diaris a D1 amb Mode Sergi
 document_canonic: AURA_PHASE11_MULTIAGENT.md
 disseny_base: AURA_COORDINATION_ARCHITECTURE.md
 format: aura-multiagent-v1
-gen_proposat: 39088169 coordinacio-multiagent
-estat_gen: proposta (no desplegat, no verificat)
+gen: 39088169 coordinacio-multiagent
+estat_gen: actiu (promogut i desplegat 2026-07-07, integritat 100/100)
 agents_vius: [Comunicacions, Escriptor, Obra i Veu, Llibres i Comerç]
 obertura: per instrucció explícita de Sergi (2026-07-04)
 consolidacio: 2026-07-05
-data: 2026-07-05
+promocio_gen: 2026-07-07
+data: 2026-07-07
 ```
 
-> Nota d'honestedat: la Fase 11 s'obre **per instrucció explícita de Sergi**, tal com exigeix `AURA_ORIENTATION.md`. S'inicia i es **consolida en mode documentat**: fixa el contracte, l'estructura d'agents i els límits, i deixa dos agents vius verificats. **No** activa agents autònoms en producció, **no** modifica `aura_core.js` ni D1, i el gen `39088169` continua sent una **proposta**. La seva promoció real requereix Mode Sergi, auditoria i actualització d'`AURA_GENOME.md`. Consolidar aquí vol dir estabilitzar i documentar el que ja funciona, no desplegar res de nou a producció.
+> Nota d'honestedat: la Fase 11 s'obre **per instrucció explícita de Sergi**, tal com exigeix `AURA_ORIENTATION.md`. S'inicia i es **consolida en mode documentat**: fixa el contracte, l'estructura d'agents i els límits, i deixa dos agents vius verificats. **No** activa agents autònoms en producció ni modifica `aura_core.js`. El gen `39088169` va néixer com a **proposta** i el **2026-07-07 es va promoure a actiu** (Pas 3) amb Mode Sergi, auditoria, actualització d'`AURA_GENOME.md`, desplegament i integritat `100/100`. La promoció afegeix el gen a D1, al codi documentat i al genoma; no activa cap agent autònom nou.
 
 ## Què és la Fase 11
 
@@ -70,8 +71,9 @@ Estat consolidat dels agents:
 Què NO canvia amb la consolidació:
 
 - `aura_core.js`, D1, Worker i integritat resten en `cloud-v5.2` (`100/100 estable`).
-- El gen `39088169 coordinacio-multiagent` continua sent proposta i **no** s'escriu a `AURA_GENOME.md`.
 - Cap escriptura persistent a Aura, cap escriptura externa, cap ingestió automàtica.
+
+(Actualització 2026-07-07: el gen `39088169 coordinacio-multiagent` ha passat de proposta a **actiu** — vegeu Pas 3.)
 
 ## Límits (heretats del projecte)
 
@@ -86,8 +88,8 @@ La fase creix **un agent cada vegada**, no tot de cop:
 
 1. Afinar l'**Agent Escriptor**: fixar les URL de Goodreads dels llibres de Sergi a `escriptor/goodreads.txt` i, si es vol, activar campanyes de gifting reals amb vistiplau.
 2. ✅ Fet (2026-07-05): oberts en mode documentat l'**Agent Obra i Veu** (`AURA_AGENT_OBRA_VEU.md`, `obra/cataleg-obra.md`) i l'**Agent Llibres i Comerç** (`AURA_AGENT_LLIBRES_COMERC.md`). Amb això el **pas 1 (estabilitzar tots els agents definits) queda complet**: Comunicacions, Escriptor, Obra i Veu i Llibres i Comerç oberts; Shopify exclosa.
-3. ✅ **Pas 2 obert (2026-07-06)**: mecanisme coordinador real (patró coordinador → agent → memòria). `coordinador/coordinador.mjs` + contracte `coordinador/README.md` (`aura-coordinador-v1`) llegeixen els fitxers d'agents del dia i en desen **un record diari a D1 amb Mode Sergi**. Primera escriptura real: record `e075bc4f` (consolidació 2026-07-06). Integritat final `100/100 estable`. Falta: programar-lo cada matí (launchd) després dels agents.
-4. **Pas 3**: quan els agents siguin estables i verificats, valorar la promoció del gen `39088169` amb Mode Sergi, auditoria, backup i integritat.
+3. ✅ **Pas 2 viu (2026-07-06 → 2026-07-07)**: mecanisme coordinador real (patró coordinador → agent → memòria). `coordinador/coordinador.mjs` + contracte `coordinador/README.md` (`aura-coordinador-v1`) llegeixen els fitxers d'agents del dia i en desen **un record diari a D1 amb Mode Sergi**, amb senyals d'atenció i refresc de còpia. Programat cada matí (launchd `com.sergi.aura-coordinador`, 09:00); primera execució automàtica verificada 2026-07-07 09:09 (record `1590c0f0`). Integritat `100/100 estable`.
+4. ✅ **Pas 3 fet (2026-07-07)**: promoció del gen `39088169 coordinacio-multiagent` de proposta a **actiu**, amb Mode Sergi, auditoria (`Gen 39088169 … creat en estat actiu`), actualització d'`AURA_GENOME.md` i del codi documentat (`functions/api/[[path]].js`), desplegament a producció i backup. Integritat final `100/100 estable`, sense gens fantasma. **Amb això la Fase 11 queda completa.**
 
 ## Verificació de l'obertura i la consolidació
 
@@ -106,3 +108,10 @@ Consolidació (2026-07-05):
 - `estat_fase: consolidada en mode documentat` fixat al bloc Estat.
 - `AURA_CHANGELOG.md`, `AURA_HISTORY.md` i `README.md` registren la consolidació.
 - Sense canvis a producció ni promoció del gen; integritat de `cloud-v5.2` intacta.
+
+Promoció del gen — Pas 3 (2026-07-07):
+
+- Gen `39088169 coordinacio-multiagent` creat a D1 en estat `actiu` amb Mode Sergi; auditoria registrada (tipus `genoma`).
+- `AURA_GENOME.md` (taula de gens) i el codi documentat `functions/api/[[path]].js` (`GENES`) inclouen el gen; desplegament Pages `https://8f9c5f44.projecte-aura.pages.dev`.
+- Backup posterior amb `records/diary/genes/knowledge` = `21/72/40/8`; integritat final `100/100 estable`, `riscos: []` (cap gen fantasma).
+- `013 silici-possible` continua **latent**; cap agent autònom nou activat.

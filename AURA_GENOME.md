@@ -395,6 +395,7 @@ Verificació `cloud-v5.2`:
 | `5702887` | `biblioteca-coneixement` | `actiu` | Cataloga fonts de coneixement d'Aura amb procedència, estat i límits, sense ingestió automàtica ni afirmacions de comprensió o experiència pròpia. |
 | `9227465` | `autoreflexio-operativa` | `actiu` | Calcula una síntesi d'activitat d'Aura a partir de memòria, diari, genoma, coneixement, integritat i estat evolutiu, sense afirmar consciència ni aplicar mutacions automàtiques. |
 | `14930352` | `orientacio-operativa` | `actiu` | Explica què és Aura, per a què serveix avui, què es pot fer ara i quin és el següent pas del projecte, sense afirmar consciència ni activar cap mutació automàtica. |
+| `39088169` | `coordinacio-multiagent` | `actiu` | Formalitza el nucli coordinador de la Fase 11: Aura orquestra agents especialistes per domini (Comunicacions, Escriptor, Obra i Veu, Llibres i Comerç) i consolida cada dia els seus resums com a records a la memòria d'Aura amb Mode Sergi. Additiu, només lectura cap enfora, sense ingestió automàtica. |
 
 ## Estat evolutiu inicial
 

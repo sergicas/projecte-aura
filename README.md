@@ -46,7 +46,7 @@ Estat honest dels agents:
 - **Memòria/Coneixement** i **Integritat/Backups**: nucli real de `cloud-v5.2`.
 - **Llibres i Comerç** (connectable) i **Obra i Veu** (aspiració): encara no oberts. La botiga Shopify queda exclosa.
 
-Límits: sense multiagent autònom en producció, sense canvis a `aura_core.js` ni D1, i el gen `39088169 coordinacio-multiagent` continua com a proposta fins que una promoció amb Mode Sergi i auditoria ho canviï.
+Límits: sense multiagent autònom en producció ni canvis a `aura_core.js`. El gen `39088169 coordinacio-multiagent` es va **promoure a actiu el 2026-07-07** (Pas 3) amb Mode Sergi, auditoria, actualització d'`AURA_GENOME.md`, desplegament i integritat `100/100`; formalitza el nucli coordinador, no activa cap agent autònom.
 
 ## Ús web simplificat
 

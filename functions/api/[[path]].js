@@ -382,6 +382,13 @@ const GENES = [
     description:
       "Explica què és Aura, per a què serveix avui, què es pot fer ara i quin és el següent pas del projecte, sense afirmar consciència ni activar cap mutació automàtica.",
   },
+  {
+    id: "39088169",
+    name: "coordinacio-multiagent",
+    state: "actiu",
+    description:
+      "Formalitza el nucli coordinador de la Fase 11: Aura orquestra agents especialistes per domini (Comunicacions, Escriptor, Obra i Veu, Llibres i Comerç) i consolida cada dia els seus resums com a records a la memòria d'Aura amb Mode Sergi. Additiu, només lectura cap enfora, sense ingestió automàtica.",
+  },
 ];
 const DOCUMENTED_GENE_IDS = GENES.map((gene) => gene.id);
 

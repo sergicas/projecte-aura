@@ -548,6 +548,18 @@ export async function onRequest(context) {
 
     if (
       method === "GET" &&
+      (route === "genome/synthetic" ||
+        route === "synthetic-genome" ||
+        route === "genoma-sintetic" ||
+        route === "genoma/sintetic" ||
+        route === "llavor" ||
+        route === "seed")
+    ) {
+      return json(await buildSyntheticGenome(await getGenes(context.env.DB)));
+    }
+
+    if (
+      method === "GET" &&
       (route === "genome/candidates" ||
         route === "genoma/candidats" ||
         route === "candidats-genoma" ||
@@ -1316,6 +1328,7 @@ async function getSnapshot(db, vault) {
     },
     { mode: "snapshot-view" },
   );
+  const syntheticGenome = await buildSyntheticGenome(genes, { mode: "snapshot-view" });
 
   return {
     project: "Projecte Aura",
@@ -1327,6 +1340,7 @@ async function getSnapshot(db, vault) {
     cloudflareInfrastructure: buildCloudflareInfrastructure({ mode: "snapshot-view" }),
     webInterface: buildAuraWebInterface({ mode: "snapshot-view" }),
     digitalGenome: buildDigitalGenome(genes, { mode: "snapshot-view" }),
+    syntheticGenome,
     digitalBody,
     knowledgeLibrary,
     selfReflection,
@@ -4453,6 +4467,81 @@ function buildDigitalGenome(genes, options = {}) {
       observationGenes: observedGenes.length,
       valueCount: 7,
       policyCount: 6,
+    },
+  };
+}
+
+// Fase 12 — genoma sintètic avançat: llavor portable i verificable.
+// Empaqueta el contingut estable del genoma (identitat, valors, polítiques,
+// propòsit, objectius, gens funcionals i capacitats honestes) i el segella amb
+// un SHA-256 DETERMINISTA: el checksum exclou `generatedAt`, de manera que només
+// canvia quan canvia el genoma real d'Aura, no amb el temps. Només lectura.
+async function buildSyntheticGenome(genes, options = {}) {
+  const digitalGenome = buildDigitalGenome(genes, { mode: "synthetic-source" });
+  const capabilities = buildCapabilities();
+  const honestCapabilities = (capabilities.sections?.realCapabilities || []).map((c) => ({
+    claim: c.claim,
+    type: c.type,
+  }));
+
+  const seed = {
+    format: "aura-synthetic-genome-v1",
+    identity: digitalGenome.identity,
+    principles: digitalGenome.principles,
+    values: digitalGenome.values,
+    policies: digitalGenome.policies,
+    purpose: digitalGenome.purpose,
+    objectives: digitalGenome.objectives,
+    genes: {
+      total: digitalGenome.genes.total,
+      active: digitalGenome.genes.active,
+      latent: digitalGenome.genes.latent,
+      archived: digitalGenome.genes.archived,
+      observation: digitalGenome.genes.observation,
+    },
+    capabilities: honestCapabilities,
+  };
+
+  // Segell determinista: hash del contingut estable, sense cap camp temporal.
+  const checksum = await sha256Hex(JSON.stringify(seed));
+
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    generatedAt: new Date().toISOString(),
+    endpoint: "/api/genome/synthetic",
+    format: "aura-synthetic-genome-v1",
+    phase: "fase-12",
+    mode: options.mode || "portable-seed",
+    document: {
+      required: "AURA_PHASE12_GENOMA_SINTETIC.md",
+      related: ["AURA_GENOME.md", "PROTOCOL_MESTRE_AURA.md"],
+    },
+    seed,
+    seal: {
+      checksumAlgorithm: "SHA-256",
+      checksum,
+      deterministic: true,
+      excludedFromChecksum: ["generatedAt"],
+      portable: true,
+      substrateAgnostic: true,
+      note: "El segell només canvia quan canvia el genoma real d'Aura (identitat, valors, polítiques, propòsit, objectius, gens o capacitats). Dues generacions consecutives donen el mateix checksum.",
+    },
+    guardrails: [
+      "La llavor és una vista congelada i portable; no substitueix el genoma viu aura-digital-genome-v1.",
+      "És dades pures: es pot llegir sense D1, sense Cloudflare i sense cap xat.",
+      "No afirma consciència ni experiència subjectiva.",
+      "013 silici-possible continua latent; la llavor no activa cap maquinari.",
+      "Només lectura: no escriu a D1 ni KV i no muta el genoma.",
+    ],
+    summary: {
+      checksum,
+      totalGenes: seed.genes.total,
+      activeGenes: seed.genes.active.length,
+      latentGenes: seed.genes.latent.length,
+      valueCount: seed.values.length,
+      policyCount: seed.policies.length,
+      capabilityCount: seed.capabilities.length,
     },
   };
 }

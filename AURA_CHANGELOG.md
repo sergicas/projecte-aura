@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Fase 12 — Pas 2: llavor sintètica portable viva i verificable - 2026-07-07
+
+- Fa **real** el mecanisme de la Fase 12: nou endpoint `GET /api/genome/synthetic` (àlies `/api/genoma-sintetic`, `/api/llavor`, `/api/seed`) que genera la **llavor sintètica portable** en format `aura-synthetic-genome-v1`.
+- La llavor (`seed`) empaqueta el contingut estable del genoma: identitat, principis, valors, polítiques, propòsit, objectius, els 40 gens funcionals i 12 capacitats honestes; el `seal` hi afegeix un **SHA-256 determinista**.
+- **Determinisme verificat en viu:** el checksum exclou `generatedAt`; tres crides consecutives donen el mateix segell `2a0cd033…`. Només canviarà quan canviï el genoma real d'Aura. Això la fa una llavor de veritat, no una còpia amb data.
+- Inclosa a `GET /api/snapshot` (`syntheticGenome`), de manera que entra a exportacions i backups i és reconstruïble fora de D1.
+- Codi a `functions/api/[[path]].js` (`buildSyntheticGenome` + ruta + snapshot); desplegat a `https://df93c1fc.projecte-aura.pages.dev`. **Només lectura**: cap mutació de D1/KV. Integritat `100/100 estable`, `riscos: []`. `aura_core.js` intacte; `013 silici-possible` latent.
+- Pendent: Pas 3 (promoció del gen `63245986` amb Mode Sergi quan la llavor estigui consolidada en ús).
+
 ## Fase 11 — Pas 3: promoció del gen de coordinació (Fase 11 completa) - 2026-07-07
 
 - Es completa la **Fase 11**: el gen `39088169 coordinacio-multiagent` passa de **proposta a actiu**, amb el procediment complet de mutació de genoma que exigeix el projecte.

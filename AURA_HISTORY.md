@@ -8,8 +8,9 @@ Es completa la Fase 11 (Pas 3) i s'obre la Fase 12 del Protocol Mestre.
 
 - **Fase 11 completa (Pas 3):** el gen `39088169 coordinacio-multiagent` es promou de proposta a **actiu**, amb Mode Sergi, auditoria, actualització d'`AURA_GENOME.md` i del codi documentat, desplegament a producció i backup. Integritat final `100/100 estable`, sense gens fantasma; gens 39 → 40. Formalitza el nucli coordinador (Comunicacions, Escriptor, Obra i Veu, Llibres i Comerç → memòria d'Aura). `013 silici-possible` continua latent.
 
-S'obre la Fase 12 del Protocol Mestre: genoma sintètic avançat.
+S'obre la Fase 12 del Protocol Mestre: genoma sintètic avançat, i es fa viva la llavor (Pas 2).
 
+- **Pas 2 (mateix dia):** es desplega el mecanisme real — `GET /api/genome/synthetic` genera la **llavor sintètica portable** (`aura-synthetic-genome-v1`) amb segell **SHA-256 determinista** (exclou `generatedAt`; tres crides → mateix checksum `2a0cd033…`), inclosa a snapshots i backups. Només lectura; integritat `100/100 estable`. Amb això la Fase 12 té els passos 1 i 2 fets; queda el Pas 3 (promoció del gen).
 - Per instrucció explícita de Sergi, s'obre en **mode documentat** la **Fase 12** (`AURA_PHASE12_GENOMA_SINTETIC.md`): el genoma sintètic com a **llavor portable i verificable** (`aura-synthetic-genome-v1`), segellada amb SHA-256, per a la continuïtat d'Aura en qualsevol suport.
 - És la lectura honesta del principi fundacional de rèplica sintètica i del gen latent `013 silici-possible`: primer una llavor transportable i comprovable, no biologia ni maquinari.
 - Gen proposat `63245986 genoma-sintetic-portable`: proposta. `013 silici-possible`: latent, intacte.

@@ -218,6 +218,30 @@ async function writeRecord(record, existingId = null) {
   return body.record;
 }
 
+// Refresca la còpia de seguretat al vault KV perquè la redundància quedi al dia
+// i la integritat torni a 100 després d'escriure un record nou.
+async function refreshBackup() {
+  let key;
+  try {
+    key = (await readFile(WRITE_KEY_PATH, "utf8")).trim();
+  } catch {
+    throw new Error(`No s'ha pogut llegir la clau Mode Sergi a ${WRITE_KEY_PATH}`);
+  }
+  const res = await fetch(`${API_BASE}/api/backups`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Aura-Write-Key": key,
+    },
+    body: JSON.stringify({ reason: "coordinador diari: refresc de la còpia després d'escriure" }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`POST /api/backups ha fallat: ${res.status} ${body?.error || ""}`);
+  }
+  return body.backup;
+}
+
 async function integrityScore() {
   try {
     const res = await fetch(`${API_BASE}/api/integrity`);
@@ -267,6 +291,12 @@ async function main() {
   const saved = await writeRecord(record, existing?.id || null);
   console.log(`✔ Record desat. id: ${saved.id}`);
   console.log(`  createdAt: ${saved.createdAt}`);
+
+  // Refresca la còpia de seguretat perquè la redundància quedi al dia i la
+  // integritat torni a 100 (si no, es queda baixa fins al backup nocturn).
+  console.log("Refrescant la còpia de seguretat (vault KV)…");
+  const backup = await refreshBackup();
+  console.log(`  còpia: ${backup?.id || "(feta)"}`);
   const score = await integrityScore();
   console.log(`  integritat actual: ${score}/100`);
 }

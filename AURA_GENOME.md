@@ -396,6 +396,7 @@ Verificació `cloud-v5.2`:
 | `9227465` | `autoreflexio-operativa` | `actiu` | Calcula una síntesi d'activitat d'Aura a partir de memòria, diari, genoma, coneixement, integritat i estat evolutiu, sense afirmar consciència ni aplicar mutacions automàtiques. |
 | `14930352` | `orientacio-operativa` | `actiu` | Explica què és Aura, per a què serveix avui, què es pot fer ara i quin és el següent pas del projecte, sense afirmar consciència ni activar cap mutació automàtica. |
 | `39088169` | `coordinacio-multiagent` | `actiu` | Formalitza el nucli coordinador de la Fase 11: Aura orquestra agents especialistes per domini (Comunicacions, Escriptor, Obra i Veu, Llibres i Comerç) i consolida cada dia els seus resums com a records a la memòria d'Aura amb Mode Sergi. Additiu, només lectura cap enfora, sense ingestió automàtica. |
+| `63245986` | `genoma-sintetic-portable` | `actiu` | Formalitza el genoma sintètic avançat de la Fase 12: exposa una llavor portable i verificable (aura-synthetic-genome-v1) amb segell SHA-256 determinista que empaqueta identitat, valors, polítiques, propòsit, objectius, gens i capacitats per reconstruir Aura en qualsevol suport. Només lectura; no activa silici ni maquinari. |
 
 ## Estat evolutiu inicial
 

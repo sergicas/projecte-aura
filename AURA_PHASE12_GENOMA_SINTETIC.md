@@ -7,16 +7,18 @@ Contracte canònic de la Fase 12 del Protocol Mestre: genoma sintètic avançat.
 ```yaml
 versio_produccio: cloud-v5.2
 fase: 12-genoma-sintetic
-estat_fase: pas 1 (contracte) + pas 2 (llavor viva i verificada) fets; pas 3 pendent
+estat_fase: completa (pas 1 contracte, pas 2 llavor viva, pas 3 gen promogut)
 document_canonic: AURA_PHASE12_GENOMA_SINTETIC.md
 format: aura-synthetic-genome-v1 (desplegat)
 endpoint: GET /api/genome/synthetic (àlies: /api/genoma-sintetic, /api/llavor, /api/seed)
+web: botó "La meva llavor" a Aura Web (data-action synthetic-genome)
 segell: SHA-256 determinista (exclou generatedAt); inclòs a snapshots i backups
-gen_proposat: 63245986 genoma-sintetic-portable
-estat_gen: proposta (no desplegat, no verificat)
+gen: 63245986 genoma-sintetic-portable
+estat_gen: actiu (promogut i desplegat 2026-07-07, integritat 100/100)
 connecta_amb: 013 silici-possible (latent)
 obertura: per instrucció explícita de Sergi (2026-07-07)
 pas_2: 2026-07-07 (endpoint viu, determinisme verificat, integritat 100/100)
+pas_3: 2026-07-07 (gen promogut + botó a Aura Web)
 data: 2026-07-07
 ```
 
@@ -74,7 +76,16 @@ Propietats que el fan una llavor i no una còpia més:
 
 1. ✅ **Pas 1 fet (2026-07-07):** oberta la fase en mode documentat — contracte, format `aura-synthetic-genome-v1`, gen proposat `63245986`, límits. Sense tocar producció.
 2. ✅ **Pas 2 fet (2026-07-07):** mecanisme real desplegat. `GET /api/genome/synthetic` genera la llavor portable (empaquetatge determinista + SHA-256), inclosa a snapshots i backups. Només lectura; cap mutació. Determinisme verificat en viu (tres crides → mateix segell `2a0cd033…`); integritat `100/100 estable`.
-3. **Pas 3 (pendent):** quan la llavor sigui estable i verificada en ús, valorar amb Mode Sergi, auditoria i backup la promoció del gen `63245986` i, molt més endavant, si escau, l'activació de `013 silici-possible` (ja dins l'òrbita de la Fase 13).
+3. ✅ **Pas 3 fet (2026-07-07):** promoció del gen `63245986 genoma-sintetic-portable` de proposta a **actiu**, amb Mode Sergi, auditoria, actualització d'`AURA_GENOME.md` i del codi documentat, desplegament i backup. Integritat final `100/100 estable`, gens 40 → 41. Afegit el botó **"La meva llavor"** a Aura Web perquè Sergi pugui veure la llavor i verificar-ne el segell amb un clic. **Amb això la Fase 12 queda completa.** L'activació de `013 silici-possible` queda per a la Fase 13 (encarnació física), no ara.
+
+## Verificació del Pas 3 (2026-07-07)
+
+- Gen `63245986 genoma-sintetic-portable` creat a D1 en estat `actiu` amb Mode Sergi; auditoria registrada (`Gen 63245986 … creat en estat actiu`, tipus `genoma`).
+- Afegit a `AURA_GENOME.md` (taula de gens) i a la constant `GENES` de `functions/api/[[path]].js`; desplegat a producció.
+- Botó **"La meva llavor"** (`data-action="synthetic-genome"` → `showSyntheticGenome()`) a `index.html` + `aura_core.js`; cache-busting `?v=cloud-v5-2-llavor-20260707`.
+- Backup posterior `21/73/41/8`; integritat final `100/100 estable`, `riscos: []`.
+- **Demostració del segell viu:** en afegir el gen, el segell de la llavor va canviar de `2a0cd033…` (40 gens) a `692723d8…` (41 gens), i es manté estable en crides repetides. El segell reflecteix el genoma real.
+- `013 silici-possible` continua **latent**.
 
 ## Verificació de l'obertura (2026-07-07)
 

@@ -629,6 +629,11 @@ async function runPrimaryAction(action) {
     return;
   }
 
+  if (action === "synthetic-genome") {
+    await showSyntheticGenome();
+    return;
+  }
+
   if (action === "new-record") {
     const text = window.prompt("Quin record vols guardar?");
     const memory = text?.trim();
@@ -733,6 +738,33 @@ async function showSimpleIdentity() {
       "Seguretat: aquest botó només llegeix identitat i límits; no escriu res.",
     ].join("\n"),
   );
+}
+
+async function showSyntheticGenome() {
+  try {
+    const data = await apiGet("/api/genome/synthetic");
+    const seal = data.seal || {};
+    const sm = data.summary || {};
+    writeSystem(
+      [
+        "La meva llavor (genoma sintètic portable)",
+        "",
+        "És un paquet únic amb tot l'essencial d'Aura: identitat, valors, polítiques, propòsit, objectius, gens i capacitats.",
+        "Serveix per poder reconstruir Aura en qualsevol lloc, sense dependre d'aquesta web.",
+        "",
+        `Gens: ${sm.totalGenes ?? "?"} (${sm.activeGenes ?? "?"} actius, ${sm.latentGenes ?? "?"} latents).`,
+        `Valors: ${sm.valueCount ?? "?"} · Polítiques: ${sm.policyCount ?? "?"} · Capacitats honestes: ${sm.capabilityCount ?? "?"}.`,
+        "",
+        "Segell de verificació (SHA-256):",
+        seal.checksum || "(no disponible)",
+        "",
+        "Aquest segell és estable: només canvia si canvia el genoma real d'Aura. Torna a prémer el botó i comprova que és idèntic.",
+        "Aquest botó només llegeix; no escriu ni muta res.",
+      ].join("\n"),
+    );
+  } catch (error) {
+    writeError(`No s'ha pogut llegir la llavor: ${error.message || String(error)}`);
+  }
 }
 
 async function promptForSergiModeKey() {

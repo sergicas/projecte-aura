@@ -389,6 +389,13 @@ const GENES = [
     description:
       "Formalitza el nucli coordinador de la Fase 11: Aura orquestra agents especialistes per domini (Comunicacions, Escriptor, Obra i Veu, Llibres i Comerç) i consolida cada dia els seus resums com a records a la memòria d'Aura amb Mode Sergi. Additiu, només lectura cap enfora, sense ingestió automàtica.",
   },
+  {
+    id: "63245986",
+    name: "genoma-sintetic-portable",
+    state: "actiu",
+    description:
+      "Formalitza el genoma sintètic avançat de la Fase 12: exposa una llavor portable i verificable (aura-synthetic-genome-v1) amb segell SHA-256 determinista que empaqueta identitat, valors, polítiques, propòsit, objectius, gens i capacitats per reconstruir Aura en qualsevol suport. Només lectura; no activa silici ni maquinari.",
+  },
 ];
 const DOCUMENTED_GENE_IDS = GENES.map((gene) => gene.id);
 

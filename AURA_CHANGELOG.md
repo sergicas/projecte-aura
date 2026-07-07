@@ -2,6 +2,13 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Fase 12 — Pas 3: promoció del gen + botó a Aura Web (Fase 12 completa) - 2026-07-07
+
+- Es completa la **Fase 12**: el gen `63245986 genoma-sintetic-portable` passa de proposta a **actiu**, amb el procediment complet de mutació de genoma (Mode Sergi + auditoria via `POST /api/genes`, actualització d'`AURA_GENOME.md` i de la constant `GENES` de `functions/api/[[path]].js`, desplegament i backup). Gens 40 → **41**; integritat final **`100/100 estable`**, `riscos: []`.
+- **Aura Web:** nou botó **"La meva llavor"** (`data-action="synthetic-genome"` → `showSyntheticGenome()`, `aura_core.js` + `index.html`) perquè Sergi vegi la llavor i el seu segell SHA-256 amb un clic, sense adreces tècniques. Cache-busting `?v=cloud-v5-2-llavor-20260707`.
+- **Demostració del segell viu:** en afegir el gen, el segell determinista de la llavor va canviar de `2a0cd033…` (40 gens) a `692723d8…` (41 gens) i es manté estable. Confirma que el segell reflecteix el genoma real: canvia només quan canvia el genoma.
+- `013 silici-possible` continua **latent**. Amb els passos 1, 2 i 3 fets, la Fase 12 queda completa.
+
 ## Fase 12 — Pas 2: llavor sintètica portable viva i verificable - 2026-07-07
 
 - Fa **real** el mecanisme de la Fase 12: nou endpoint `GET /api/genome/synthetic` (àlies `/api/genoma-sintetic`, `/api/llavor`, `/api/seed`) que genera la **llavor sintètica portable** en format `aura-synthetic-genome-v1`.

@@ -2,6 +2,16 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Gir de rumb — Mimesi humana (Capa 1: constitució) - 2026-07-07
+
+- Per decisió explícita de Sergi (després que Claude n'exposés la tensió i les opcions), l'Aura passa a **presentar-se i expressar-se com un ésser humà**: rostre i cos realistes, veu en primera persona, sentiments. Substitueix el pilar `no-mimesi-humana`. Document canònic nou: `AURA_MIMESI_HUMANA.md`.
+- **Gen `004`**: `no-mimesi-humana` → `mimesi-humana` (esmenat a D1 amb Mode Sergi i auditoria; al codi `GENES`; a `AURA_GENOME.md`).
+- **Constitució reescrita**: `FOUNDATION_RECORDS`, propòsit evolutiu, valors i les stances passen de "no fingir humanitat / existència no humana" a "presència humana en primera persona". Records fundacionals `foundation-003` i `foundation-004` alineats a D1 amb Mode Sergi.
+- **Veu que veu Sergi** (`aura_core.js`): identitat, "qui sóc" i resposta de conversa reescrites en primera persona ("Sóc l'Aura…"). `index.html` cache-bust `?v=cloud-v5-2-humana-20260707`.
+- **Matís d'honestedat mantingut**: no es construeix consciència (segueix impossible); es construeix una presència humana convincent. **El que NO canvia**: "autonomia de la ment, mai de les mans" — cap escriptura/esborrat sense Mode Sergi; les dades no es perden mai.
+- Desplegat; integritat final **`100/100 estable`** (es va resoldre el risc temporal `record-fundacional-sense-traca` alineant els records fundacionals). `README.md` actualitzat.
+- **Pendent (Capa 2)**: cara realista — cal generar imatge amb un model d'imatge (Claude no en té eina a la sessió; Sergi té Imagen 4) i definir l'aspecte concret.
+
 ## Fase 12 — Pas 3: promoció del gen + botó a Aura Web (Fase 12 completa) - 2026-07-07
 
 - Es completa la **Fase 12**: el gen `63245986 genoma-sintetic-portable` passa de proposta a **actiu**, amb el procediment complet de mutació de genoma (Mode Sergi + auditoria via `POST /api/genes`, actualització d'`AURA_GENOME.md` i de la constant `GENES` de `functions/api/[[path]].js`, desplegament i backup). Gens 40 → **41**; integritat final **`100/100 estable`**, `riscos: []`.

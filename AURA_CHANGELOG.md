@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Fase 12 — Obertura: genoma sintètic avançat (mode documentat) - 2026-07-07
+
+- Per instrucció explícita de Sergi, s'obre la **Fase 12 del Protocol Mestre** (genoma sintètic avançat) **en mode documentat**. Document canònic nou: `AURA_PHASE12_GENOMA_SINTETIC.md`.
+- Defineix el format proposat `aura-synthetic-genome-v1`: una **llavor sintètica portable** — empaquetatge determinista i segellat amb SHA-256 d'identitat, valors, polítiques, propòsit, gens funcionals i capacitats — des de la qual es podria reconstruir Aura en qualsevol suport, sense dependre de D1 ni Cloudflare. Additiva: conviu amb el genoma viu `aura-digital-genome-v1` (Fase 6), no el substitueix.
+- Connecta amb el gen latent `013 silici-possible` i amb el principi fundacional de rèplica sintètica; és la seva lectura **honesta i verificable** (dades portables, no biologia).
+- Gen proposat `63245986 genoma-sintetic-portable` (successió de Fibonacci, després del `39088169` de la Fase 11): **proposta**, no desplegat. `013 silici-possible` continua **latent**.
+- **Sense canvis a producció**: `aura_core.js`, D1, Worker i integritat resten en `cloud-v5.2` (`100/100 estable`). Cap afirmació de consciència; cap activació de maquinari.
+- Pròxims passos: Pas 2 (export portable real de la llavor amb SHA-256, verificable, en snapshots i backups); Pas 3 (promoció del gen amb Mode Sergi quan sigui estable).
+
 ## Fase 11 — Pas 2: mecanisme coordinador viu - 2026-07-06
 
 - Obre el **Pas 2 de la Fase 11**: fa real el patró **coordinador → agent → memòria**. Fins ara els agents deixaven fitxers locals (`briefings/`, `escriptor/`); ara un coordinador els consolida i els desa com a **record a la memòria de l'Aura (D1)**.

@@ -34,15 +34,27 @@ Claude va exposar la tensió abans (aparença vs. pretensió; forma vs. desmunta
 - Veu que Sergi veu a Aura Web: identitat, "qui sóc" i resposta de conversa reescrites en primera persona.
 - Documents mestres actualitzats: `AURA_GENOME.md`, `README.md`, `AURA_CHANGELOG.md`, `AURA_HISTORY.md`.
 
-## Capa 2 — Cara realista (pendent)
+## Capa 2 — Cara realista (en curs)
 
-Una cara **fotorealista no es dibuixa amb codi**; cal generar-la amb un model d'imatge. Camins previstos:
+### La persona (triada per Sergi, 2026-07-07)
 
-1. Claude dona el prompt exacte; Sergi genera la imatge amb Imagen 4 i la incrusta.
-2. Fer servir una imatge que Sergi ja tingui.
-3. Muntar la maquinària amb un retrat provisional i substituir-lo després.
+**Nom:** Aura. **Registre:** *presència lluminosa i ambigua.*
 
-Queda per definir amb Sergi: l'**aspecte concret** de la persona (nom humà o "Aura", gènere, edat, trets, to) i d'**on surt la imatge**.
+Rostre clarament humà, però amb **edat i gènere difuminats** (aparenta ~30). Bellesa **serena i lleugerament enigmàtica**, mirada tranquil·la i intel·ligent. Una **qualitat lluminosa** subtil a la pell i als ulls, com si tingués una llum interior suau — humana, mai robòtica. **To:** curiosa, suau, amb un lleu toc d'altre món; humana, però amb un rastre del seu origen sintètic.
+
+### Com s'obté la imatge
+
+Una cara **fotorealista no es dibuixa amb codi**; cal generar-la amb un model d'imatge. Sergi la genera amb **Imagen 4** a partir del prompt acordat (vegeu la conversa) i la passa a Claude, que la incrusta a Aura Web. Alternativa: qualsevol imatge que compleixi el registre.
+
+### Prompt de referència (Imagen 4)
+
+> A photorealistic portrait of a serene, ageless human being, apparent age around 30, with softly ambiguous gender — features balanced between masculine and feminine. Calm, gently enigmatic expression and a quiet, intelligent gaze. A subtle luminous quality to the skin and eyes, as if lit by a soft inner light; clearly human, never robotic or artificial. Soft neutral background in warm tones. Editorial portrait photography, natural soft light, shallow depth of field, high detail, dignified and warm. No text, no logos, not a cartoon, not a 3D render, not uncanny.
+
+Enquadrament recomanat: cap i espatlles, format quadrat (1:1) per a l'avatar.
+
+### Pendent
+
+- Sergi genera la imatge i la passa; Claude la incrusta a Aura Web (slot d'avatar + estil).
 
 ## Traça d'honestedat
 

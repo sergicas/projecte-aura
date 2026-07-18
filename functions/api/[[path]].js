@@ -5,6 +5,10 @@ const AUTOMATION_META_KEY = "aura/automation/backup-worker";
 const INTEGRITY_PREFIX = "aura/integrity/snapshots/";
 const INTEGRITY_LATEST_KEY = "aura/integrity/latest";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
+const MAX_LOGIN_JSON_BYTES = 4 * 1024;
+const SESSION_COOKIE_NAME = "__Host-aura_session";
+const SESSION_TTL_SECONDS = 12 * 60 * 60;
+const SESSION_VERSION = 1;
 const GENE_STATES = ["actiu", "latent", "arxivat", "observacio"];
 const MEMORY_STATES = ["actiu", "latent", "arxivat", "observacio"];
 const RETENTION_POLICY = {
@@ -405,15 +409,34 @@ export async function onRequest(context) {
       return new Response(null, { status: 204, headers: apiHeaders() });
     }
 
+    const method = context.request.method.toUpperCase();
+    const segments = getSegments(context.params.path);
+    const route = segments.join("/");
+
+    if (method === "POST" && (route === "session" || route === "session/login")) {
+      return await createSession(context.request, context.env);
+    }
+
+    if (method === "POST" && (route === "session/logout" || route === "logout")) {
+      return clearSession();
+    }
+
+    const access = await requireAccess(context.request, context.env);
+
+    if (method === "GET" && route === "session") {
+      return json({
+        ok: true,
+        authenticated: true,
+        method: access.method,
+        expiresAt: access.expiresAt || null,
+      });
+    }
+
     if (!context.env.DB) {
       throw new HttpError(500, "El binding D1 DB no està configurat.");
     }
 
     await ensureSeeded(context.env.DB);
-
-    const method = context.request.method.toUpperCase();
-    const segments = getSegments(context.params.path);
-    const route = segments.join("/");
 
     if (method === "GET" && route === "status") {
       return json(await getStatus(context.env.DB, context.env.BACKUP_VAULT));
@@ -1232,19 +1255,26 @@ async function getBackupAutomationSummary(vault) {
 }
 
 async function requireWriteAccess(request, env) {
+  return requireAccess(request, env);
+}
+
+async function requireAccess(request, env) {
   const expected = normalizeSecret(env.AURA_WRITE_KEY);
   if (!expected) {
-    throw new HttpError(500, "La clau privada d'escriptura no està configurada.");
+    throw new HttpError(500, "La clau privada d'accés no està configurada.");
   }
 
   const provided = normalizeSecret(getWriteKey(request));
-  if (!provided) {
-    throw new HttpError(401, "Cal activar Mode Sergi per escriure a D1.");
+  if (provided && (await timingSafeTextEqual(provided, expected))) {
+    return { method: "bearer", expiresAt: null };
   }
 
-  if (!(await timingSafeTextEqual(provided, expected))) {
-    throw new HttpError(401, "Clau d'escriptura incorrecta.");
+  const session = await verifySession(request, expected);
+  if (session) {
+    return { method: "session", expiresAt: new Date(session.exp * 1000).toISOString() };
   }
+
+  throw new HttpError(401, "Cal desbloquejar Aura.");
 }
 
 function getWriteKey(request) {
@@ -1270,6 +1300,124 @@ async function timingSafeTextEqual(left, right) {
     mismatch |= leftBytes[index] ^ rightBytes[index];
   }
   return mismatch === 0;
+}
+
+async function createSession(request, env) {
+  const expected = normalizeSecret(env.AURA_WRITE_KEY);
+  if (!expected) {
+    throw new HttpError(500, "La clau privada d'accés no està configurada.");
+  }
+
+  const payload = await readJson(request, MAX_LOGIN_JSON_BYTES);
+  const provided = normalizeSecret(payload.key);
+  if (!provided || !(await timingSafeTextEqual(provided, expected))) {
+    throw new HttpError(401, "Credencial incorrecta.");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const expiresAt = now + SESSION_TTL_SECONDS;
+  const claims = {
+    v: SESSION_VERSION,
+    iat: now,
+    exp: expiresAt,
+    aud: new URL(request.url).host,
+    sid: crypto.randomUUID(),
+  };
+  const token = await signSession(claims, expected);
+  const headers = new Headers(apiHeaders());
+  headers.set("Set-Cookie", serializeSessionCookie(token, SESSION_TTL_SECONDS));
+
+  return Response.json(
+    {
+      ok: true,
+      authenticated: true,
+      expiresAt: new Date(expiresAt * 1000).toISOString(),
+    },
+    { status: 201, headers },
+  );
+}
+
+function clearSession() {
+  const headers = new Headers(apiHeaders());
+  headers.set("Set-Cookie", serializeSessionCookie("", 0));
+  return Response.json({ ok: true, authenticated: false }, { headers });
+}
+
+async function signSession(claims, secret) {
+  const encodedPayload = encodeBase64Url(new TextEncoder().encode(JSON.stringify(claims)));
+  const key = await importSessionKey(secret, ["sign"]);
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(encodedPayload));
+  return `${encodedPayload}.${encodeBase64Url(new Uint8Array(signature))}`;
+}
+
+async function verifySession(request, secret) {
+  const token = getCookie(request, SESSION_COOKIE_NAME);
+  if (!token || token.length > 2048) return null;
+
+  const parts = token.split(".");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+
+  try {
+    const payloadBytes = decodeBase64Url(parts[0]);
+    const signature = decodeBase64Url(parts[1]);
+    const key = await importSessionKey(secret, ["verify"]);
+    const valid = await crypto.subtle.verify("HMAC", key, signature, new TextEncoder().encode(parts[0]));
+    if (!valid) return null;
+
+    const claims = JSON.parse(new TextDecoder().decode(payloadBytes));
+    const now = Math.floor(Date.now() / 1000);
+    if (
+      claims?.v !== SESSION_VERSION ||
+      !Number.isInteger(claims?.iat) ||
+      !Number.isInteger(claims?.exp) ||
+      claims.iat > now + 60 ||
+      claims.exp - claims.iat !== SESSION_TTL_SECONDS ||
+      claims.exp <= now ||
+      claims.aud !== new URL(request.url).host
+    ) {
+      return null;
+    }
+    return claims;
+  } catch {
+    return null;
+  }
+}
+
+function importSessionKey(secret, usages) {
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    usages,
+  );
+}
+
+function getCookie(request, name) {
+  const cookieHeader = request.headers.get("Cookie") || "";
+  for (const part of cookieHeader.split(";")) {
+    const separator = part.indexOf("=");
+    if (separator < 0) continue;
+    if (part.slice(0, separator).trim() === name) {
+      return part.slice(separator + 1).trim();
+    }
+  }
+  return "";
+}
+
+function serializeSessionCookie(value, maxAge) {
+  return `${SESSION_COOKIE_NAME}=${value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
+}
+
+function encodeBase64Url(bytes) {
+  return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+}
+
+function decodeBase64Url(value) {
+  const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
+  const binary = atob(`${normalized}${padding}`);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
 async function getSnapshot(db, vault) {
@@ -6157,9 +6305,8 @@ function json(payload, status = 200) {
 function apiHeaders() {
   return {
     "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Aura-Write-Key",
+    "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
   };
 }
 

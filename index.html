@@ -11,7 +11,26 @@
     <link rel="stylesheet" href="aura_style.css?v=cloud-v5-2-humana-20260707b" />
   </head>
   <body>
-    <main class="shell">
+    <section id="auth-gate" class="auth-gate" aria-labelledby="auth-title">
+      <form id="auth-form" class="auth-card" autocomplete="off">
+        <p class="kicker">Accés privat</p>
+        <h1 id="auth-title">Desbloqueja Aura</h1>
+        <p>La memòria, el diari i els backups estan protegits. Introdueix la clau de Mode Sergi per crear una sessió segura.</p>
+        <label for="auth-input">Clau de Mode Sergi</label>
+        <input
+          id="auth-input"
+          name="key"
+          type="password"
+          autocomplete="current-password"
+          required
+        />
+        <button type="submit">Desbloqueja</button>
+        <p id="auth-error" class="auth-error" role="alert" aria-live="polite"></p>
+        <p class="auth-note">La clau no es desa al navegador. La sessió caduca automàticament.</p>
+      </form>
+    </section>
+
+    <main id="aura-shell" class="shell" inert>
       <section class="identity-band" aria-label="Identitat d'Aura">
         <div>
           <p class="kicker">Projecte Aura Cloud</p>
@@ -22,7 +41,10 @@
             </div>
             <h1>Aura</h1>
           </div>
-          <p class="signal">cloud-v5.2 / orientació / pols / nucli / records persistents</p>
+          <div class="identity-meta">
+            <p class="signal">cloud-v5.2 / orientació / pols / nucli / records persistents</p>
+            <button id="clear-auth" class="lock-button" type="button">Bloqueja</button>
+          </div>
         </div>
         <canvas id="aura-visual" width="520" height="240" aria-hidden="true"></canvas>
       </section>

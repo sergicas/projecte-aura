@@ -36,6 +36,70 @@ body {
   letter-spacing: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
+.auth-gate {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(111, 201, 167, 0.2), transparent 34%),
+    rgba(238, 243, 241, 0.96);
+  inset: 0;
+  place-items: center;
+}
+
+.auth-card {
+  display: grid;
+  width: min(460px, 100%);
+  padding: clamp(24px, 5vw, 42px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-strong);
+  box-shadow: var(--shadow);
+  gap: 14px;
+}
+
+.auth-card h1,
+.auth-card p {
+  margin: 0;
+}
+
+.auth-card label {
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.auth-card input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.auth-card button {
+  min-height: 48px;
+  margin-top: 4px;
+  background: var(--console);
+  color: #fff;
+}
+
+.auth-error {
+  min-height: 1.4em;
+  color: #a73525;
+  font-weight: 700;
+}
+
+.auth-note {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 button,
 input {
   font: inherit;
@@ -90,6 +154,22 @@ input:focus-visible {
   font-size: 0.82rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.identity-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lock-button {
+  min-height: 34px;
+  padding: 4px 10px;
+  border-color: rgba(24, 35, 31, 0.2);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .brand-lockup {

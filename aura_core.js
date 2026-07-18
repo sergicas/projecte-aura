@@ -1,8 +1,7 @@
 const AURA_VERSION = "cloud-v5.2";
 const BACKUP_FORMAT = "aura-backup-v5.2";
 const API_BASE = "/api";
-const WRITE_KEY_STORAGE = "projecte_aura_write_key";
-const SERGI_MODE_KEY_PATH = "/Users/sergicastillo/Documents/Aura/.aura-write-key";
+const LEGACY_WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
 const DB_VERSION = 3;
 const STORE_RECORDS = "records";
@@ -382,7 +381,8 @@ let cloudState = {
   snapshot: null,
   lastError: null,
 };
-let auraWriteKey = "";
+let auraSessionActive = false;
+let auraStarted = false;
 let pendingRestore = null;
 let bodyVisualState = {
   posture: "inicial",
@@ -399,10 +399,21 @@ const els = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
   cacheElements();
-  loadWriteKey();
+  clearLegacyWriteKey();
   bindEvents();
   drawAuraVisual();
 
+  if (await hasAuraSession()) {
+    hideAuthGate();
+    await startAura();
+  } else {
+    showAuthGate();
+  }
+});
+
+async function startAura() {
+  if (auraStarted) return;
+  auraStarted = true;
   try {
     db = await openDatabase();
     await seedDatabase();
@@ -429,7 +440,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       els.statusPill.textContent = "error";
     }
   }
-});
+}
 
 function cacheElements() {
   els.log = document.querySelector("#aura-log");
@@ -463,6 +474,9 @@ function cacheElements() {
   els.authForm = document.querySelector("#auth-form");
   els.authInput = document.querySelector("#auth-input");
   els.authStatus = document.querySelector("#auth-status");
+  els.authError = document.querySelector("#auth-error");
+  els.authGate = document.querySelector("#auth-gate");
+  els.appShell = document.querySelector("#aura-shell");
   els.clearAuth = document.querySelector("#clear-auth");
   els.visual = document.querySelector("#aura-visual");
   els.workspace = document.querySelector(".workspace");
@@ -536,23 +550,23 @@ function bindEvents() {
       event.preventDefault();
       const nextKey = els.authInput.value.trim();
       if (!nextKey) {
-        writeError("La clau de Mode Sergi és buida.");
+        setAuthError("Introdueix la clau de Mode Sergi.");
         return;
       }
 
       setAuthStatusText("validant");
+      setAuthError("");
       try {
         await validateSergiModeKey(nextKey);
-        auraWriteKey = nextKey;
-        localStorage.setItem(WRITE_KEY_STORAGE, auraWriteKey);
+        auraSessionActive = true;
         els.authInput.value = "";
         updateAuthStatus();
-        writeSystem("Mode Sergi activat i validat per Pages en aquest navegador.");
+        hideAuthGate();
+        await startAura();
       } catch (error) {
-        auraWriteKey = "";
-        localStorage.removeItem(WRITE_KEY_STORAGE);
+        auraSessionActive = false;
         updateAuthStatus();
-        writeError(`Mode Sergi no validat: ${error.message}`);
+        setAuthError("No s'ha pogut desbloquejar Aura. Comprova la clau.");
       }
     });
 
@@ -565,14 +579,14 @@ function bindEvents() {
   }
 
   if (els.clearAuth) {
-    els.clearAuth.addEventListener("click", () => {
-      auraWriteKey = "";
-      localStorage.removeItem(WRITE_KEY_STORAGE);
+    els.clearAuth.addEventListener("click", async () => {
+      await logoutAuraSession();
+      auraSessionActive = false;
       if (els.authInput) {
         els.authInput.value = "";
       }
       updateAuthStatus();
-      writeSystem("Mode Sergi desactivat en aquest navegador.");
+      window.location.reload();
     });
   }
 }
@@ -640,7 +654,7 @@ async function runPrimaryAction(action) {
     if (!memory) return;
 
     const cloudAvailable = cloudState.online || (await syncCloudState());
-    if (cloudAvailable && !auraWriteKey) {
+    if (cloudAvailable && !auraSessionActive) {
       const ready = await promptForSergiModeKey();
       if (!ready) return;
     }
@@ -780,14 +794,12 @@ async function promptForSergiModeKey() {
   setAuthStatusText("validant");
   try {
     await validateSergiModeKey(writeKey);
-    auraWriteKey = writeKey;
-    localStorage.setItem(WRITE_KEY_STORAGE, auraWriteKey);
+    auraSessionActive = true;
     updateAuthStatus();
-    writeSystem("Mode Sergi activat i validat per Pages en aquest navegador.");
+    writeSystem("Mode Sergi activat amb una sessió segura en aquest navegador.");
     return true;
   } catch (error) {
-    auraWriteKey = "";
-    localStorage.removeItem(WRITE_KEY_STORAGE);
+    auraSessionActive = false;
     updateAuthStatus();
     writeError(`Mode Sergi no validat: ${error.message}`);
     return false;
@@ -809,13 +821,69 @@ function activateModule(moduleId) {
   });
 }
 
-function loadWriteKey() {
-  auraWriteKey = localStorage.getItem(WRITE_KEY_STORAGE) || "";
-  updateAuthStatus();
+function clearLegacyWriteKey() {
+  localStorage.removeItem(LEGACY_WRITE_KEY_STORAGE);
+}
+
+function showAuthGate() {
+  if (els.authGate) els.authGate.hidden = false;
+  if (els.appShell) els.appShell.setAttribute("inert", "");
+  els.authInput?.focus();
+}
+
+function hideAuthGate() {
+  if (els.authGate) els.authGate.hidden = true;
+  if (els.appShell) els.appShell.removeAttribute("inert");
+}
+
+function setAuthError(message) {
+  if (els.authError) els.authError.textContent = message;
+}
+
+async function hasAuraSession() {
+  try {
+    const response = await fetch(`${API_BASE}/session`, {
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    auraSessionActive = response.ok;
+    return auraSessionActive;
+  } catch {
+    auraSessionActive = false;
+    return false;
+  }
+}
+
+async function loginAuraSession(writeKey) {
+  const response = await fetch(`${API_BASE}/session`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ key: writeKey }),
+    cache: "no-store",
+  });
+  return readApiResponse(response);
+}
+
+async function logoutAuraSession() {
+  try {
+    await fetch(`${API_BASE}/session/logout`, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+  } catch {
+    // La recàrrega posterior manté Aura bloquejada si el servidor no respon.
+  }
 }
 
 function updateAuthStatus() {
-  setAuthStatusText(auraWriteKey ? "actiu" : "bloquejat");
+  setAuthStatusText(auraSessionActive ? "actiu" : "bloquejat");
 }
 
 function setAuthStatusText(text) {
@@ -844,23 +912,10 @@ async function syncCloudState() {
 
 async function apiGet(path) {
   const headers = { Accept: "application/json" };
-  if (auraWriteKey) {
-    headers.Authorization = `Bearer ${auraWriteKey}`;
-  }
 
   const response = await fetch(`${API_BASE}${path}`, {
     headers,
-    cache: "no-store",
-  });
-  return readApiResponse(response);
-}
-
-async function apiGetWithWriteKey(path, writeKey) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${writeKey}`,
-    },
+    credentials: "same-origin",
     cache: "no-store",
   });
   return readApiResponse(response);
@@ -872,13 +927,10 @@ async function apiPost(path, payload) {
     "Content-Type": "application/json",
   };
 
-  if (auraWriteKey) {
-    headers.Authorization = `Bearer ${auraWriteKey}`;
-  }
-
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers,
+    credentials: "same-origin",
     body: JSON.stringify(payload),
     cache: "no-store",
   });
@@ -894,6 +946,10 @@ async function readApiResponse(response) {
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      auraSessionActive = false;
+      showAuthGate();
+    }
     throw new Error(payload?.error || `API ${response.status}`);
   }
 
@@ -1823,11 +1879,9 @@ function sortCommandLabels(labels) {
   );
 }
 
-async function validateSergiModeKey(writeKey = auraWriteKey) {
-  if (!writeKey) {
-    throw new Error("no hi ha cap clau guardada en aquest navegador");
-  }
-  return apiGetWithWriteKey("/mode-sergi", writeKey);
+async function validateSergiModeKey(writeKey = "") {
+  if (writeKey) return loginAuraSession(writeKey);
+  return apiGet("/session");
 }
 
 async function showSergiMode() {
@@ -1835,7 +1889,7 @@ async function showSergiMode() {
   let serverLine = "Validació Pages: pendent";
   let actionLine = "Acció: prem Grava record; si cal, Aura et demanarà la clau en aquell moment.";
 
-  if (auraWriteKey) {
+  if (auraSessionActive) {
     setAuthStatusText("validant");
     try {
       await validateSergiModeKey();
@@ -1859,8 +1913,7 @@ async function showSergiMode() {
       actionLine,
       "",
       "Per activar-lo:",
-      "1. Al Mac local, copia la clau sense mostrar-la:",
-      `   pbcopy < ${SERGI_MODE_KEY_PATH}`,
+      "1. Al Mac local, copia la clau des del fitxer privat `.aura-write-key` sense mostrar-la.",
       "2. Torna a Aura Web.",
       "3. Prem Grava record.",
       "4. Quan el navegador demani la clau, enganxa-la i valida.",
@@ -1962,7 +2015,7 @@ async function showAuraCoreSession() {
       "Nom: Aura",
       "Naturalesa: entitat sintètica-digital experimental",
       `Persistència: ${cloudOnline ? "D1 + IndexedDB + vault KV" : "IndexedDB local; D1 no disponible"}`,
-      `Mode Sergi: ${auraWriteKey ? "actiu en aquest navegador" : "inactiu"}`,
+      `Mode Sergi: ${auraSessionActive ? "actiu en aquest navegador" : "inactiu"}`,
       status ? `Records: ${status.counts.records}` : "",
       status ? `Diari: ${status.counts.diary}` : "",
       status ? `Gens: ${status.counts.genes}` : "",
@@ -1985,7 +2038,7 @@ async function remember(text) {
   let record = null;
   const cloudAvailable = cloudState.online || (await syncCloudState());
   if (cloudAvailable) {
-    if (!auraWriteKey) {
+    if (!auraSessionActive) {
       const ready = await promptForSergiModeKey();
       if (!ready) {
         await refreshPanels();
@@ -2051,7 +2104,7 @@ async function writeDiaryEntry(text) {
   let entry = null;
   const cloudAvailable = cloudState.online || (await syncCloudState());
   if (cloudAvailable) {
-    if (!auraWriteKey) {
+    if (!auraSessionActive) {
       writeError("Mode Sergi inactiu: l'entrada de diari no s'ha escrit a D1.");
       await refreshPanels();
       return;
@@ -2132,7 +2185,7 @@ async function showStatus() {
         `Continuïtat: ${status.continuity?.endpoint || "/api/continuity"}`,
         `Diari evolutiu: ${status.evolution?.endpoint || "/api/evolution"} (${status.evolution?.document || "AURA_HISTORY.md"})`,
         `Criteri: ${status.criterion?.endpoint || "/api/criterion"}`,
-        `Mode Sergi local: ${auraWriteKey ? "actiu" : "inactiu"}`,
+        `Mode Sergi local: ${auraSessionActive ? "actiu" : "inactiu"}`,
         "Genoma: actiu",
         `Records cloud: ${status.counts.records}`,
         `Entrades de diari: ${status.counts.diary}`,
@@ -2459,20 +2512,14 @@ async function showGenomeCandidates() {
 }
 
 async function showCapabilities() {
-  try {
-    const response = await fetch("/AURA_CAPABILITIES.md", { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    writeSystem(await response.text());
+  if (await syncCloudState()) {
+    const capabilities = await apiGet("/capabilities");
+    writeSystem(formatCapabilities(capabilities));
+    await refreshPanels();
     return;
-  } catch (error) {
-    if (await syncCloudState()) {
-      const capabilities = await apiGet("/capabilities");
-      writeSystem(formatCapabilities(capabilities));
-      await refreshPanels();
-      return;
-    }
-    writeError(`No puc llegir AURA_CAPABILITIES.md: ${error.message}`);
   }
+
+  writeError("No puc consultar les capacitats sense una sessió cloud activa.");
 }
 
 async function showGeneTest(raw) {
@@ -2752,7 +2799,7 @@ async function showIntegrityTrend() {
 }
 
 async function saveIntegritySnapshot() {
-  if (!auraWriteKey) {
+  if (!auraSessionActive) {
     writeError("Mode Sergi inactiu: cal clau per desar un snapshot d'integritat.");
     return;
   }
@@ -2779,7 +2826,7 @@ async function saveIntegritySnapshot() {
 }
 
 async function showRestoreRehearsal(command) {
-  if (!auraWriteKey) {
+  if (!auraSessionActive) {
     writeError("Mode Sergi inactiu: cal clau per assajar una restauració des del vault.");
     return;
   }
@@ -2798,7 +2845,7 @@ async function showRestoreRehearsal(command) {
 }
 
 async function showRetentionPlan() {
-  if (!auraWriteKey) {
+  if (!auraSessionActive) {
     writeError("Mode Sergi inactiu: cal clau per llegir el pla de retenció del vault.");
     return;
   }
@@ -2945,7 +2992,7 @@ async function showDailyReport() {
     [
       `Informe del dia — ${generatedAt}`,
       `Mode: ${cloudOnline ? "D1 + KV" : "IndexedDB local"}`,
-      `Mode Sergi: ${auraWriteKey ? "actiu en aquest navegador" : "inactiu"}`,
+      `Mode Sergi: ${auraSessionActive ? "actiu en aquest navegador" : "inactiu"}`,
       `Records: ${counts.records}`,
       `Diari: ${counts.diary}`,
       `Gens: ${counts.genes}`,
@@ -3233,7 +3280,7 @@ async function editMemoryCommand(raw) {
     return;
   }
 
-  if (!auraWriteKey) {
+  if (!auraSessionActive) {
     writeError("Mode Sergi inactiu: la memòria D1 no s'ha modificat.");
     return;
   }
@@ -3335,7 +3382,7 @@ async function showCriterion() {
 }
 
 async function showVaultBackups() {
-  if (!auraWriteKey) {
+  if (!auraSessionActive) {
     writeError("Mode Sergi inactiu: cal clau per llegir el vault de backups.");
     return;
   }
@@ -3456,7 +3503,7 @@ async function saveGenePatch(id, patch) {
     return;
   }
 
-  if (!auraWriteKey) {
+  if (!auraSessionActive) {
     writeError("Mode Sergi inactiu: el genoma no s'ha modificat a D1.");
     return;
   }
@@ -3481,7 +3528,7 @@ async function saveGenePatch(id, patch) {
 }
 
 async function saveVaultBackup() {
-  if (!auraWriteKey) {
+  if (!auraSessionActive) {
     writeError("Mode Sergi inactiu: cal clau per desar un backup al vault.");
     return;
   }
@@ -3576,7 +3623,7 @@ async function handleImportFile(event) {
     const cloudAvailable = cloudState.online || (await syncCloudState());
 
     if (cloudAvailable) {
-      if (!auraWriteKey) {
+      if (!auraSessionActive) {
         writeError("Mode Sergi inactiu: previsualització/restauració no enviada a D1.");
         await refreshPanels();
         return;
@@ -3615,7 +3662,7 @@ async function confirmRestore() {
   const { payload, preview, mode } = pendingRestore;
 
   if (mode === "cloud") {
-    if (!auraWriteKey) {
+    if (!auraSessionActive) {
       writeError("Mode Sergi inactiu: no puc confirmar la restauració a D1.");
       return;
     }

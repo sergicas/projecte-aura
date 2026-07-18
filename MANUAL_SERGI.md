@@ -50,24 +50,24 @@ Primer pas recomanat: catalogar l'avatar com a font externa i afegir un enllaç 
 - Producció: https://projecte-aura.pages.dev
 - Worker backups: https://projecte-aura-backup-worker.sergicas.workers.dev
 - Projecte local: `/Users/sergicastillo/Documents/Aura`
-- Clau Mode Sergi: `/Users/sergicastillo/Documents/Aura/.aura-write-key`
+- Clau Mode Sergi: `.aura-write-key` dins del projecte local
 
-No copiïs, imprimeixis ni comparteixis la clau. Aura pot llegir sense Mode Sergi, però qualsevol escriptura persistent a D1 o al vault necessita Mode Sergi actiu.
+No imprimeixis ni comparteixis la clau. Aura Web necessita Mode Sergi per llegir o escriure dades de D1 i del vault. La clau no es desa al navegador: una validació correcta crea una cookie de sessió `HttpOnly`, `Secure` i `SameSite=Strict` que caduca al cap de 12 hores.
 
 ## Com activar Mode Sergi
 
 1. Copia la clau local sense mostrar-la:
 
 ```bash
-pbcopy < /Users/sergicastillo/Documents/Aura/.aura-write-key
+pbcopy < .aura-write-key
 ```
 
 2. Obre Aura en producció.
-3. Prem `Grava record`.
-4. Quan el navegador demani la clau, enganxa-la i valida.
-5. Comprova-ho amb `/mode-sergi` o `aura sergi-mode`.
+3. Enganxa la clau a la pantalla `Desbloqueja Aura` i valida.
+4. Comprova-ho amb `/mode-sergi` o `aura sergi-mode`.
+5. Quan acabis, prem `Bloqueja`.
 
-`/mode-sergi` no es limita a mirar el navegador: valida la clau amb `GET /api/mode-sergi`. En la web simplificada no hi ha pestanya `Estat` ni camp permanent de clau; la clau es demana només quan cal gravar a D1.
+`/mode-sergi` no es limita a mirar el navegador: valida la sessió amb `GET /api/mode-sergi`. Tota l'API de dades queda tancada sense una sessió vàlida; els processos automàtics poden continuar usant `AURA_WRITE_KEY` com a Bearer.
 
 No enganxis la clau al xat. No la copiïs a documents. Només va al diàleg del navegador quan Aura la demana.
 

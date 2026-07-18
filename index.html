@@ -31,53 +31,109 @@
     </section>
 
     <main id="aura-shell" class="shell" inert>
-      <section class="identity-band" aria-label="Identitat d'Aura">
-        <div>
-          <p class="kicker">Projecte Aura Cloud</p>
-          <div class="brand-lockup" aria-label="Aura">
-            <div class="aura-mark" aria-hidden="true">
-              <span class="aura-mark-ring" aria-hidden="true"></span>
-              <span class="aura-mark-core">A</span>
-            </div>
-            <h1>Aura</h1>
+      <header class="app-header" aria-label="Capçalera d'Aura">
+        <div class="brand-lockup" aria-label="Aura">
+          <div class="aura-mark" aria-hidden="true">
+            <span class="aura-mark-ring" aria-hidden="true"></span>
+            <span class="aura-mark-core">A</span>
           </div>
-          <div class="identity-meta">
-            <p class="signal">cloud-v5.2 / orientació / pols / nucli / records persistents</p>
-            <button id="clear-auth" class="lock-button" type="button">Bloqueja</button>
+          <div class="brand-copy">
+            <p class="kicker">Projecte Aura Cloud</p>
+            <h1>Aura</h1>
+            <p>Memòria, orientació i continuïtat del projecte</p>
           </div>
         </div>
-        <canvas id="aura-visual" width="520" height="240" aria-hidden="true"></canvas>
-      </section>
+        <div class="session-controls">
+          <p class="connection-status" aria-live="polite">
+            <span class="connection-dot" aria-hidden="true"></span>
+            <span id="status-pill">Connectant…</span>
+          </p>
+          <button id="clear-auth" class="lock-button" type="button">Bloqueja la sessió</button>
+        </div>
+      </header>
 
       <section class="workspace simple-workspace" aria-label="Aura simplificada" data-active-module="xat">
         <section class="aura-module simple-console is-active" data-module-panel="xat" aria-label="Aura simplificada">
-          <section class="console-panel">
-            <div id="aura-log" class="log" role="log" aria-live="polite"></div>
+          <div class="phase3-layout">
+            <aside class="action-panel" aria-labelledby="actions-title">
+              <div class="panel-intro">
+                <p class="section-eyebrow">Comença aquí</p>
+                <h2 id="actions-title">Què necessites?</h2>
+                <p>Consulta Aura sense modificar res o grava un record quan vulguis conservar una decisió.</p>
+              </div>
 
-            <div class="quick-actions simple-actions" aria-label="Accions principals">
-              <button type="button" data-action="what-is-aura" title="Explica què és Aura i per a què serveix aquesta pantalla" aria-label="Què és Aura?">Què és Aura?</button>
-              <button type="button" data-action="next-step" title="Mostra què pots fer ara mateix" aria-label="Què faig ara?">Què faig ara?</button>
-              <button type="button" data-action="pulse" title="Mostra l'estat local d'Aura" aria-label="Estat d'Aura">Estat d'Aura</button>
-              <button type="button" data-action="core" title="Mostra la identitat i els límits d'Aura" aria-label="Identitat">Identitat</button>
-              <button type="button" data-action="daily-report">Informe del dia</button>
-              <button type="button" data-action="new-record">Grava record</button>
-              <button type="button" data-action="list-records">Veure records</button>
-              <button type="button" data-action="last-record">Últim record</button>
-              <button type="button" data-action="synthetic-genome" title="Explica i verifica el paquet de dades que permet reconstruir Aura" aria-label="Què és la llavor d'Aura?">Què és la llavor?</button>
-            </div>
+              <div class="featured-actions" aria-label="Accions recomanades">
+                <button class="action-card action-card--primary" type="button" data-action="next-step">
+                  <span>Què faig ara?</span>
+                  <small>Recomanació concreta per continuar</small>
+                </button>
+                <button class="action-card" type="button" data-action="daily-report">
+                  <span>Informe d'avui</span>
+                  <small>Resum del projecte i pendents</small>
+                </button>
+                <button class="action-card action-card--write" type="button" data-action="new-record">
+                  <span>Grava un record</span>
+                  <small>Desa una decisió a la memòria</small>
+                </button>
+              </div>
 
-            <form id="command-form" class="command-row" autocomplete="off">
-              <label class="sr-only" for="command-input">Ordre o record</label>
-              <input
-                id="command-input"
-                name="command"
-                type="text"
-                placeholder="Escriu una ordre o un record..."
-                spellcheck="false"
-                autocomplete="off"
-              />
-            </form>
-          </section>
+              <section class="action-group" aria-labelledby="memory-actions-title">
+                <h3 id="memory-actions-title">Memòria</h3>
+                <div class="compact-actions">
+                  <button type="button" data-action="list-records">Veure els records</button>
+                  <button type="button" data-action="last-record">Últim record</button>
+                </div>
+              </section>
+
+              <section class="action-group" aria-labelledby="understand-actions-title">
+                <h3 id="understand-actions-title">Entendre Aura</h3>
+                <div class="compact-actions compact-actions--two-columns">
+                  <button type="button" data-action="what-is-aura">Què és Aura?</button>
+                  <button type="button" data-action="pulse">Estat d'Aura</button>
+                  <button type="button" data-action="core">Identitat i límits</button>
+                  <button type="button" data-action="synthetic-genome" aria-label="Què és la llavor d'Aura?">La llavor d'Aura</button>
+                </div>
+              </section>
+
+              <section class="aura-pulse-card" aria-labelledby="pulse-visual-title">
+                <div>
+                  <h3 id="pulse-visual-title">Pols visual</h3>
+                  <p>Representació de l'estat actual; només lectura.</p>
+                </div>
+                <canvas id="aura-visual" width="520" height="240" aria-hidden="true"></canvas>
+              </section>
+            </aside>
+
+            <section class="console-panel" aria-labelledby="conversation-title">
+              <header class="console-head">
+                <div>
+                  <p class="section-eyebrow">Conversa i resultats</p>
+                  <h2 id="conversation-title">Resposta d'Aura</h2>
+                </div>
+                <span class="read-only-note">Les consultes no escriuen</span>
+              </header>
+
+              <div id="aura-log" class="log" role="log" aria-live="polite" aria-label="Historial de respostes d'Aura"></div>
+
+              <form id="command-form" class="command-row" autocomplete="off">
+                <div class="command-help">
+                  <label for="command-input">Escriu una ordre</label>
+                  <small>Prem Retorn o el botó Envia.</small>
+                </div>
+                <div class="command-input-row">
+                  <input
+                    id="command-input"
+                    name="command"
+                    type="text"
+                    placeholder="Exemple: /proxim-pas"
+                    spellcheck="false"
+                    autocomplete="off"
+                  />
+                  <button type="submit">Envia</button>
+                </div>
+              </form>
+            </section>
+          </div>
         </section>
       </section>
     </main>

@@ -235,11 +235,444 @@ input:focus-visible {
     inset 0 0 16px rgba(111, 201, 167, 0.26);
 }
 
-h1 {
+.brand-lockup h1 {
   margin: 0;
   font-size: clamp(4rem, 11vw, 9.2rem);
   line-height: 0.84;
   font-weight: 800;
+}
+
+/* Fase 3 — jerarquia operativa, accions agrupades i conversa central */
+.app-header {
+  position: sticky;
+  z-index: 10;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 18px;
+  border: 1px solid rgba(24, 35, 31, 0.12);
+  border-radius: 16px;
+  background: rgba(251, 255, 252, 0.9);
+  box-shadow: 0 12px 40px rgba(29, 35, 32, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+.app-header .brand-lockup {
+  gap: 14px;
+}
+
+.app-header .aura-mark {
+  width: 62px;
+}
+
+.app-header .aura-mark-core {
+  font-size: 1.65rem;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.brand-copy .kicker {
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+.brand-copy h1 {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 0.95;
+}
+
+.brand-copy > p:last-child {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.session-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(111, 201, 167, 0.34);
+  border-radius: 999px;
+  background: rgba(111, 201, 167, 0.12);
+  color: #315e4c;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3a9a73;
+  box-shadow: 0 0 0 4px rgba(58, 154, 115, 0.12);
+}
+
+.app-header .lock-button {
+  min-height: 38px;
+  margin: 0;
+  padding: 6px 11px;
+}
+
+.workspace.simple-workspace {
+  width: min(1240px, 100%);
+}
+
+.phase3-layout {
+  display: grid;
+  grid-template-columns: minmax(290px, 0.72fr) minmax(0, 1.28fr);
+  gap: clamp(18px, 2.5vw, 30px);
+  align-items: start;
+}
+
+.action-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.panel-intro,
+.action-group,
+.aura-pulse-card {
+  border: 1px solid rgba(24, 35, 31, 0.12);
+  border-radius: 14px;
+  background: rgba(251, 255, 252, 0.8);
+}
+
+.panel-intro {
+  padding: 20px;
+}
+
+.section-eyebrow {
+  margin: 0 0 6px;
+  color: var(--coral);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.panel-intro h2,
+.console-head h2,
+.action-group h3,
+.aura-pulse-card h3 {
+  margin: 0;
+}
+
+.panel-intro h2,
+.console-head h2 {
+  font-size: clamp(1.45rem, 2vw, 2rem);
+}
+
+.panel-intro > p:last-child {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.featured-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.action-card {
+  display: grid;
+  min-height: 68px;
+  gap: 4px;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.action-card span {
+  font-weight: 850;
+}
+
+.action-card small {
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.action-card--primary {
+  border-color: rgba(47, 111, 159, 0.34);
+  background: rgba(47, 111, 159, 0.1);
+}
+
+.action-card--write {
+  border-color: rgba(216, 95, 71, 0.34);
+  background: rgba(216, 95, 71, 0.08);
+}
+
+.action-group {
+  padding: 16px;
+}
+
+.action-group h3,
+.aura-pulse-card h3 {
+  font-size: 0.92rem;
+}
+
+.compact-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.compact-actions button {
+  min-width: 0;
+  min-height: 46px;
+  padding: 8px 10px;
+  font-size: 0.86rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.aura-pulse-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.aura-pulse-card p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.aura-pulse-card #aura-visual {
+  min-height: 120px;
+  max-height: 150px;
+  box-shadow: none;
+}
+
+.phase3-layout .console-panel {
+  display: grid;
+  min-height: 620px;
+  grid-template-rows: auto minmax(280px, 1fr) auto;
+  border-radius: 14px;
+}
+
+.console-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 17px 18px;
+  border-bottom: 1px solid rgba(237, 247, 238, 0.12);
+  color: #edf7ee;
+}
+
+.read-only-note {
+  padding: 6px 9px;
+  border: 1px solid rgba(111, 201, 167, 0.25);
+  border-radius: 999px;
+  color: var(--mint);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.phase3-layout .log {
+  min-height: 280px;
+  max-height: 66vh;
+  padding: 18px;
+}
+
+.phase3-layout .command-row {
+  gap: 10px;
+}
+
+.command-help {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: #edf7ee;
+}
+
+.command-help label {
+  font-weight: 800;
+}
+
+.command-help small {
+  color: rgba(237, 247, 238, 0.62);
+}
+
+.command-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.command-input-row button {
+  min-width: 86px;
+  background: var(--mint);
+  color: #07100c;
+  font-weight: 850;
+}
+
+[data-action][aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.66;
+}
+
+[data-action][aria-busy="true"]::after {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  margin-left: 7px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  content: "";
+  vertical-align: -0.1em;
+  animation: aura-spin 700ms linear infinite;
+}
+
+@keyframes aura-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 880px) {
+  .phase3-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .action-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .panel-intro,
+  .featured-actions,
+  .aura-pulse-card {
+    grid-column: 1 / -1;
+  }
+
+  .featured-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .phase3-layout .console-panel {
+    min-height: 520px;
+  }
+}
+
+@media (max-width: 620px) {
+  .shell {
+    padding: 10px;
+  }
+
+  .app-header {
+    position: static;
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .app-header .aura-mark {
+    width: 52px;
+  }
+
+  .brand-copy > p:last-child,
+  .connection-status {
+    display: none;
+  }
+
+  .app-header .lock-button {
+    max-width: 92px;
+    font-size: 0.75rem;
+  }
+
+  .workspace {
+    padding-top: 14px;
+  }
+
+  .action-panel,
+  .featured-actions,
+  .compact-actions,
+  .compact-actions--two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .action-panel {
+    display: contents;
+  }
+
+  .panel-intro {
+    order: 1;
+  }
+
+  .featured-actions {
+    order: 2;
+  }
+
+  .phase3-layout .console-panel {
+    order: 3;
+  }
+
+  .action-group {
+    order: 4;
+  }
+
+  .aura-pulse-card {
+    order: 5;
+  }
+
+  .panel-intro,
+  .action-group,
+  .aura-pulse-card {
+    border-radius: 10px;
+  }
+
+  .phase3-layout .console-panel {
+    min-height: 0;
+  }
+
+  .phase3-layout .log {
+    min-height: 240px;
+    max-height: none;
+  }
+
+  .console-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .read-only-note {
+    white-space: normal;
+  }
+
+  .command-help small {
+    display: none;
+  }
+
+  .command-input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .command-input-row button {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 .signal {

@@ -17,7 +17,7 @@ assert.doesNotMatch(
   "apiGet() i apiPost() ja afegeixen el prefix /api; no s'ha de duplicar.",
 );
 assert.match(core, /function buildApiUrl\(path\)/, "Les crides API han de validar el prefix intern.");
-assert.match(html, />Què és la llavor\?<\/button>/, "El botó ha d'explicar què obrirà.");
+assert.match(html, />La llavor d'Aura<\/button>/, "El botó ha d'explicar què obrirà.");
 assert.match(
   core,
   /No és una llavor biològica ni implica consciència/,
@@ -27,6 +27,14 @@ assert.doesNotMatch(html, /aura_face|aura-face|Rostre d'Aura/, "La interfície n
 assert.doesNotMatch(styles, /aura-face|aura-mark--face/, "Els estils de la fotografia s'han d'eliminar.");
 assert.doesNotMatch(packageJson, /aura_face\.jpg/, "El desplegament no ha d'incloure la fotografia.");
 assert.match(html, /<span class="aura-mark-core">A<\/span>/, "Aura ha de conservar una marca abstracta sense fotografia.");
+assert.match(html, /class="app-header"/, "La fase 3 ha de tenir una capçalera compacta.");
+assert.match(html, /class="phase3-layout"/, "La fase 3 ha de separar accions i resultats.");
+assert.match(html, /class="action-panel"/, "Les accions han d'estar agrupades abans de la conversa.");
+assert.match(html, /class="console-head"/, "La conversa ha de tenir un títol visible.");
+assert.match(html, /<button type="submit">Envia<\/button>/, "El camp d'ordres ha de tenir una acció d'enviament explícita.");
+assert.doesNotMatch(html, /class="identity-band"/, "La capçalera antiga no ha de continuar ocupant la primera pantalla.");
+assert.match(styles, /@media \(max-width: 620px\)/, "La interfície ha de tenir una composició mòbil específica.");
+assert.match(styles, /prefers-reduced-motion: reduce/, "La interfície ha de respectar el moviment reduït.");
 
 await assert.rejects(
   access(new URL("../aura_face.jpg", import.meta.url)),

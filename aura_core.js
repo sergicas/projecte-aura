@@ -424,20 +424,20 @@ async function startAura() {
     if (cloudState.online) {
       writeSystem("Aura Cloud v5.2 inicialitzada.\nOrientació operativa activa: /que-es-aura i /proxim-pas expliquen ús actual i següent pas; sense consciència, RAG, embeddings ni mutació automàtica.");
       if (els.statusPill) {
-        els.statusPill.textContent = AURA_VERSION;
+        els.statusPill.textContent = "Núvol actiu";
       }
     } else {
       writeSystem(
         "Aura Cloud v5.2 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva memòria, genoma, catàleg de coneixement, autoreflexió i orientació derivada d'aquest navegador.",
       );
       if (els.statusPill) {
-        els.statusPill.textContent = "local";
+        els.statusPill.textContent = "Mode local";
       }
     }
   } catch (error) {
     writeError(`No s'ha pogut iniciar IndexedDB: ${error.message}`);
     if (els.statusPill) {
-      els.statusPill.textContent = "error";
+      els.statusPill.textContent = "Error de connexió";
     }
   }
 }
@@ -4004,7 +4004,7 @@ async function refreshPanels() {
   };
 
   if (els.statusPill) {
-    els.statusPill.textContent = cloudState.online ? cloudState.snapshot.status?.version || AURA_VERSION : "local";
+    els.statusPill.textContent = cloudState.online ? "Núvol actiu" : "Mode local";
   }
   if (els.memoryCount) {
     els.memoryCount.textContent = String(counts.records);
@@ -6228,7 +6228,7 @@ function buildLocalAuraWebInterface(options = {}) {
       related: ["README.md", "PROTOCOL_MESTRE_AURA.md", "AURA_HISTORY.md"],
     },
     layout: {
-      shell: "identity-band + simple-workspace + console-panel",
+      shell: "app-header + phase3-layout + console-panel",
       modules: modules.map((module) => module.id),
       defaultModule: "simple",
       responsive: ["desktop-grid", "tablet-stack", "mobile-stack"],

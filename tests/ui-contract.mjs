@@ -37,6 +37,10 @@ assert.match(styles, /@media \(max-width: 620px\)/, "La interfície ha de tenir 
 assert.match(styles, /prefers-reduced-motion: reduce/, "La interfície ha de respectar el moviment reduït.");
 assert.match(html, /durant 30 dies/, "La pantalla d'accés ha d'explicar la durada de la sessió.");
 assert.match(core, /Confirma la sortida/, "Tancar la sessió ha de requerir confirmació.");
+assert.doesNotMatch(core, /window\.prompt\(/, "La interfície no ha de dependre de finestres prompt no compatibles.");
+assert.match(html, /id="record-form"/, "Gravar un record ha de tenir un formulari integrat.");
+assert.match(html, />Desa el record<\/button>/, "El formulari de record ha de tenir una acció explícita.");
+assert.match(core, /openRecordComposer\(\)/, "El botó de gravar ha d'obrir el formulari integrat.");
 
 await assert.rejects(
   access(new URL("../aura_face.jpg", import.meta.url)),

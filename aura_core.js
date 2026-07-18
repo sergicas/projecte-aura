@@ -479,6 +479,10 @@ function cacheElements() {
   els.authGate = document.querySelector("#auth-gate");
   els.appShell = document.querySelector("#aura-shell");
   els.clearAuth = document.querySelector("#clear-auth");
+  els.recordForm = document.querySelector("#record-form");
+  els.recordInput = document.querySelector("#record-input");
+  els.recordError = document.querySelector("#record-error");
+  els.cancelRecord = document.querySelector("#cancel-record");
   els.visual = document.querySelector("#aura-visual");
   els.workspace = document.querySelector(".workspace");
   els.moduleTabs = [...document.querySelectorAll("[data-module]")];
@@ -519,6 +523,39 @@ function bindEvents() {
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => runButtonAction(button));
   });
+
+  if (els.recordForm && els.recordInput) {
+    els.recordForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const memory = els.recordInput.value.trim();
+      if (!memory) {
+        setRecordError("Escriu el record que vols conservar.");
+        els.recordInput.focus();
+        return;
+      }
+
+      if (!auraSessionActive) {
+        setRecordError("La sessió ha caducat. Desbloqueja Aura per continuar.");
+        showAuthGate();
+        return;
+      }
+
+      const submitButton = els.recordForm.querySelector('[type="submit"]');
+      submitButton.disabled = true;
+      submitButton.setAttribute("aria-busy", "true");
+      setRecordError("");
+      writeCommand(`recorda que ${memory}`);
+      try {
+        const saved = await remember(memory);
+        if (saved) closeRecordComposer();
+      } finally {
+        submitButton.disabled = false;
+        submitButton.removeAttribute("aria-busy");
+      }
+    });
+  }
+
+  els.cancelRecord?.addEventListener("click", closeRecordComposer);
 
   els.moduleTabs.forEach((button) => {
     button.addEventListener("click", () => activateModule(button.dataset.module));
@@ -666,18 +703,30 @@ async function runPrimaryAction(action) {
   }
 
   if (action === "new-record") {
-    const text = window.prompt("Quin record vols guardar?");
-    const memory = text?.trim();
-    if (!memory) return;
-
-    const cloudAvailable = cloudState.online || (await syncCloudState());
-    if (cloudAvailable && !auraSessionActive) {
-      const ready = await promptForSergiModeKey();
-      if (!ready) return;
-    }
-
-    await runCommand(`recorda que ${memory}`);
+    openRecordComposer();
   }
+}
+
+function openRecordComposer() {
+  if (!els.recordForm || !els.recordInput) return;
+  els.recordForm.hidden = false;
+  setRecordError("");
+  document.querySelector('[data-action="new-record"]')?.setAttribute("aria-expanded", "true");
+  els.recordInput.focus();
+}
+
+function closeRecordComposer() {
+  if (!els.recordForm || !els.recordInput) return;
+  els.recordForm.hidden = true;
+  els.recordInput.value = "";
+  setRecordError("");
+  const trigger = document.querySelector('[data-action="new-record"]');
+  trigger?.setAttribute("aria-expanded", "false");
+  trigger?.focus();
+}
+
+function setRecordError(message) {
+  if (els.recordError) els.recordError.textContent = message;
 }
 
 async function getSimpleLocalCounts() {
@@ -712,7 +761,7 @@ async function showSimpleWhatIsAura() {
       "En aquesta pantalla em pots llegir, consultar el que recordo i, si tu ho decideixes, deixar-me un record nou.",
       `Ara ens veiem en ${mode}.`,
       "Els botons de lectura no toquen res.",
-      "`Grava record` és l'únic que pot escriure, i sempre et demano Mode Sergi abans.",
+      "`Grava un record` és l'únic botó que pot escriure: obre un formulari dins d'Aura i usa la sessió segura que ja tens activa.",
     ].join("\n"),
   );
 }
@@ -796,31 +845,6 @@ async function showSyntheticGenome() {
     );
   } catch (error) {
     writeError(`No s'ha pogut llegir la llavor: ${error.message || String(error)}`);
-  }
-}
-
-async function promptForSergiModeKey() {
-  const nextKey = window.prompt(
-    "Mode Sergi és necessari per gravar a D1. Enganxa la clau local aquí, no al xat.",
-  );
-  const writeKey = nextKey?.trim();
-  if (!writeKey) {
-    writeError("Mode Sergi inactiu: el record no s'ha escrit a D1.");
-    return false;
-  }
-
-  setAuthStatusText("validant");
-  try {
-    await validateSergiModeKey(writeKey);
-    auraSessionActive = true;
-    updateAuthStatus();
-    writeSystem("Mode Sergi activat amb una sessió segura en aquest navegador.");
-    return true;
-  } catch (error) {
-    auraSessionActive = false;
-    updateAuthStatus();
-    writeError(`Mode Sergi no validat: ${error.message}`);
-    return false;
   }
 }
 
@@ -1913,7 +1937,7 @@ async function validateSergiModeKey(writeKey = "") {
 async function showSergiMode() {
   let state = "bloquejat en aquest navegador";
   let serverLine = "Validació Pages: pendent";
-  let actionLine = "Acció: prem Grava record; si cal, Aura et demanarà la clau en aquell moment.";
+  let actionLine = "Acció: desbloqueja Aura des de la pantalla d'accés per continuar.";
 
   if (auraSessionActive) {
     setAuthStatusText("validant");
@@ -1924,9 +1948,9 @@ async function showSergiMode() {
       actionLine = "Acció: ja pots escriure records, diari, backups, snapshots i canvis protegits.";
       updateAuthStatus();
     } catch (error) {
-      state = "clau guardada, però no validada";
+      state = "sessió caducada o no validada";
       serverLine = `Validació Pages: falla (${error.message})`;
-      actionLine = "Acció: torna a prémer Grava record i enganxa la clau local quan la demani.";
+      actionLine = "Acció: torna a desbloquejar Aura des de la pantalla d'accés.";
       setAuthStatusText("revisar");
     }
   }
@@ -1938,14 +1962,9 @@ async function showSergiMode() {
       serverLine,
       actionLine,
       "",
-      "Per activar-lo:",
-      "1. Al Mac local, copia la clau des del fitxer privat `.aura-write-key` sense mostrar-la.",
-      "2. Torna a Aura Web.",
-      "3. Prem Grava record.",
-      "4. Quan el navegador demani la clau, enganxa-la i valida.",
-      "",
-      "Quan Pages valida la clau, el navegador la conserva per poder gravar records.",
-      "No enganxis la clau al xat ni en cap document.",
+      auraSessionActive
+        ? "Prem `Grava un record`: el formulari apareixerà dins d'Aura i no et tornarà a demanar la clau."
+        : "La clau només s'introdueix a la pantalla privada de desbloqueig; mai al xat ni al formulari del record.",
     ].join("\n"),
   );
 }
@@ -2058,18 +2077,17 @@ async function remember(text) {
   const memory = parseRichMemoryInput(text);
   if (!memory.text) {
     writeError("No hi ha cap record per guardar.");
-    return;
+    return false;
   }
 
   let record = null;
   const cloudAvailable = cloudState.online || (await syncCloudState());
   if (cloudAvailable) {
     if (!auraSessionActive) {
-      const ready = await promptForSergiModeKey();
-      if (!ready) {
-        await refreshPanels();
-        return;
-      }
+      writeError("La sessió ha caducat. Desbloqueja Aura abans de gravar el record.");
+      showAuthGate();
+      await refreshPanels();
+      return false;
     }
 
     try {
@@ -2091,7 +2109,13 @@ async function remember(text) {
       if (error.message.includes("Clau") || error.message.includes("Mode Sergi")) {
         writeError(`${error.message} El record no s'ha escrit a D1.`);
         await refreshPanels();
-        return;
+        return false;
+      }
+
+      if (!auraSessionActive) {
+        writeError("La sessió ha caducat. El record no s'ha escrit a D1.");
+        await refreshPanels();
+        return false;
       }
 
       writeError(`D1 no ha pogut guardar el record: ${error.message}`);
@@ -2119,6 +2143,7 @@ async function remember(text) {
   }
 
   await refreshPanels();
+  return true;
 }
 
 async function writeDiaryEntry(text) {

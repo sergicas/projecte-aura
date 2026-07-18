@@ -329,7 +329,7 @@ pbcopy < .aura-write-key
 4. Confirma l'estat amb `/mode-sergi` o `aura sergi-mode`.
 5. Quan acabis, prem `Bloqueja` per eliminar la cookie de sessió.
 
-El servidor converteix la validació correcta en una cookie `HttpOnly`, `Secure` i `SameSite=Strict` amb una durada màxima de 12 hores. El navegador no conserva la clau. `/mode-sergi` comprova la sessió activa contra `GET /api/mode-sergi`.
+El servidor converteix la validació correcta en una cookie `HttpOnly`, `Secure` i `SameSite=Strict` amb una durada màxima de 30 dies. El navegador no conserva la clau. `/mode-sergi` comprova la sessió activa contra `GET /api/mode-sergi`. Tancar la sessió requereix dos clics per evitar una desconnexió accidental.
 
 No enganxis la clau al xat ni en cap document.
 

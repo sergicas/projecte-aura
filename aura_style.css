@@ -326,6 +326,13 @@ input:focus-visible {
   padding: 6px 11px;
 }
 
+.lock-button[data-confirm-logout="true"] {
+  border-color: rgba(216, 95, 71, 0.52);
+  background: rgba(216, 95, 71, 0.1);
+  color: #9d3828;
+  font-weight: 800;
+}
+
 .workspace.simple-workspace {
   width: min(1240px, 100%);
 }

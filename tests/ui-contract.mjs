@@ -35,6 +35,8 @@ assert.match(html, /<button type="submit">Envia<\/button>/, "El camp d'ordres ha
 assert.doesNotMatch(html, /class="identity-band"/, "La capçalera antiga no ha de continuar ocupant la primera pantalla.");
 assert.match(styles, /@media \(max-width: 620px\)/, "La interfície ha de tenir una composició mòbil específica.");
 assert.match(styles, /prefers-reduced-motion: reduce/, "La interfície ha de respectar el moviment reduït.");
+assert.match(html, /durant 30 dies/, "La pantalla d'accés ha d'explicar la durada de la sessió.");
+assert.match(core, /Confirma la sortida/, "Tancar la sessió ha de requerir confirmació.");
 
 await assert.rejects(
   access(new URL("../aura_face.jpg", import.meta.url)),

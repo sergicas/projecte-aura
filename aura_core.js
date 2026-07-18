@@ -383,6 +383,7 @@ let cloudState = {
 };
 let auraSessionActive = false;
 let auraStarted = false;
+let logoutConfirmationTimer = null;
 let pendingRestore = null;
 let bodyVisualState = {
   posture: "inicial",
@@ -580,6 +581,15 @@ function bindEvents() {
 
   if (els.clearAuth) {
     els.clearAuth.addEventListener("click", async () => {
+      if (els.clearAuth.dataset.confirmLogout !== "true") {
+        els.clearAuth.dataset.confirmLogout = "true";
+        els.clearAuth.textContent = "Confirma la sortida";
+        clearTimeout(logoutConfirmationTimer);
+        logoutConfirmationTimer = window.setTimeout(resetLogoutConfirmation, 5000);
+        return;
+      }
+
+      clearTimeout(logoutConfirmationTimer);
       await logoutAuraSession();
       auraSessionActive = false;
       if (els.authInput) {
@@ -589,6 +599,13 @@ function bindEvents() {
       window.location.reload();
     });
   }
+}
+
+function resetLogoutConfirmation() {
+  if (!els.clearAuth) return;
+  delete els.clearAuth.dataset.confirmLogout;
+  els.clearAuth.textContent = "Tanca la sessió";
+  logoutConfirmationTimer = null;
 }
 
 async function runButtonAction(button) {

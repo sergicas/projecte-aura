@@ -51,6 +51,7 @@ assert.match(setCookie, /HttpOnly/iu);
 assert.match(setCookie, /Secure/iu);
 assert.match(setCookie, /SameSite=Strict/iu);
 assert.match(setCookie, /Path=\//iu);
+assert.match(setCookie, /Max-Age=2592000/iu, "La sessió recordada ha de durar 30 dies");
 
 const sessionCookie = setCookie.split(";", 1)[0];
 const validSession = await onRequest(

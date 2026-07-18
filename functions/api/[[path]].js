@@ -7,7 +7,8 @@ const INTEGRITY_LATEST_KEY = "aura/integrity/latest";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
 const MAX_LOGIN_JSON_BYTES = 4 * 1024;
 const SESSION_COOKIE_NAME = "__Host-aura_session";
-const SESSION_TTL_SECONDS = 12 * 60 * 60;
+const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
+const LEGACY_SESSION_TTL_SECONDS = 12 * 60 * 60;
 const SESSION_VERSION = 1;
 const GENE_STATES = ["actiu", "latent", "arxivat", "observacio"];
 const MEMORY_STATES = ["actiu", "latent", "arxivat", "observacio"];
@@ -1371,7 +1372,7 @@ async function verifySession(request, secret) {
       !Number.isInteger(claims?.iat) ||
       !Number.isInteger(claims?.exp) ||
       claims.iat > now + 60 ||
-      claims.exp - claims.iat !== SESSION_TTL_SECONDS ||
+      ![SESSION_TTL_SECONDS, LEGACY_SESSION_TTL_SECONDS].includes(claims.exp - claims.iat) ||
       claims.exp <= now ||
       claims.aud !== new URL(request.url).host
     ) {

@@ -52,7 +52,7 @@ Primer pas recomanat: catalogar l'avatar com a font externa i afegir un enllaç 
 - Projecte local: `/Users/sergicastillo/Documents/Aura`
 - Clau Mode Sergi: `.aura-write-key` dins del projecte local
 
-No imprimeixis ni comparteixis la clau. Aura Web necessita Mode Sergi per llegir o escriure dades de D1 i del vault. La clau no es desa al navegador: una validació correcta crea una cookie de sessió `HttpOnly`, `Secure` i `SameSite=Strict` que caduca al cap de 12 hores.
+No imprimeixis ni comparteixis la clau. Aura Web necessita Mode Sergi per llegir o escriure dades de D1 i del vault. La clau no es desa al navegador: una validació correcta crea una cookie de sessió `HttpOnly`, `Secure` i `SameSite=Strict` que caduca al cap de 30 dies. Tancar-la requereix dos clics per evitar una desconnexió accidental.
 
 ## Com activar Mode Sergi
 

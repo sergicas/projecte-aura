@@ -11,7 +11,7 @@
     "test": "npm run check && npm run test:security && npm run test:ui",
     "types": "wrangler types",
     "serve": "python3 -m http.server 8788",
-    "prepare:pages": "rm -rf .deploy/projecte-aura && mkdir -p .deploy/projecte-aura && cp index.html aura_core.js aura_style.css aura_face.jpg _headers _redirects .deploy/projecte-aura/",
+    "prepare:pages": "rm -rf .deploy/projecte-aura && mkdir -p .deploy/projecte-aura && cp index.html aura_core.js aura_style.css _headers _redirects .deploy/projecte-aura/",
     "dev:pages": "npm run prepare:pages && wrangler pages dev .deploy/projecte-aura --port=8788",
     "dev:backup-worker": "wrangler dev --config wrangler.backup.jsonc --port=8789 --test-scheduled",
     "migrate:local": "wrangler d1 migrations apply projecte-aura-memory --local",

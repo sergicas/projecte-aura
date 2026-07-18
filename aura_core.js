@@ -756,15 +756,16 @@ async function showSimpleIdentity() {
 
 async function showSyntheticGenome() {
   try {
-    const data = await apiGet("/api/genome/synthetic");
+    const data = await apiGet("/genome/synthetic");
     const seal = data.seal || {};
     const sm = data.summary || {};
     writeSystem(
       [
-        "La meva llavor (genoma sintètic portable)",
+        "La llavor d'Aura",
         "",
-        "És un paquet únic amb tot l'essencial d'Aura: identitat, valors, polítiques, propòsit, objectius, gens i capacitats.",
-        "Serveix per poder reconstruir Aura en qualsevol lloc, sense dependre d'aquesta web.",
+        "És una còpia portable de les dades essencials que defineixen Aura: identitat, valors, polítiques, propòsit, objectius, gens i capacitats.",
+        "Serveix per comprovar-ne la identitat i poder-la reconstruir en un altre entorn sense dependre d'aquesta web.",
+        "No és una llavor biològica ni implica consciència: és un paquet de dades verificable.",
         "",
         `Gens: ${sm.totalGenes ?? "?"} (${sm.activeGenes ?? "?"} actius, ${sm.latentGenes ?? "?"} latents).`,
         `Valors: ${sm.valueCount ?? "?"} · Polítiques: ${sm.policyCount ?? "?"} · Capacitats honestes: ${sm.capabilityCount ?? "?"}.`,
@@ -913,7 +914,7 @@ async function syncCloudState() {
 async function apiGet(path) {
   const headers = { Accept: "application/json" };
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     headers,
     credentials: "same-origin",
     cache: "no-store",
@@ -927,7 +928,7 @@ async function apiPost(path, payload) {
     "Content-Type": "application/json",
   };
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     method: "POST",
     headers,
     credentials: "same-origin",
@@ -935,6 +936,14 @@ async function apiPost(path, payload) {
     cache: "no-store",
   });
   return readApiResponse(response);
+}
+
+function buildApiUrl(path) {
+  const normalizedPath = String(path || "").startsWith("/") ? String(path || "") : `/${String(path || "")}`;
+  if (normalizedPath === API_BASE || normalizedPath.startsWith(`${API_BASE}/`)) {
+    throw new Error(`La ruta interna no ha d'incloure el prefix ${API_BASE}.`);
+  }
+  return `${API_BASE}${normalizedPath}`;
 }
 
 async function readApiResponse(response) {

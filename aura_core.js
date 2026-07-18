@@ -5752,15 +5752,6 @@ function drawAuraVisual() {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  const colors = ["#6fc9a7", "#8fc7ef", "#c9972f", "#d85f47"];
-  const points = Array.from({ length: 64 }, (_, index) => ({
-    angle: (index / 64) * Math.PI * 2,
-    radius: 58 + ((index * 17) % 112),
-    lane: index % 3,
-    speed: 0.0012 + (index % 6) * 0.00024,
-    size: 1.8 + (index % 4) * 0.55,
-    color: colors[index % colors.length],
-  }));
   const stars = Array.from({ length: 78 }, (_, index) => ({
     x: (index * 73) % 520,
     y: (index * 47) % 240,
@@ -5827,38 +5818,6 @@ function drawAuraVisual() {
       ctx.arc(x, y, star.size, 0, Math.PI * 2);
       ctx.fill();
     });
-
-    const visibleNodes = Math.max(
-      18,
-      Math.min(points.length, 18 + Number(state.records || 0) + Math.ceil(Number(state.diary || 0) / 3)),
-    );
-    const nodes = points.slice(0, visibleNodes).map((point, index) => {
-      const drift = time * point.speed;
-      const laneLift = point.lane === 0 ? -18 : point.lane === 1 ? 2 : 18;
-      const x = cx + Math.cos(point.angle + drift) * point.radius * (1.08 + (index % 4) * 0.07);
-      const y = cy - 8 + laneLift + Math.sin(point.angle * 1.52 + drift) * point.radius * 0.42;
-      return { ...point, x, y };
-    });
-
-    ctx.lineWidth = 1.15;
-    nodes.forEach((node, index) => {
-      const targetY = cy - 22 + Math.sin(index) * 16;
-      ctx.strokeStyle = `rgba(237, 247, 238, ${0.035 + integrity * 0.1})`;
-      ctx.beginPath();
-      ctx.moveTo(node.x, node.y);
-      ctx.quadraticCurveTo(cx + Math.cos(index) * 36, targetY, cx, cy - 4);
-      ctx.stroke();
-    });
-
-    nodes.forEach((node) => {
-      ctx.shadowColor = node.color;
-      ctx.shadowBlur = 8;
-      ctx.fillStyle = node.color;
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, node.size + integrity * 0.9, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.shadowBlur = 0;
 
     ctx.save();
     ctx.translate(cx, cy);

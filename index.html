@@ -8,7 +8,7 @@
       content="Projecte Aura Cloud v5.2: interfície simple per orientar la sessió, consultar estat i records, i gravar records només amb Mode Sergi."
     />
     <title>Projecte Aura Cloud v5.2</title>
-    <link rel="stylesheet" href="aura_style.css?v=phase3-record-form-20260718" />
+    <link rel="stylesheet" href="aura_style.css?v=phase3-record-dialog-20260718" />
   </head>
   <body>
     <section id="auth-gate" class="auth-gate" aria-labelledby="auth-title">
@@ -121,27 +121,6 @@
 
               <div id="aura-log" class="log" role="log" aria-live="polite" aria-label="Historial de respostes d'Aura"></div>
 
-              <form id="record-form" class="record-composer" autocomplete="off" hidden>
-                <div>
-                  <p class="section-eyebrow">Nou record</p>
-                  <label for="record-input">Què vols que recordi Aura?</label>
-                  <p>Escriu una decisió, una dada o un fet que vulguis conservar.</p>
-                </div>
-                <textarea
-                  id="record-input"
-                  name="record"
-                  rows="3"
-                  maxlength="4000"
-                  placeholder="Exemple: Hem decidit prioritzar la millora de la interfície"
-                  required
-                ></textarea>
-                <p id="record-error" class="record-error" role="alert" aria-live="polite"></p>
-                <div class="record-actions">
-                  <button id="cancel-record" type="button">Cancel·la</button>
-                  <button type="submit">Desa el record</button>
-                </div>
-              </form>
-
               <form id="command-form" class="command-row" autocomplete="off">
                 <div class="command-help">
                   <label for="command-input">Escriu una ordre</label>
@@ -163,8 +142,32 @@
           </div>
         </section>
       </section>
+
+      <dialog id="record-dialog" class="record-dialog" aria-labelledby="record-dialog-title">
+        <form id="record-form" class="record-composer" autocomplete="off">
+          <div>
+            <p class="section-eyebrow">Nou record</p>
+            <h2 id="record-dialog-title">Què vols que recordi Aura?</h2>
+            <p>Escriu una decisió, una dada o un fet que vulguis conservar.</p>
+          </div>
+          <label class="sr-only" for="record-input">Contingut del nou record</label>
+          <textarea
+            id="record-input"
+            name="record"
+            rows="4"
+            maxlength="4000"
+            placeholder="Exemple: Hem decidit prioritzar la millora de la interfície"
+            required
+          ></textarea>
+          <p id="record-error" class="record-error" role="alert" aria-live="polite"></p>
+          <div class="record-actions">
+            <button id="cancel-record" type="button">Cancel·la</button>
+            <button type="submit">Desa el record</button>
+          </div>
+        </form>
+      </dialog>
     </main>
 
-    <script src="aura_core.js?v=phase3-record-form-20260718" defer></script>
+    <script src="aura_core.js?v=phase3-record-dialog-20260718" defer></script>
   </body>
 </html>

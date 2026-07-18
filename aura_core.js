@@ -480,6 +480,7 @@ function cacheElements() {
   els.appShell = document.querySelector("#aura-shell");
   els.clearAuth = document.querySelector("#clear-auth");
   els.recordForm = document.querySelector("#record-form");
+  els.recordDialog = document.querySelector("#record-dialog");
   els.recordInput = document.querySelector("#record-input");
   els.recordError = document.querySelector("#record-error");
   els.cancelRecord = document.querySelector("#cancel-record");
@@ -556,6 +557,10 @@ function bindEvents() {
   }
 
   els.cancelRecord?.addEventListener("click", closeRecordComposer);
+  els.recordDialog?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeRecordComposer();
+  });
 
   els.moduleTabs.forEach((button) => {
     button.addEventListener("click", () => activateModule(button.dataset.module));
@@ -708,16 +713,16 @@ async function runPrimaryAction(action) {
 }
 
 function openRecordComposer() {
-  if (!els.recordForm || !els.recordInput) return;
-  els.recordForm.hidden = false;
+  if (!els.recordDialog || !els.recordInput) return;
   setRecordError("");
   document.querySelector('[data-action="new-record"]')?.setAttribute("aria-expanded", "true");
+  if (!els.recordDialog.open) els.recordDialog.showModal();
   els.recordInput.focus();
 }
 
 function closeRecordComposer() {
-  if (!els.recordForm || !els.recordInput) return;
-  els.recordForm.hidden = true;
+  if (!els.recordDialog || !els.recordInput) return;
+  if (els.recordDialog.open) els.recordDialog.close();
   els.recordInput.value = "";
   setRecordError("");
   const trigger = document.querySelector('[data-action="new-record"]');

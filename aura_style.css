@@ -574,8 +574,14 @@ input:focus-visible {
 
   .app-header {
     position: static;
-    align-items: flex-start;
+    align-items: center;
     padding: 14px;
+  }
+
+  .app-header .brand-lockup {
+    align-items: center;
+    flex-direction: row;
+    gap: 10px;
   }
 
   .app-header .aura-mark {

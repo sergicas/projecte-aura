@@ -218,7 +218,8 @@ Contracte:
 - Workers KV conserva backups, snapshots d'integritat i metadata del Worker.
 - El Worker `projecte-aura-backup-worker` executa backups automàtics.
 - IndexedDB és fallback local, no font definitiva.
-- `AURA_WRITE_KEY` és secret i no s'ha d'imprimir ni documentar.
+- Cloudflare Access protegeix l'accés humà al web i a `/api/*`, sense cap segona clau al navegador.
+- `AURA_WRITE_KEY` és un secret tècnic reservat a automatitzacions i manteniment; no s'ha d'imprimir, documentar ni exposar al navegador.
 
 Document obligatori de Fase 4:
 

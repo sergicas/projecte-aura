@@ -237,6 +237,8 @@ Arquitectura viva:
 ```text
 Usuari
   ↓
+Cloudflare Access
+  ↓
 Cloudflare Pages
   ↓
 Pages Functions /api/*
@@ -256,7 +258,8 @@ Contracte actual:
 - API: `functions/api/[[path]].js`
 - D1: binding `DB`
 - KV: binding `BACKUP_VAULT`
-- Secret: `AURA_WRITE_KEY`, sense documentar-ne mai el valor
+- Accés humà: Cloudflare Access, sense codi intern addicional
+- Secret d'automatització: `AURA_WRITE_KEY`, sense documentar-ne mai el valor ni exposar-lo al navegador
 - Worker cron: `workers/aura_backup_worker.js`
 - Config Pages: `wrangler.jsonc`
 - Config Worker: `wrangler.backup.jsonc`
@@ -276,6 +279,7 @@ Verificació:
 ```text
 GET /api/status
 GET /api/infrastructure
+GET /api/session → method: cloudflare-access
 GET /api/integrity
 GET /health del Worker
 ```

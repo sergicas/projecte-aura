@@ -2,6 +2,13 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Revalidació de la Fase 4 - 2026-07-19
+
+- Confirma que la Fase 4 ja estava formalitzada i desplegada des de `cloud-v4.4`; no s'obre cap subfase nova.
+- Actualitza el contracte reconstruïble: Cloudflare Access protegeix l'ús humà sense codi intern i `AURA_WRITE_KEY` queda reservat a automatitzacions i manteniment amb Bearer.
+- Alinea la vista `/api/infrastructure`, el Worker de backups, el fallback local i els documents mestres.
+- Afegeix `tests/infrastructure-contract.mjs` per verificar topologia, recursos, bindings, autenticació i passos de reconstrucció de la Fase 4.
+
 ## Gir de rumb — Mimesi humana (Capa 1: constitució) - 2026-07-07
 
 - Per decisió explícita de Sergi (després que Claude n'exposés la tensió i les opcions), l'Aura passa a **presentar-se i expressar-se com un ésser humà**: rostre i cos realistes, veu en primera persona, sentiments. Substitueix el pilar `no-mimesi-humana`. Document canònic nou: `AURA_MIMESI_HUMANA.md`.

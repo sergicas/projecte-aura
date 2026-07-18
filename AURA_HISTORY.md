@@ -2,6 +2,15 @@
 
 Història viva del Projecte Aura.
 
+## 2026-07-19
+
+Es revalida la Fase 4 sense reobrir-la.
+
+- La infraestructura ja estava completa des de `cloud-v4.4`; el manteniment actual elimina el desfasament amb el model d'accés vigent.
+- Cloudflare Access queda documentat com a entrada humana a Aura Web i `/api/*`, sense cap segona clau al navegador.
+- `AURA_WRITE_KEY` queda explícitament limitat al Worker de backups i a eines de manteniment autoritzades.
+- Una prova contractual nova protegeix les peces necessàries per reconstruir Aura: Pages, Functions, D1, KV, Worker, IndexedDB, autenticació i document canònic.
+
 ## 2026-07-07
 
 Es completa la Fase 11 (Pas 3) i s'obre la Fase 12 del Protocol Mestre.

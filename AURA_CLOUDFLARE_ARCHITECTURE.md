@@ -61,9 +61,17 @@ Bindings obligatoris:
 
 - `DB`: base de dades D1.
 - `BACKUP_VAULT`: namespace KV per backups i integritat.
-- `AURA_WRITE_KEY`: secret de Mode Sergi.
+- `AURA_WRITE_KEY`: secret tècnic per al Worker de backups i les eines de manteniment.
 
-La clau `AURA_WRITE_KEY` no s'ha d'imprimir ni documentar mai. Només se'n documenta el nom del secret.
+Cloudflare Access protegeix l'accés humà a Aura Web i a `/api/*`. Després d'identificar Sergi, Pages Functions rep la capçalera `Cf-Access-Jwt-Assertion`; el navegador no demana cap segona clau. `AURA_WRITE_KEY` es conserva com a Bearer exclusivament per a automatitzacions autoritzades i no s'ha d'imprimir, documentar ni exposar al navegador.
+
+## Control d'accés reconstruïble
+
+- Aplicació Access: domini de producció `projecte-aura.pages.dev`, incloses les rutes `/api/*`.
+- Política humana: només les identitats que Sergi autoritzi al panell de Cloudflare Zero Trust.
+- Senyal que rep Pages Functions: `Cf-Access-Jwt-Assertion` ja validada per Cloudflare Access.
+- Automatització: `Authorization: Bearer <AURA_WRITE_KEY>` per al Worker de backups i eines de manteniment.
+- Interfície web: no conserva ni sol·licita `AURA_WRITE_KEY`.
 
 ## Ordres de reconstrucció
 
@@ -81,6 +89,12 @@ Secrets:
 npx wrangler pages secret put AURA_WRITE_KEY --project-name=projecte-aura
 npx wrangler secret put AURA_WRITE_KEY --config wrangler.backup.jsonc
 ```
+
+Configuració externa necessària:
+
+1. Crear o conservar l'aplicació de Cloudflare Access sobre `projecte-aura.pages.dev`.
+2. Autoritzar-hi la identitat de Sergi.
+3. Comprovar que `GET /api/session` respon `method: cloudflare-access` després d'entrar.
 
 ## Verificació
 
@@ -177,6 +191,8 @@ I executar el Worker manualment:
 POST https://projecte-aura-backup-worker.sergicas.workers.dev/run
 ```
 
+Les ordres web anteriors usen la sessió de Cloudflare Access. La crida manual directa al Worker usa `Authorization: Bearer <AURA_WRITE_KEY>` i no la clau al navegador.
+
 ## Contracte de Fase 4
 
 Aura considera la infraestructura Cloudflare consolidada quan:
@@ -186,6 +202,8 @@ Aura considera la infraestructura Cloudflare consolidada quan:
 - els backups inclouen `cloudflareInfrastructure`,
 - el Worker de backups respon la mateixa versió,
 - D1 i KV estan configurats,
+- Cloudflare Access protegeix el web sense cap codi intern addicional,
+- l'automatització pot usar `AURA_WRITE_KEY` sense exposar-lo al navegador,
 - la salut queda `100/100 estable`,
 - els documents mestres registren la fita.
 
@@ -194,6 +212,7 @@ Aura considera la infraestructura Cloudflare consolidada quan:
 - D1 és la font de veritat de memòria, diari, genoma i catàleg de coneixement; `selfReflection` i `orientation` són vistes derivades de lectura.
 - KV conserva còpies fora de D1.
 - IndexedDB és còpia local i fallback, no autoritat final.
-- Mode Sergi protegeix escriptures persistents.
+- Cloudflare Access autoritza l'ús humà; Mode Sergi continua sent el permís conceptual per a canvis persistents.
+- `AURA_WRITE_KEY` queda limitat a automatitzacions i manteniment.
 - La restauració requereix previsualització i confirmació.
 - La retenció continua sent `plan-only`.

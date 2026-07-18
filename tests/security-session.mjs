@@ -3,89 +3,69 @@ import assert from "node:assert/strict";
 import { onRequest } from "../functions/api/[[path]].js";
 
 const TEST_KEY = "aura-security-test-key";
+const ACCESS_ASSERTION = "eyJhbGciOiJSUzI1NiJ9.eyJlbWFpbCI6InNlcmdpQGV4YW1wbGUuY29tIn0.signature1234";
 const BASE_URL = "https://aura.test/api";
 const env = { AURA_WRITE_KEY: TEST_KEY };
 
-function context(path, init = {}) {
+function context(path, init = {}, accessAssertion = "") {
+  const headers = new Headers(init.headers);
+  if (accessAssertion) headers.set("Cf-Access-Jwt-Assertion", accessAssertion);
   return {
-    request: new Request(`${BASE_URL}/${path}`, init),
+    request: new Request(`${BASE_URL}/${path}`, { ...init, headers }),
     env,
     params: { path: path.split("/") },
   };
 }
 
 const anonymousMemory = await onRequest(context("memory"));
-assert.equal(anonymousMemory.status, 401, "La memòria ha de rebutjar accessos anònims");
+assert.equal(anonymousMemory.status, 401, "La memòria ha de rebutjar accessos que no hagin passat per Access");
 assert.equal(
   anonymousMemory.headers.get("Access-Control-Allow-Origin"),
   null,
   "L'API no ha d'exposar CORS wildcard",
 );
 
-const anonymousBackup = await onRequest(context("backup"));
-assert.equal(anonymousBackup.status, 401, "L'exportació de backup ha de rebutjar accessos anònims");
+const malformedAccess = await onRequest(context("session", {}, "not-a-jwt"));
+assert.equal(malformedAccess.status, 401, "Una assertion malformada no s'ha d'acceptar");
 
-const invalidLogin = await onRequest(
-  context("session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "incorrecta" }),
-  }),
+const legacyCookieOnly = await onRequest(
+  context("session", { headers: { Cookie: "__Host-aura_session=legacy.fake" } }),
 );
-assert.equal(invalidLogin.status, 401, "Una clau incorrecta no ha de crear sessió");
-assert.equal(invalidLogin.headers.get("Set-Cookie"), null, "Una clau incorrecta no ha de fixar cap cookie");
+assert.equal(legacyCookieOnly.status, 401, "La cookie interna antiga no ha de substituir Cloudflare Access");
 
-const validLogin = await onRequest(
+const keyOnlyLogin = await onRequest(
   context("session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ key: TEST_KEY }),
   }),
 );
-assert.equal(validLogin.status, 201, "Una clau correcta ha de crear sessió");
+assert.equal(keyOnlyLogin.status, 401, "El navegador no ha de poder crear una sessió amb una clau interna");
 
-const setCookie = validLogin.headers.get("Set-Cookie");
-assert.ok(setCookie, "La sessió ha d'incloure una cookie");
-assert.match(setCookie, /^__Host-aura_session=/u);
-assert.match(setCookie, /HttpOnly/iu);
-assert.match(setCookie, /Secure/iu);
-assert.match(setCookie, /SameSite=Strict/iu);
-assert.match(setCookie, /Path=\//iu);
-assert.match(setCookie, /Max-Age=2592000/iu, "La sessió recordada ha de durar 30 dies");
-
-const sessionCookie = setCookie.split(";", 1)[0];
-const validSession = await onRequest(
-  context("session", {
-    headers: { Cookie: sessionCookie },
-  }),
+const accessSession = await onRequest(context("session", {}, ACCESS_ASSERTION));
+assert.equal(accessSession.status, 200, "Cloudflare Access ha d'autoritzar la sessió web");
+const accessPayload = await accessSession.json();
+assert.equal(accessPayload.method, "cloudflare-access");
+assert.match(
+  accessSession.headers.get("Set-Cookie") || "",
+  /__Host-aura_session=;.*Max-Age=0/iu,
+  "La migració ha d'eliminar la cookie interna antiga",
 );
-assert.equal(validSession.status, 200, "La cookie signada ha de validar la sessió");
 
-const tamperedSession = await onRequest(
-  context("session", {
-    headers: { Cookie: `${sessionCookie}x` },
-  }),
+const accessPostSession = await onRequest(
+  context("session", { method: "POST" }, ACCESS_ASSERTION),
 );
-assert.equal(tamperedSession.status, 401, "Una cookie manipulada s'ha de rebutjar");
-
-const foreignHostSession = await onRequest({
-  request: new Request("https://altre-host.test/api/session", {
-    headers: { Cookie: sessionCookie },
-  }),
-  env,
-  params: { path: ["session"] },
-});
-assert.equal(foreignHostSession.status, 401, "La sessió ha d'estar vinculada al host que l'ha emès");
+assert.equal(accessPostSession.status, 200, "POST /session no ha de demanar cap codi intern després d'Access");
 
 const bearerSession = await onRequest(
   context("session", {
     headers: { Authorization: `Bearer ${TEST_KEY}` },
   }),
 );
-assert.equal(bearerSession.status, 200, "La compatibilitat Bearer s'ha de conservar");
+assert.equal(bearerSession.status, 200, "La compatibilitat Bearer s'ha de conservar per a l'automatització");
 
 const logout = await onRequest(context("session/logout", { method: "POST" }));
 assert.equal(logout.status, 200);
-assert.match(logout.headers.get("Set-Cookie") || "", /Max-Age=0/iu, "Sortir ha d'eliminar la cookie");
+assert.match(logout.headers.get("Set-Cookie") || "", /Max-Age=0/iu, "La ruta antiga ha de netejar la cookie");
 
-console.log("Aura security session tests: OK");
+console.log("Aura Cloudflare Access security tests: OK");

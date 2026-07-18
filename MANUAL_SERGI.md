@@ -50,26 +50,17 @@ Primer pas recomanat: catalogar l'avatar com a font externa i afegir un enllaç 
 - Producció: https://projecte-aura.pages.dev
 - Worker backups: https://projecte-aura-backup-worker.sergicas.workers.dev
 - Projecte local: `/Users/sergicastillo/Documents/Aura`
-- Clau Mode Sergi: `.aura-write-key` dins del projecte local
 
-No imprimeixis ni comparteixis la clau. Aura Web necessita Mode Sergi per llegir o escriure dades de D1 i del vault. La clau no es desa al navegador: una validació correcta crea una cookie de sessió `HttpOnly`, `Secure` i `SameSite=Strict` que caduca al cap de 30 dies. Tancar-la requereix dos clics per evitar una desconnexió accidental.
+Aura Web queda protegida per Cloudflare Access. Després d'entrar amb el correu autoritzat, no demana cap segona clau ni codi intern. `AURA_WRITE_KEY` es conserva només com a secret tècnic dels processos automàtics i no forma part de l'ús normal del navegador.
 
-## Com activar Mode Sergi
+## Com comprovar Mode Sergi
 
-1. Copia la clau local sense mostrar-la:
-
-```bash
-pbcopy < .aura-write-key
-```
-
-2. Obre Aura en producció.
-3. Enganxa la clau a la pantalla `Desbloqueja Aura` i valida.
+1. Obre Aura en producció.
+2. Completa Cloudflare Access amb el correu autoritzat si t'ho demana.
+3. Aura s'obre directament.
 4. Comprova-ho amb `/mode-sergi` o `aura sergi-mode`.
-5. Quan acabis, prem `Bloqueja`.
 
-`/mode-sergi` no es limita a mirar el navegador: valida la sessió amb `GET /api/mode-sergi`. Tota l'API de dades queda tancada sense una sessió vàlida; els processos automàtics poden continuar usant `AURA_WRITE_KEY` com a Bearer.
-
-No enganxis la clau al xat. No la copiïs a documents. Només va al diàleg del navegador quan Aura la demana.
+`/mode-sergi` valida l'autorització de Pages i ha d'indicar que Cloudflare Access està actiu. Els processos automàtics poden continuar usant `AURA_WRITE_KEY` com a Bearer sense exposar-lo al navegador.
 
 ## Com comprovar un record guardat
 
@@ -209,7 +200,7 @@ Ordres canòniques, en ordre alfabètic:
 - `aura remember text`: guarda un record.
 - `aura say text`: missatge operatiu de conversa Core.
 - `aura self-reflection`: mostra l'autoreflexió operativa de la Fase 10.
-- `aura sergi-mode`: explica com activar Mode Sergi sense mostrar la clau.
+- `aura sergi-mode`: comprova l'autorització de Cloudflare Access.
 - `aura start`: inicia o resumeix la sessió Core.
 - `aura status`: mostra l'estat.
 - `aura web`: mostra el contracte Aura Web simplificat de la Fase 5.

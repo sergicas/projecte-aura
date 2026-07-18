@@ -383,7 +383,6 @@ let cloudState = {
 };
 let auraSessionActive = false;
 let auraStarted = false;
-let logoutConfirmationTimer = null;
 let pendingRestore = null;
 let bodyVisualState = {
   posture: "inicial",
@@ -403,12 +402,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   clearLegacyWriteKey();
   bindEvents();
   drawAuraVisual();
-
-  if (await hasAuraSession()) {
-    hideAuthGate();
-    await startAura();
-  } else {
-    showAuthGate();
+  auraSessionActive = await hasAuraSession();
+  await startAura();
+  if (!auraSessionActive) {
+    writeError("Cloudflare Access no ha validat la sessió. Recarrega la pàgina per tornar a entrar.");
   }
 });
 
@@ -472,13 +469,6 @@ function cacheElements() {
   els.confirmRestore = document.querySelector("#confirm-restore");
   els.importJson = document.querySelector("#import-json");
   els.importFile = document.querySelector("#import-file");
-  els.authForm = document.querySelector("#auth-form");
-  els.authInput = document.querySelector("#auth-input");
-  els.authStatus = document.querySelector("#auth-status");
-  els.authError = document.querySelector("#auth-error");
-  els.authGate = document.querySelector("#auth-gate");
-  els.appShell = document.querySelector("#aura-shell");
-  els.clearAuth = document.querySelector("#clear-auth");
   els.recordForm = document.querySelector("#record-form");
   els.recordDialog = document.querySelector("#record-dialog");
   els.recordInput = document.querySelector("#record-input");
@@ -536,8 +526,7 @@ function bindEvents() {
       }
 
       if (!auraSessionActive) {
-        setRecordError("La sessió ha caducat. Desbloqueja Aura per continuar.");
-        showAuthGate();
+        setRecordError("Cloudflare Access no ha validat la sessió. Recarrega Aura per continuar.");
         return;
       }
 
@@ -588,66 +577,6 @@ function bindEvents() {
     els.importFile.addEventListener("change", handleImportFile);
   }
 
-  if (els.authForm && els.authInput) {
-    els.authForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const nextKey = els.authInput.value.trim();
-      if (!nextKey) {
-        setAuthError("Introdueix la clau de Mode Sergi.");
-        return;
-      }
-
-      setAuthStatusText("validant");
-      setAuthError("");
-      try {
-        await validateSergiModeKey(nextKey);
-        auraSessionActive = true;
-        els.authInput.value = "";
-        updateAuthStatus();
-        hideAuthGate();
-        await startAura();
-      } catch (error) {
-        auraSessionActive = false;
-        updateAuthStatus();
-        setAuthError("No s'ha pogut desbloquejar Aura. Comprova la clau.");
-      }
-    });
-
-    els.authInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        els.authForm.requestSubmit();
-      }
-    });
-  }
-
-  if (els.clearAuth) {
-    els.clearAuth.addEventListener("click", async () => {
-      if (els.clearAuth.dataset.confirmLogout !== "true") {
-        els.clearAuth.dataset.confirmLogout = "true";
-        els.clearAuth.textContent = "Confirma la sortida";
-        clearTimeout(logoutConfirmationTimer);
-        logoutConfirmationTimer = window.setTimeout(resetLogoutConfirmation, 5000);
-        return;
-      }
-
-      clearTimeout(logoutConfirmationTimer);
-      await logoutAuraSession();
-      auraSessionActive = false;
-      if (els.authInput) {
-        els.authInput.value = "";
-      }
-      updateAuthStatus();
-      window.location.reload();
-    });
-  }
-}
-
-function resetLogoutConfirmation() {
-  if (!els.clearAuth) return;
-  delete els.clearAuth.dataset.confirmLogout;
-  els.clearAuth.textContent = "Tanca la sessió";
-  logoutConfirmationTimer = null;
 }
 
 async function runButtonAction(button) {
@@ -872,21 +801,6 @@ function clearLegacyWriteKey() {
   localStorage.removeItem(LEGACY_WRITE_KEY_STORAGE);
 }
 
-function showAuthGate() {
-  if (els.authGate) els.authGate.hidden = false;
-  if (els.appShell) els.appShell.setAttribute("inert", "");
-  els.authInput?.focus();
-}
-
-function hideAuthGate() {
-  if (els.authGate) els.authGate.hidden = true;
-  if (els.appShell) els.appShell.removeAttribute("inert");
-}
-
-function setAuthError(message) {
-  if (els.authError) els.authError.textContent = message;
-}
-
 async function hasAuraSession() {
   try {
     const response = await fetch(`${API_BASE}/session`, {
@@ -900,42 +814,6 @@ async function hasAuraSession() {
     auraSessionActive = false;
     return false;
   }
-}
-
-async function loginAuraSession(writeKey) {
-  const response = await fetch(`${API_BASE}/session`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    credentials: "same-origin",
-    body: JSON.stringify({ key: writeKey }),
-    cache: "no-store",
-  });
-  return readApiResponse(response);
-}
-
-async function logoutAuraSession() {
-  try {
-    await fetch(`${API_BASE}/session/logout`, {
-      method: "POST",
-      headers: { Accept: "application/json" },
-      credentials: "same-origin",
-      cache: "no-store",
-    });
-  } catch {
-    // La recàrrega posterior manté Aura bloquejada si el servidor no respon.
-  }
-}
-
-function updateAuthStatus() {
-  setAuthStatusText(auraSessionActive ? "actiu" : "bloquejat");
-}
-
-function setAuthStatusText(text) {
-  if (!els.authStatus) return;
-  els.authStatus.textContent = text;
 }
 
 async function syncCloudState() {
@@ -1003,7 +881,6 @@ async function readApiResponse(response) {
   if (!response.ok) {
     if (response.status === 401) {
       auraSessionActive = false;
-      showAuthGate();
     }
     throw new Error(payload?.error || `API ${response.status}`);
   }
@@ -1934,29 +1811,25 @@ function sortCommandLabels(labels) {
   );
 }
 
-async function validateSergiModeKey(writeKey = "") {
-  if (writeKey) return loginAuraSession(writeKey);
+async function validateCloudflareAccess() {
   return apiGet("/session");
 }
 
 async function showSergiMode() {
-  let state = "bloquejat en aquest navegador";
+  let state = "Cloudflare Access no validat";
   let serverLine = "Validació Pages: pendent";
-  let actionLine = "Acció: desbloqueja Aura des de la pantalla d'accés per continuar.";
+  let actionLine = "Acció: recarrega Aura per tornar a passar per Cloudflare Access.";
 
   if (auraSessionActive) {
-    setAuthStatusText("validant");
     try {
-      await validateSergiModeKey();
-      state = "actiu i validat en aquest navegador";
+      await validateCloudflareAccess();
+      state = "autoritzat per Cloudflare Access";
       serverLine = "Validació Pages: correcta";
       actionLine = "Acció: ja pots escriure records, diari, backups, snapshots i canvis protegits.";
-      updateAuthStatus();
     } catch (error) {
-      state = "sessió caducada o no validada";
+      state = "Cloudflare Access caducat o no validat";
       serverLine = `Validació Pages: falla (${error.message})`;
-      actionLine = "Acció: torna a desbloquejar Aura des de la pantalla d'accés.";
-      setAuthStatusText("revisar");
+      actionLine = "Acció: recarrega Aura per tornar a autenticar-te amb Cloudflare.";
     }
   }
 
@@ -1968,8 +1841,8 @@ async function showSergiMode() {
       actionLine,
       "",
       auraSessionActive
-        ? "Prem `Grava un record`: el formulari apareixerà dins d'Aura i no et tornarà a demanar la clau."
-        : "La clau només s'introdueix a la pantalla privada de desbloqueig; mai al xat ni al formulari del record.",
+        ? "No cal cap clau ni codi intern d'Aura. Prem `Grava un record` i desa'l directament."
+        : "Aura no demana cap clau interna. L'entrada es controla exclusivament amb Cloudflare Access.",
     ].join("\n"),
   );
 }
@@ -2003,7 +1876,7 @@ function showAuraCoreHelp() {
     "- aura remember text: guarda un record amb Mode Sergi si D1 està disponible.",
     "- aura say text: missatge operatiu de conversa Core.",
     "- aura self-reflection: mostra l'autoreflexió operativa de la Fase 10.",
-    "- aura sergi-mode: explica com activar Mode Sergi sense mostrar la clau.",
+    "- aura sergi-mode: comprova l'autorització de Cloudflare Access.",
     "- aura start: inicia o resumeix la sessió Core.",
     "- aura status: mostra l'estat d'Aura.",
     "- aura web: mostra els mòduls Aura Web de la Fase 5.",
@@ -2027,7 +1900,7 @@ function showAuraCoreHelp() {
     "- /memoria: mostra records recents.",
     "- /memoria-canonica: mostra la memòria persistent en format Fase 2.",
     "- /metamemoria: classifica records sense eliminar-los.",
-    "- /mode-sergi: explica com activar Mode Sergi sense mostrar la clau.",
+    "- /mode-sergi: comprova l'autorització de Cloudflare Access.",
     "- /orientacio: mostra l'orientació v5.2.",
     "- /proposit: mostra el propòsit evolutiu.",
     "- /propostes-evolucio: mostra propostes evolutives sense mutació automàtica.",
@@ -2089,8 +1962,7 @@ async function remember(text) {
   const cloudAvailable = cloudState.online || (await syncCloudState());
   if (cloudAvailable) {
     if (!auraSessionActive) {
-      writeError("La sessió ha caducat. Desbloqueja Aura abans de gravar el record.");
-      showAuthGate();
+      writeError("Cloudflare Access no ha validat la sessió. Recarrega Aura abans de gravar el record.");
       await refreshPanels();
       return false;
     }
@@ -2111,7 +1983,7 @@ async function remember(text) {
       await syncCloudState();
       writeSystem(formatSavedRecordConfirmation(record, "D1"));
     } catch (error) {
-      if (error.message.includes("Clau") || error.message.includes("Mode Sergi")) {
+      if (!auraSessionActive || error.message.includes("Cloudflare Access") || error.message.includes("Mode Sergi")) {
         writeError(`${error.message} El record no s'ha escrit a D1.`);
         await refreshPanels();
         return false;
@@ -2161,7 +2033,7 @@ async function writeDiaryEntry(text) {
   const cloudAvailable = cloudState.online || (await syncCloudState());
   if (cloudAvailable) {
     if (!auraSessionActive) {
-      writeError("Mode Sergi inactiu: l'entrada de diari no s'ha escrit a D1.");
+      writeError("Cloudflare Access no validat: l'entrada de diari no s'ha escrit a D1.");
       await refreshPanels();
       return;
     }
@@ -2173,7 +2045,7 @@ async function writeDiaryEntry(text) {
       await syncCloudState();
       writeSystem(`Entrada de diari guardada a D1:\n${text}`);
     } catch (error) {
-      if (error.message.includes("Clau") || error.message.includes("Mode Sergi")) {
+      if (!auraSessionActive || error.message.includes("Cloudflare Access") || error.message.includes("Mode Sergi")) {
         writeError(`${error.message} L'entrada no s'ha escrit a D1.`);
         await refreshPanels();
         return;
@@ -2856,7 +2728,7 @@ async function showIntegrityTrend() {
 
 async function saveIntegritySnapshot() {
   if (!auraSessionActive) {
-    writeError("Mode Sergi inactiu: cal clau per desar un snapshot d'integritat.");
+    writeError("Cloudflare Access no validat: no es pot desar el snapshot d'integritat.");
     return;
   }
 
@@ -2883,7 +2755,7 @@ async function saveIntegritySnapshot() {
 
 async function showRestoreRehearsal(command) {
   if (!auraSessionActive) {
-    writeError("Mode Sergi inactiu: cal clau per assajar una restauració des del vault.");
+    writeError("Cloudflare Access no validat: no es pot assajar la restauració des del vault.");
     return;
   }
 
@@ -2902,7 +2774,7 @@ async function showRestoreRehearsal(command) {
 
 async function showRetentionPlan() {
   if (!auraSessionActive) {
-    writeError("Mode Sergi inactiu: cal clau per llegir el pla de retenció del vault.");
+    writeError("Cloudflare Access no validat: no es pot llegir el pla de retenció del vault.");
     return;
   }
 
@@ -3337,7 +3209,7 @@ async function editMemoryCommand(raw) {
   }
 
   if (!auraSessionActive) {
-    writeError("Mode Sergi inactiu: la memòria D1 no s'ha modificat.");
+    writeError("Cloudflare Access no validat: la memòria D1 no s'ha modificat.");
     return;
   }
 
@@ -3439,7 +3311,7 @@ async function showCriterion() {
 
 async function showVaultBackups() {
   if (!auraSessionActive) {
-    writeError("Mode Sergi inactiu: cal clau per llegir el vault de backups.");
+    writeError("Cloudflare Access no validat: no es pot llegir el vault de backups.");
     return;
   }
 
@@ -3560,7 +3432,7 @@ async function saveGenePatch(id, patch) {
   }
 
   if (!auraSessionActive) {
-    writeError("Mode Sergi inactiu: el genoma no s'ha modificat a D1.");
+    writeError("Cloudflare Access no validat: el genoma no s'ha modificat a D1.");
     return;
   }
 
@@ -3585,7 +3457,7 @@ async function saveGenePatch(id, patch) {
 
 async function saveVaultBackup() {
   if (!auraSessionActive) {
-    writeError("Mode Sergi inactiu: cal clau per desar un backup al vault.");
+    writeError("Cloudflare Access no validat: no es pot desar el backup al vault.");
     return;
   }
 
@@ -3680,7 +3552,7 @@ async function handleImportFile(event) {
 
     if (cloudAvailable) {
       if (!auraSessionActive) {
-        writeError("Mode Sergi inactiu: previsualització/restauració no enviada a D1.");
+        writeError("Cloudflare Access no validat: previsualització/restauració no enviada a D1.");
         await refreshPanels();
         return;
       }
@@ -3719,7 +3591,7 @@ async function confirmRestore() {
 
   if (mode === "cloud") {
     if (!auraSessionActive) {
-      writeError("Mode Sergi inactiu: no puc confirmar la restauració a D1.");
+      writeError("Cloudflare Access no validat: no puc confirmar la restauració a D1.");
       return;
     }
 
@@ -6201,7 +6073,7 @@ function buildLocalCloudflareInfrastructure(options = {}) {
         { name: "BACKUP_VAULT", type: "workers-kv", configuredIn: ["wrangler.jsonc", "wrangler.backup.jsonc"] },
         { name: "AURA_WRITE_KEY", type: "secret", configuredIn: ["Cloudflare Pages secrets", "Worker secrets"] },
       ],
-      secretPolicy: "La clau Mode Sergi no s'imprimeix ni es desa en documentació.",
+      secretPolicy: "AURA_WRITE_KEY queda reservat als processos automàtics i no s'exposa al navegador.",
     },
     deployment: {
       localCheck: "npm run check",
@@ -6285,7 +6157,7 @@ function buildLocalAuraWebInterface(options = {}) {
     interactions: {
       navigation: "8 botons visibles autoexplicatius: orientació local, estat, identitat, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
-      modeSergi: "demanda puntual de clau quan cal escriure a D1",
+      modeSergi: "autorització automàtica per Cloudflare Access, sense codi intern",
       localFallback: "IndexedDB manté una vista operativa si D1 no respon.",
     },
     safeguards: [

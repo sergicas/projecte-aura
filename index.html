@@ -5,32 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Projecte Aura Cloud v5.2: interfície simple per orientar la sessió, consultar estat i records, i gravar records només amb Mode Sergi."
+      content="Projecte Aura Cloud v5.2: interfície privada protegida per Cloudflare Access per orientar, consultar i conservar records."
     />
     <title>Projecte Aura Cloud v5.2</title>
-    <link rel="stylesheet" href="aura_style.css?v=phase3-record-dialog-20260718" />
+    <link rel="stylesheet" href="aura_style.css?v=access-unic-20260718" />
   </head>
   <body>
-    <section id="auth-gate" class="auth-gate" aria-labelledby="auth-title">
-      <form id="auth-form" class="auth-card" autocomplete="off">
-        <p class="kicker">Accés privat</p>
-        <h1 id="auth-title">Desbloqueja Aura</h1>
-        <p>La memòria, el diari i els backups estan protegits. Introdueix la clau de Mode Sergi per crear una sessió segura.</p>
-        <label for="auth-input">Clau de Mode Sergi</label>
-        <input
-          id="auth-input"
-          name="key"
-          type="password"
-          autocomplete="current-password"
-          required
-        />
-        <button type="submit">Desbloqueja</button>
-        <p id="auth-error" class="auth-error" role="alert" aria-live="polite"></p>
-        <p class="auth-note">La clau no es desa al navegador. La sessió segura es conserva en aquest dispositiu durant 30 dies.</p>
-      </form>
-    </section>
-
-    <main id="aura-shell" class="shell" inert>
+    <main id="aura-shell" class="shell">
       <header class="app-header" aria-label="Capçalera d'Aura">
         <div class="brand-lockup" aria-label="Aura">
           <div class="aura-mark" aria-hidden="true">
@@ -48,7 +29,7 @@
             <span class="connection-dot" aria-hidden="true"></span>
             <span id="status-pill">Connectant…</span>
           </p>
-          <button id="clear-auth" class="lock-button" type="button" title="Cal confirmar-ho amb un segon clic">Tanca la sessió</button>
+          <span class="access-badge">Protegit per Cloudflare Access</span>
         </div>
       </header>
 
@@ -168,6 +149,6 @@
       </dialog>
     </main>
 
-    <script src="aura_core.js?v=phase3-record-dialog-20260718" defer></script>
+    <script src="aura_core.js?v=access-unic-20260718" defer></script>
   </body>
 </html>

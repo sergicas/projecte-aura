@@ -40,66 +40,6 @@ body {
   display: none !important;
 }
 
-.auth-gate {
-  position: fixed;
-  z-index: 100;
-  display: grid;
-  min-height: 100vh;
-  padding: 24px;
-  background:
-    radial-gradient(circle at 50% 18%, rgba(111, 201, 167, 0.2), transparent 34%),
-    rgba(238, 243, 241, 0.96);
-  inset: 0;
-  place-items: center;
-}
-
-.auth-card {
-  display: grid;
-  width: min(460px, 100%);
-  padding: clamp(24px, 5vw, 42px);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--paper-strong);
-  box-shadow: var(--shadow);
-  gap: 14px;
-}
-
-.auth-card h1,
-.auth-card p {
-  margin: 0;
-}
-
-.auth-card label {
-  margin-top: 8px;
-  font-weight: 700;
-}
-
-.auth-card input {
-  min-height: 48px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-}
-
-.auth-card button {
-  min-height: 48px;
-  margin-top: 4px;
-  background: var(--console);
-  color: #fff;
-}
-
-.auth-error {
-  min-height: 1.4em;
-  color: #a73525;
-  font-weight: 700;
-}
-
-.auth-note {
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
 button,
 input {
   font: inherit;
@@ -161,15 +101,6 @@ input:focus-visible {
   gap: 12px;
   align-items: center;
   justify-content: space-between;
-}
-
-.lock-button {
-  min-height: 34px;
-  padding: 4px 10px;
-  border-color: rgba(24, 35, 31, 0.2);
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.82rem;
 }
 
 .brand-lockup {
@@ -320,17 +251,15 @@ input:focus-visible {
   box-shadow: 0 0 0 4px rgba(58, 154, 115, 0.12);
 }
 
-.app-header .lock-button {
-  min-height: 38px;
-  margin: 0;
-  padding: 6px 11px;
-}
-
-.lock-button[data-confirm-logout="true"] {
-  border-color: rgba(216, 95, 71, 0.52);
-  background: rgba(216, 95, 71, 0.1);
-  color: #9d3828;
+.access-badge {
+  padding: 7px 10px;
+  border: 1px solid rgba(47, 111, 159, 0.24);
+  border-radius: 999px;
+  background: rgba(47, 111, 159, 0.08);
+  color: #285d82;
+  font-size: 0.76rem;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .workspace.simple-workspace {
@@ -703,9 +632,13 @@ input:focus-visible {
     display: none;
   }
 
-  .app-header .lock-button {
-    max-width: 92px;
-    font-size: 0.75rem;
+  .access-badge {
+    max-width: 116px;
+    padding: 6px 8px;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
   }
 
   .workspace {
@@ -941,42 +874,6 @@ input:focus-visible {
   margin-top: 8px;
   font-size: clamp(1.2rem, 2vw, 1.9rem);
   line-height: 1.05;
-}
-
-.auth-block {
-  gap: 10px;
-}
-
-.auth-block strong {
-  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
-}
-
-.auth-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.auth-form input {
-  min-width: 0;
-  min-height: 40px;
-  border: 1px solid rgba(29, 35, 32, 0.18);
-  border-radius: 6px;
-  background: var(--paper-strong);
-  color: var(--ink);
-  padding: 0 10px;
-}
-
-.auth-form button,
-.auth-clear {
-  width: 100%;
-  min-height: 38px;
-}
-
-.auth-clear {
-  margin-top: 8px;
-  background: transparent;
 }
 
 .console-panel {

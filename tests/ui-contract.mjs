@@ -35,8 +35,10 @@ assert.match(html, /<button type="submit">Envia<\/button>/, "El camp d'ordres ha
 assert.doesNotMatch(html, /class="identity-band"/, "La capçalera antiga no ha de continuar ocupant la primera pantalla.");
 assert.match(styles, /@media \(max-width: 620px\)/, "La interfície ha de tenir una composició mòbil específica.");
 assert.match(styles, /prefers-reduced-motion: reduce/, "La interfície ha de respectar el moviment reduït.");
-assert.match(html, /durant 30 dies/, "La pantalla d'accés ha d'explicar la durada de la sessió.");
-assert.match(core, /Confirma la sortida/, "Tancar la sessió ha de requerir confirmació.");
+assert.doesNotMatch(html, /auth-gate|auth-input|type="password"/, "Aura no ha de mostrar una segona pantalla de clau.");
+assert.doesNotMatch(html, /Clau de Mode Sergi|Desbloqueja Aura/, "La interfície no ha de demanar cap codi intern.");
+assert.match(html, /Protegit per Cloudflare Access/, "La capçalera ha d'explicar quina protecció continua activa.");
+assert.doesNotMatch(core, /loginAuraSession|showAuthGate/, "El client no ha de conservar el flux antic de desbloqueig.");
 assert.doesNotMatch(core, /window\.prompt\(/, "La interfície no ha de dependre de finestres prompt no compatibles.");
 assert.match(html, /id="record-form"/, "Gravar un record ha de tenir un formulari integrat.");
 assert.match(html, /<dialog id="record-dialog"/, "El formulari ha d'aparèixer en una finestra visible sobre la interfície.");

@@ -1,6 +1,6 @@
 # Projecte Aura Cloud v5.2
 
-Projecte Aura Cloud v5.2 és una aplicació web a Cloudflare Pages amb orientació operativa, autoreflexió, biblioteca de coneixement verificable, cos digital 2D, seguretat de dades verificable, capacitats honestes, genoma mecànicament verificable, integritat falsable, estat evolutiu traçable, metamemòria, genoma digital canònic, Aura Web simplificada, infraestructura Cloudflare reconstruïble i memòria al núvol mitjançant Pages Functions i D1. L'API de dades està protegida amb una sessió signada de Mode Sergi, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, l'auditoria registra mutacions estructurals al diari i `/prova-gen` executa comprovacions reals per als gens mecànics `001`, `034`, `1597`, `17711`, `008` i `089`.
+Projecte Aura Cloud v5.2 és una aplicació web a Cloudflare Pages amb orientació operativa, autoreflexió, biblioteca de coneixement verificable, cos digital 2D, seguretat de dades verificable, capacitats honestes, genoma mecànicament verificable, integritat falsable, estat evolutiu traçable, metamemòria, genoma digital canònic, Aura Web simplificada, infraestructura Cloudflare reconstruïble i memòria al núvol mitjançant Pages Functions i D1. L'API web està protegida per Cloudflare Access, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, l'auditoria registra mutacions estructurals al diari i `/prova-gen` executa comprovacions reals per als gens mecànics `001`, `034`, `1597`, `17711`, `008` i `089`.
 
 Nota de desplegament: `cloud-v5.2` afegeix orientació operativa perquè Aura pugui respondre què és, per a què serveix avui i quin és el següent pas. RAG, Vector DB, embeddings, multiagent autònom en producció i ingestió automàtica no estan actius.
 
@@ -61,7 +61,7 @@ Des del 2026-07-04, la web visible local mostra vuit botons:
 - `Veure records`
 - `Últim record`
 
-Aura Web comença bloquejada i crea una sessió segura després de validar Mode Sergi. La clau s'envia només al formulari d'accés, no es desa a `localStorage` i no queda disponible per al JavaScript després de validar-la. Per provar-la localment cal usar Pages Functions amb `npm run dev:pages`; obrir `index.html` amb `file://` ja no dona accés a les dades.
+Aura Web entra directament després de la validació de Cloudflare Access. No té cap segona pantalla de clau ni cap codi intern de Mode Sergi. Per provar Pages Functions localment usa `npm run dev:pages`; l'escriptura automatitzada conserva `AURA_WRITE_KEY` com a Bearer exclusivament per al Worker de backups i les eines de manteniment.
 
 ## Protocol operatiu actual
 
@@ -165,7 +165,7 @@ Verificació desplegada v5.2:
 - `wrangler.jsonc`
 - `wrangler.backup.jsonc`
 
-La persistència principal és D1. IndexedDB es conserva com a còpia local i fallback del navegador. El vault de backups usa Workers KV mitjançant el binding `BACKUP_VAULT`. Totes les rutes de l'API, tant de lectura com d'escriptura, exigeixen una sessió signada o el secret `AURA_WRITE_KEY` com a Bearer per als processos automàtics. El Worker `projecte-aura-backup-worker` comparteix D1 i KV, i corre cada dia amb cron `17 3 * * *`.
+La persistència principal és D1. IndexedDB es conserva com a còpia local i fallback del navegador. El vault de backups usa Workers KV mitjançant el binding `BACKUP_VAULT`. Totes les rutes de l'API exigeixen una petició validada prèviament per Cloudflare Access o el secret `AURA_WRITE_KEY` com a Bearer per als processos automàtics. El Worker `projecte-aura-backup-worker` comparteix D1 i KV, i corre cada dia amb cron `17 3 * * *`.
 
 Nota: R2 queda preparat com a següent millora possible, però el compte de Cloudflare encara no té R2 activat al Dashboard. Per això v2.4 usa Workers KV com a emmagatzematge fora de D1.
 
@@ -316,22 +316,7 @@ Textos ràpids:
 
 ## Mode Sergi
 
-Mode Sergi protegeix tota l'API de dades, incloses les lectures de D1 i del vault. Per activar-lo sense exposar la clau:
-
-1. Copia la clau local sense imprimir-la:
-
-```bash
-pbcopy < .aura-write-key
-```
-
-2. Obre Aura Web.
-3. Enganxa la clau a la pantalla `Desbloqueja Aura` i valida.
-4. Confirma l'estat amb `/mode-sergi` o `aura sergi-mode`.
-5. Quan acabis, prem `Bloqueja` per eliminar la cookie de sessió.
-
-El servidor converteix la validació correcta en una cookie `HttpOnly`, `Secure` i `SameSite=Strict` amb una durada màxima de 30 dies. El navegador no conserva la clau. `/mode-sergi` comprova la sessió activa contra `GET /api/mode-sergi`. Tancar la sessió requereix dos clics per evitar una desconnexió accidental.
-
-No enganxis la clau al xat ni en cap document.
+Mode Sergi continua sent el nom del permís humà per fer canvis persistents, però al web queda autoritzat automàticament quan Cloudflare Access ha deixat entrar Sergi. No existeix cap clau ni codi addicional a la interfície. Confirma l'estat amb `/mode-sergi` o `aura sergi-mode`: la resposta ha d'indicar `autoritzat per Cloudflare Access`.
 
 ## Verificar records guardats
 
@@ -383,11 +368,11 @@ npm run dev:backup-worker
 
 ## API
 
-Totes les rutes `/api/*`, excepte la creació i el tancament de sessió, requereixen una sessió vàlida o `Authorization: Bearer <AURA_WRITE_KEY>`.
+Totes les rutes `/api/*` requereixen una assertion ja validada per Cloudflare Access o `Authorization: Bearer <AURA_WRITE_KEY>` per als processos automàtics.
 
-- `POST /api/session` crea una sessió segura
-- `GET /api/session` comprova la sessió
-- `POST /api/session/logout` elimina la cookie de sessió
+- `GET /api/session` comprova Cloudflare Access i elimina qualsevol cookie interna antiga
+- `POST /api/session` comprova Cloudflare Access sense demanar cap clau
+- `POST /api/session/logout` només neteja la cookie interna antiga
 
 - `GET /api/status`
 - `GET /api/mode-sergi` amb Mode Sergi

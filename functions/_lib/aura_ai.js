@@ -1,4 +1,4 @@
-export const AURA_CHAT_MODEL = "@cf/zai-org/glm-4.7-flash";
+export const AURA_CHAT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 const MAX_QUESTION_LENGTH = 4000;
 const MAX_HISTORY_MESSAGES = 8;

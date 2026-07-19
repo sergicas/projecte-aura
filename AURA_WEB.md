@@ -10,7 +10,7 @@ fase_protocol: 5
 format_api: aura-web-interface-v1
 endpoint_web: /api/web
 endpoint_conversa: /api/chat
-model: '@cf/zai-org/glm-4.7-flash'
+model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 estat_desplegament: preparat per produccio
 mode_visible: conversa natural
 ```

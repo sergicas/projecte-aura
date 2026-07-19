@@ -1,6 +1,6 @@
 const AURA_VERSION = "cloud-v5.3";
 const BACKUP_FORMAT = "aura-backup-v5.3";
-const AURA_CHAT_MODEL = "@cf/zai-org/glm-4.7-flash";
+const AURA_CHAT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MAX_CONVERSATION_HISTORY = 8;
 const API_BASE = "/api";
 const LEGACY_WRITE_KEY_STORAGE = "projecte_aura_write_key";

@@ -12,7 +12,7 @@ Aura respon preguntes obertes sobre el projecte combinant Workers AI amb context
 Pregunta de Sergi
   → POST /api/chat
   → selecció limitada de records, diari, coneixement i gens a D1
-  → @cf/zai-org/glm-4.7-flash mitjançant el binding AI
+  → @cf/meta/llama-3.3-70b-instruct-fp8-fast mitjançant el binding AI
   → resposta amb cites de fonts
   → historial curt només durant la sessió del navegador
 ```

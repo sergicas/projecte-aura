@@ -2,7 +2,7 @@
 
 Projecte Aura Cloud v5.3 és una aplicació web privada a Cloudflare Pages amb IA conversacional real, memòria persistent a D1, Workers AI, orientació operativa, backups verificables, genoma digital i infraestructura reconstruïble. Aura recupera context del projecte, respon amb cites i manté qualsevol escriptura com una acció explícita i separada.
 
-Nota de desplegament: `cloud-v5.3` incorpora `POST /api/chat` amb `@cf/zai-org/glm-4.7-flash`, recuperació lèxica limitada de D1 i cites de fonts. També afegeix el pont explícit amb Sergi Avatar i la nova identitat visual. Embeddings, Vector DB, ingestió automàtica i multiagent autònom no estan actius.
+Nota de desplegament: `cloud-v5.3` incorpora `POST /api/chat` amb `@cf/meta/llama-3.3-70b-instruct-fp8-fast`, recuperació lèxica limitada de D1 i cites de fonts. També afegeix el pont explícit amb Sergi Avatar i la nova identitat visual. Embeddings, Vector DB, ingestió automàtica i multiagent autònom no estan actius.
 
 ## Què és Aura
 

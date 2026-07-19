@@ -4,7 +4,7 @@ Canvis rellevants del Projecte Aura.
 
 ## cloud-v5.3 — Fase 5 conversacional - 2026-07-19
 
-- Incorpora un xat generatiu real amb Workers AI i el model `@cf/zai-org/glm-4.7-flash`.
+- Incorpora un xat generatiu real amb Workers AI i el model verificat `@cf/meta/llama-3.3-70b-instruct-fp8-fast`.
 - Recupera context limitat de D1, cita records, diari, coneixement i gens, i manté el xat en només lectura.
 - Afegeix cinc preguntes suggerides i historial curt només durant la sessió del navegador.
 - Activa un pont explícit amb Sergi Avatar sense enviar-li memòria privada ni permetre escriptures.

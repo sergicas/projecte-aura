@@ -2521,7 +2521,7 @@ function getMetamemoryHeuristic() {
   return {
     fundacional: [
       "ID foundation-*.",
-      "Text que defineix nom, objectiu, identitat, no-mimesi humana, memòria central, genoma o continuïtat futura.",
+      "Text que defineix nom, objectiu, identitat, mimesi humana, memòria central, genoma o continuïtat futura.",
     ],
     evolutiu: [
       "Tags de fase/protocol o text sobre versions, formalitzacions i capacitats noves.",
@@ -4533,8 +4533,8 @@ function buildAuraWebInterface(options = {}) {
       label: "Aura simplificada",
       role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -4546,6 +4546,9 @@ function buildAuraWebInterface(options = {}) {
     "Grava record",
     "Veure records",
     "Últim record",
+    "Genoma d'Aura",
+    "La llavor d'Aura",
+    "Parla amb Sergi Avatar",
   ];
 
   return {
@@ -4569,7 +4572,7 @@ function buildAuraWebInterface(options = {}) {
     visibleActions,
     modules,
     interactions: {
-      navigation: "8 botons visibles autoexplicatius: orientació local, estat, identitat, informe, memòria i una escriptura controlada",
+      navigation: "11 botons visibles autoexplicatius: orientació, estat, identitat, genoma, llavor, veu externa, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
       conversationalAI: {
         endpoint: "/api/chat",
@@ -4586,7 +4589,7 @@ function buildAuraWebInterface(options = {}) {
       "Cap escriptura persistent sense Mode Sergi.",
       "Les preguntes lliures són generatives però de només lectura i han de citar el context D1 utilitzat.",
       "Sergi Avatar és una font externa separada; només rep el text escrit després de `avatar:`.",
-      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Informe del dia, Veure records i Últim record són accions de lectura.",
+      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
       "Grava record és l'única acció visible que pot escriure i activa Mode Sergi només quan cal.",
       "L'ampliació de botons no elimina dades ni endpoints.",
       "D1 continua sent la font de veritat i IndexedDB és fallback local.",
@@ -4624,6 +4627,13 @@ function buildDigitalGenome(genes, options = {}) {
     endpoint: "/api/genome",
     format: "aura-digital-genome-v1",
     phase: "fase-6",
+    phaseStatus: {
+      state: "complete",
+      openedAt: "2026-06-26",
+      revalidatedAt: "2026-07-19",
+      canonicalGene: "2178309 genoma-digital-canon",
+      identityPolicy: "004 mimesi-humana",
+    },
     mode: options.mode || "canonical-genome-contract",
     document: {
       required: "AURA_GENOME.md",

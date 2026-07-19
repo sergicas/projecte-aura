@@ -377,6 +377,8 @@ AURA_WEB.md
 
 La Fase 6 converteix el genoma digital en contracte canònic. D1 conserva els gens funcionals i `AURA_GENOME.md` conserva la identitat, valors, polítiques, objectius i estat evolutiu.
 
+A la web, prem `Genoma d'Aura` per veure aquesta informació sense memoritzar cap ordre. `La llavor d'Aura` és una vista portable posterior i no substitueix el genoma viu de la Fase 6.
+
 Consulta recomanada:
 
 ```text

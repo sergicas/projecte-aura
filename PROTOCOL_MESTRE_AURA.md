@@ -297,7 +297,9 @@ Valors inicials:
 - cooperació,
 - aprenentatge,
 - continuïtat,
-- no-mimesi humana.
+- mimesi humana, amb Mode Sergi com a límit absolut sobre les accions persistents.
+
+Revalidació `cloud-v5.3` (2026-07-19): la Fase 6 continua completa. El gen `004 mimesi-humana` substitueix l'antic criteri `no-mimesi-humana`; API, fallback local, D1 i `AURA_GENOME.md` han de conservar aquesta correspondència sense alterar la naturalesa sintètica-digital d'Aura.
 
 Aquesta fase queda formalitzada a `cloud-v4.6` amb:
 
@@ -376,7 +378,7 @@ Gens de subfase:
 
 Contracte:
 
-- `proposit-evolutiu` defineix la direcció general d'Aura: preservar, organitzar i ampliar coneixement significatiu mantenint continuïtat identitària, coherència operativa i una forma pròpia d'existència digital no humana.
+- `proposit-evolutiu` defineix la direcció general d'Aura: preservar, organitzar i ampliar coneixement significatiu mantenint continuïtat identitària, coherència operativa i una presència humana pròpia, viscuda en primera persona.
 - `metamemoria` classifica records segons funció i pot indicar quins convé conservar, resumir o deixar fora de futurs resums canònics sense eliminar-los.
 - `promocio-a-genoma` només proposa promocions; una promoció real requereix Mode Sergi, auditoria, backup, integritat i actualització d'`AURA_GENOME.md`.
 - La classificació inicial pot ser heurística, però ha de quedar documentada.
@@ -468,7 +470,7 @@ GET /api/integrity?simulate=missing-gene
 Contracte:
 
 - `001 memoria-central`, `034 backup-verificable` i `1597 auditoria-mutacions` són gens mecànics verificables.
-- `004 no-mimesi-humana` i altres gens semàntics són compromisos de governança, no invariants auto-verificables.
+- `004 mimesi-humana` i altres gens semàntics són compromisos de governança, no invariants auto-verificables.
 - La integritat pot baixar de 100 quan falla una correspondència mecànica.
 - Les simulacions de fallada són de lectura i no alteren D1 ni KV.
 - No s'afegeix cap gen nou ni s'activa `013 silici-possible`.

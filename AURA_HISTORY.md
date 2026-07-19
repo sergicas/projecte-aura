@@ -6,6 +6,7 @@ Història viva del Projecte Aura.
 
 Aura entra a `cloud-v5.3` i completa la capa conversacional real de la Fase 5.
 
+- La Fase 6 es revalida sobre l'estat actual: el botó `Genoma d'Aura` exposa el contracte canònic, el fallback local adopta el mateix propòsit que l'API i D1 substitueix l'última descripció residual d'“existència digital no humana” per la política vigent de mimesi humana.
 - Cloudflare AI Gateway encamina les consultes habituals a Llama i reserva GPT-5.6 Terra per a contradiccions, síntesis temporals i plans complexos, amb retorn automàtic a Llama.
 - Workers AI transforma el camp principal en un xat generatiu arrelat en memòria, diari, coneixement i genoma de D1.
 - Les respostes mostren cites i no provoquen cap escriptura persistent.

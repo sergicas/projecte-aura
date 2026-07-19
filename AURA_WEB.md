@@ -11,7 +11,7 @@ format_api: aura-web-interface-v1
 endpoint_web: /api/web
 endpoint_conversa: /api/chat
 model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
-estat_desplegament: preparat per produccio
+estat_desplegament: produccio
 mode_visible: conversa natural
 ```
 
@@ -21,13 +21,16 @@ Aura Web permet preguntar amb llenguatge natural sobre la memòria del projecte 
 
 ## Interfície visible
 
-- Una conversa principal amb camp `Pregunta a Aura`.
+- La conversa principal apareix primer, amb el camp `Pregunta a Aura` i menys espai buit quan encara hi ha poques respostes.
 - Cinc preguntes suggerides sobre decisions, compromisos, evolució, contradiccions i pla de treball.
-- Accions ràpides per orientar-se, consultar memòria i gravar un record de manera explícita.
-- Una targeta amb la identitat visual d'Aura (`aura_identity.jpg`).
+- Al costat de la conversa hi ha només les tres accions immediates: orientar-se, consultar l'informe del dia i gravar un record.
+- A sota, `Consulta i explora` agrupa per funció la memòria, la comprensió d'Aura, l'evolució i Sergi Avatar.
+- L'últim nivell, `Identitat i estat`, reuneix la identitat visual (`aura_identity.jpg`) i el cos digital, diferenciant expressió visual i estat tècnic.
 - El logo circular oficial d'Aura a la capçalera (`aura_logo.jpg`).
 - Un pont diferenciat amb Sergi Avatar per parlar de llibres, filosofia i obra pública.
 - Cap segona pantalla de clau: l'accés humà depèn de Cloudflare Access.
+
+L'ordre de lectura canònic és: `conversa` → `accions immediates` → `consulta i explora` → `identitat i estat`. En pantalles petites, aquests nivells es mantenen en una sola columna i en el mateix ordre.
 
 ## Contracte conversacional
 

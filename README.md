@@ -10,6 +10,8 @@ La revalidació de Fase 7 a `cloud-v5.3` fa visible el botó `Evolució d'Aura`,
 
 La revalidació de Fase 8 a `cloud-v5.3` converteix l'antic `Pols visual` en un `Cos digital d'Aura` accessible i explicable, amb lectura clara de postura, pols, capes i colors, sempre en només lectura.
 
+La interfície de `cloud-v5.3` segueix un ordre d'ús explícit: conversa principal, accions immediates, consulta agrupada i, al final, identitat i estat. Aquesta jerarquia elimina el buit excessiu del xat inicial i evita que la imatge interrompi el recorregut operatiu.
+
 ## Què és Aura
 
 Aura és un sistema persistent de memòria, continuïtat i verificació per al Projecte Aura.

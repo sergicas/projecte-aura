@@ -1,6 +1,6 @@
 # Manual d'ús per a Sergi
 
-Projecte Aura Cloud v5.2 és una aplicació experimental amb orientació operativa, autoreflexió, biblioteca de coneixement verificable, cos digital 2D, seguretat de dades verificable, capacitats honestes, genoma mecànicament verificable, integritat falsable, estat evolutiu traçable, metamemòria, genoma digital canònic, Aura Web simplificada, infraestructura Cloudflare reconstruïble, diari evolutiu formal, memòria persistent canònica, backups verificables, auditoria i Mode Sergi. Aquest manual és per usar Aura amb calma i consolidar cada canvi abans d'afegir una nova capa.
+Projecte Aura Cloud v5.3 és una aplicació experimental amb conversa generativa, orientació operativa, autoreflexió, biblioteca de coneixement verificable, cos digital 2D, seguretat de dades verificable, capacitats honestes, genoma mecànicament verificable, integritat falsable, estat evolutiu traçable, metamemòria, genoma digital canònic, infraestructura Cloudflare reconstruïble, diari evolutiu formal, memòria persistent canònica, backups verificables, auditoria i Mode Sergi. Aquest manual és per usar Aura amb calma i consolidar cada canvi abans d'afegir una nova capa.
 
 ## Què és Aura, per a Sergi
 
@@ -53,6 +53,17 @@ Primer pas recomanat: catalogar l'avatar com a font externa i afegir un enllaç 
 
 Aura Web queda protegida per Cloudflare Access. Després d'entrar amb el correu autoritzat, no demana cap segona clau ni codi intern. `AURA_WRITE_KEY` es conserva només com a secret tècnic dels processos automàtics i no forma part de l'ús normal del navegador.
 
+## Ordre de la pantalla
+
+La pàgina està ordenada segons la freqüència d'ús:
+
+1. `Conversa amb Aura`: pregunta amb llenguatge natural o usa una pregunta suggerida.
+2. `Accions immediates`: orientació, informe del dia i escriptura voluntària d'un record.
+3. `Consulta i explora`: memòria, identitat i límits, genoma, evolució i Sergi Avatar.
+4. `Identitat i estat`: il·lustració d'Aura i cos digital tècnic.
+
+La identitat visual queda al final perquè acompanya el projecte, però no interromp el treball principal.
+
 ## Com comprovar Mode Sergi
 
 1. Obre Aura en producció.
@@ -90,16 +101,15 @@ Quan Aura diu `Record guardat a D1`, el missatge inclou l'ID, el text i dues com
 ## Rutina curta
 
 1. Obre Aura.
-2. Prem `Què és Aura?`.
-3. Prem `Què faig ara?`.
-4. Prem `Estat d'Aura`.
-5. Prem `Identitat`.
-6. Prem `Informe del dia`.
-7. Si hi ha alguna cosa important, prem `Grava record`.
-8. Quan vulguis revisar què hi ha guardat, prem `Veure records`.
-9. Després de gravar, prem `Últim record` si vols confirmar l'última escriptura.
-10. Escriu ordres avançades al camp de text només quan facin falta.
-11. Després d'una sessió amb canvis importants, fes backup i snapshot amb les ordres avançades `/desa-backup` i `/desa-integritat`.
+2. Escriu la pregunta principal a `Conversa amb Aura` o tria una pregunta suggerida.
+3. Si no saps per on continuar, prem `Què faig ara?`.
+4. Prem `Informe d'avui` per revisar el projecte i els pendents.
+5. Si hi ha alguna cosa important, prem `Grava un record`.
+6. A `Consulta i explora`, prem `Veure els records` o `Últim record` quan vulguis comprovar la memòria.
+7. Consulta identitat, genoma o evolució només quan necessitis més detall.
+8. Usa `Identitat i estat` per veure la representació visual i el cos digital.
+9. Escriu ordres avançades al camp de text només quan facin falta.
+10. Després d'una sessió amb canvis importants, fes backup i snapshot amb les ordres avançades `/desa-backup` i `/desa-integritat`.
 
 ## Protocol operatiu a partir de v5.2
 

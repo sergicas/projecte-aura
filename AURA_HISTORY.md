@@ -9,6 +9,7 @@ Aura entra a `cloud-v5.3` i completa la capa conversacional real de la Fase 5.
 - La Fase 6 es revalida sobre l'estat actual: el botó `Genoma d'Aura` exposa el contracte canònic, el fallback local adopta el mateix propòsit que l'API i D1 substitueix l'última descripció residual d'“existència digital no humana” per la política vigent de mimesi humana.
 - La Fase 7 es revalida i es fa visible: `Evolució d'Aura` mostra els set indicadors calculats i les propostes en una sola lectura, amb API, IndexedDB i backups sincronitzats i sense aplicar cap mutació automàtica.
 - La Fase 8 es revalida i es fa comprensible: el canvas es presenta com a `Cos digital d'Aura`, incorpora una descripció accessible i un botó que explica què representen el pols, la postura, les capes i els colors.
+- Aura Web s'ordena segons l'ús real: conversa, accions immediates, consulta agrupada i identitat/estat; la imatge deixa d'interrompre el recorregut principal.
 - Cloudflare AI Gateway encamina les consultes habituals a Llama i reserva GPT-5.6 Terra per a contradiccions, síntesis temporals i plans complexos, amb retorn automàtic a Llama.
 - Workers AI transforma el camp principal en un xat generatiu arrelat en memòria, diari, coneixement i genoma de D1.
 - Les respostes mostren cites i no provoquen cap escriptura persistent.

@@ -5,6 +5,8 @@ const core = await readFile(new URL("../aura_core.js", import.meta.url), "utf8")
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const styles = await readFile(new URL("../aura_style.css", import.meta.url), "utf8");
 const packageJson = await readFile(new URL("../package.json", import.meta.url), "utf8");
+const api = await readFile(new URL("../functions/api/[[path]].js", import.meta.url), "utf8");
+const backupWorker = await readFile(new URL("../workers/aura_backup_worker.js", import.meta.url), "utf8");
 
 assert.match(
   core,
@@ -29,8 +31,18 @@ assert.doesNotMatch(packageJson, /aura_face\.jpg/, "El desplegament no ha d'incl
 assert.match(html, /aura_logo\.jpg/, "La capçalera ha de mostrar el logo oficial d'Aura.");
 assert.match(html, /class="app-header"/, "La fase 3 ha de tenir una capçalera compacta.");
 assert.match(html, /class="phase3-layout"/, "La fase 3 ha de separar accions i resultats.");
-assert.match(html, /class="action-panel"/, "Les accions han d'estar agrupades abans de la conversa.");
+assert.match(html, /class="action-panel"/, "Les accions immediates han d'estar agrupades al costat de la conversa.");
 assert.match(html, /class="console-head"/, "La conversa ha de tenir un títol visible.");
+assert.match(html, /class="support-grid"/, "Les consultes secundàries han d'estar agrupades per funció.");
+assert.match(html, /class="identity-grid"/, "La identitat visual i el cos digital han de compartir un últim nivell.");
+const conversationIndex = html.indexOf('class="console-panel"');
+const immediateActionsIndex = html.indexOf('class="action-panel"');
+const supportIndex = html.indexOf('class="support-section"');
+const identityIndex = html.indexOf('class="identity-section"');
+assert.ok(
+  conversationIndex < immediateActionsIndex && immediateActionsIndex < supportIndex && supportIndex < identityIndex,
+  "L'ordre de lectura ha de ser conversa, accions immediates, consulta i identitat/estat.",
+);
 assert.match(html, /<button type="submit">Envia<\/button>/, "El camp de conversa ha de tenir una acció d'enviament explícita.");
 assert.match(html, /Pregunta a Aura/, "La Fase 5 ha de presentar el camp com una conversa natural.");
 assert.match(html, /class="prompt-suggestions"/, "La Fase 5 ha d'oferir preguntes suggerides.");
@@ -40,6 +52,15 @@ assert.match(core, /async function askAura\(question\)/, "El text lliure s'ha d'
 assert.match(core, /async function askSergiAvatar\(question\)/, "La connexió explícita amb Sergi Avatar ha de ser operativa.");
 assert.doesNotMatch(html, /class="identity-band"/, "La capçalera antiga no ha de continuar ocupant la primera pantalla.");
 assert.match(styles, /@media \(max-width: 620px\)/, "La interfície ha de tenir una composició mòbil específica.");
+assert.match(styles, /\.support-grid/, "La interfície ha de definir la graella de consulta secundària.");
+assert.match(styles, /\.identity-grid/, "La interfície ha de definir la graella d'identitat i estat.");
+for (const source of [core, api, backupWorker]) {
+  assert.match(
+    source,
+    /readingOrder: \["conversation", "immediate-actions", "consult-and-explore", "identity-and-status"\]/,
+    "El client, l'API i el backup han de conservar el mateix ordre lògic.",
+  );
+}
 assert.match(styles, /prefers-reduced-motion: reduce/, "La interfície ha de respectar el moviment reduït.");
 assert.doesNotMatch(html, /auth-gate|auth-input|type="password"/, "Aura no ha de mostrar una segona pantalla de clau.");
 assert.doesNotMatch(html, /Clau de Mode Sergi|Desbloqueja Aura/, "La interfície no ha de demanar cap codi intern.");

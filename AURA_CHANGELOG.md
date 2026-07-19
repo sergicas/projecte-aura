@@ -2,6 +2,14 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Reordenació lògica d'Aura Web - 2026-07-19
+
+- Situa la conversa com a primera acció de la pantalla i redueix l'alçada buida inicial del xat.
+- Manté al costat només `Què faig ara?`, `Informe d'avui` i `Grava un record` com a accions immediates.
+- Agrupa memòria, comprensió, evolució i Sergi Avatar sota `Consulta i explora`.
+- Mou la il·lustració i el cos digital al nivell final `Identitat i estat`.
+- Conserva el mateix ordre semàntic en mòbil i sincronitza el contracte `/api/web`, el fallback local i el Worker de backups.
+
 ## Revalidació de la Fase 8 - 2026-07-19
 
 - Reanomena l'antic `Pols visual` com a `Cos digital d'Aura` i hi afegeix el botó `Què representa?`.

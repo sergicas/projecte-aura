@@ -4582,10 +4582,11 @@ function buildAuraWebInterface(options = {}) {
       related: ["README.md", "PROTOCOL_MESTRE_AURA.md", "AURA_HISTORY.md"],
     },
     layout: {
-      shell: "identity-band + simple-workspace + console-panel",
+      shell: "app-header + primary-conversation + immediate-actions + support-grid + identity-grid",
       modules: modules.map((module) => module.id),
       defaultModule: "simple",
-      responsive: ["desktop-grid", "tablet-stack", "mobile-stack"],
+      readingOrder: ["conversation", "immediate-actions", "consult-and-explore", "identity-and-status"],
+      responsive: ["desktop-conversation-first", "tablet-stack", "mobile-linear"],
     },
     visibleActions,
     modules,

@@ -8,7 +8,7 @@
       content="Projecte Aura Cloud v5.3: conversa generativa privada híbrida amb Llama i GPT, memòria D1 i connexió explícita amb Sergi Avatar."
     />
     <title>Projecte Aura Cloud v5.3</title>
-    <link rel="stylesheet" href="aura_style.css?v=phase5-logo-20260719" />
+    <link rel="stylesheet" href="aura_style.css?v=phase8-layout-20260719" />
   </head>
   <body>
     <main id="aura-shell" class="shell">
@@ -35,104 +35,10 @@
       <section class="workspace simple-workspace" aria-label="Aura simplificada" data-active-module="xat">
         <section class="aura-module simple-console is-active" data-module-panel="xat" aria-label="Aura simplificada">
           <div class="phase3-layout">
-            <aside class="action-panel" aria-labelledby="actions-title">
-              <div class="panel-intro">
-                <p class="section-eyebrow">Comença aquí</p>
-                <h2 id="actions-title">Què necessites?</h2>
-                <p>Pregunta a Aura amb llenguatge natural. Llegirà la memòria del projecte abans de respondre i no modificarà res.</p>
-              </div>
-
-              <figure class="aura-identity-card">
-                <img
-                  src="aura_identity.jpg?v=20260719"
-                  alt="Identitat visual d'Aura: una escena il·lustrada de memòria, creativitat, viatges i tecnologia"
-                  width="1600"
-                  height="872"
-                >
-                <figcaption>
-                  <strong>Identitat d'Aura</strong>
-                  <span>Memòria, creativitat i continuïtat.</span>
-                </figcaption>
-              </figure>
-
-              <div class="featured-actions" aria-label="Accions recomanades">
-                <button class="action-card action-card--primary" type="button" data-action="next-step">
-                  <span>Què faig ara?</span>
-                  <small>Recomanació concreta per continuar</small>
-                </button>
-                <button class="action-card" type="button" data-action="daily-report">
-                  <span>Informe d'avui</span>
-                  <small>Resum del projecte i pendents</small>
-                </button>
-                <button
-                  class="action-card action-card--write"
-                  type="button"
-                  data-action="new-record"
-                  aria-controls="record-form"
-                  aria-expanded="false"
-                >
-                  <span>Grava un record</span>
-                  <small>Desa una decisió a la memòria</small>
-                </button>
-              </div>
-
-              <section class="action-group" aria-labelledby="memory-actions-title">
-                <h3 id="memory-actions-title">Memòria</h3>
-                <div class="compact-actions">
-                  <button type="button" data-action="list-records">Veure els records</button>
-                  <button type="button" data-action="last-record">Últim record</button>
-                </div>
-              </section>
-
-              <section class="action-group" aria-labelledby="understand-actions-title">
-                <h3 id="understand-actions-title">Entendre Aura</h3>
-                <div class="compact-actions compact-actions--two-columns">
-                  <button type="button" data-action="what-is-aura">Què és Aura?</button>
-                  <button type="button" data-action="pulse">Estat d'Aura</button>
-                  <button type="button" data-action="core">Identitat i límits</button>
-                  <button type="button" data-action="digital-genome">Genoma d'Aura</button>
-                  <button type="button" data-action="synthetic-genome" aria-label="Què és la llavor d'Aura?">La llavor d'Aura</button>
-                </div>
-              </section>
-
-              <section class="action-group" aria-labelledby="evolution-actions-title">
-                <h3 id="evolution-actions-title">Evolució</h3>
-                <div class="compact-actions">
-                  <button type="button" data-action="evolution">Evolució d'Aura</button>
-                </div>
-                <p class="external-note">Indicadors i propostes calculats; no aplica cap canvi automàtic.</p>
-              </section>
-
-              <section class="action-group" aria-labelledby="connected-voices-title">
-                <h3 id="connected-voices-title">Veus connectades</h3>
-                <div class="compact-actions">
-                  <button type="button" data-action="sergi-avatar">Parla amb Sergi Avatar</button>
-                </div>
-                <p class="external-note">Per a llibres, filosofia i obra pública. Les converses del servei extern s'arxiven anònimament.</p>
-              </section>
-
-              <section class="aura-pulse-card" aria-labelledby="pulse-visual-title">
-                <div class="aura-pulse-card__head">
-                  <div>
-                    <h3 id="pulse-visual-title">Cos digital d'Aura</h3>
-                    <p>Mirall visual de memòria, genoma i integritat; només lectura.</p>
-                  </div>
-                  <button type="button" data-action="digital-body">Què representa?</button>
-                </div>
-                <canvas
-                  id="aura-visual"
-                  width="520"
-                  height="240"
-                  role="img"
-                  aria-label="Cos digital 2D d'Aura: una representació animada de l'estat operatiu, la memòria, el genoma i la integritat"
-                ></canvas>
-              </section>
-            </aside>
-
             <section class="console-panel" aria-labelledby="conversation-title">
               <header class="console-head">
                 <div>
-                  <p class="section-eyebrow">Fase 5 · IA conversacional</p>
+                  <p class="section-eyebrow">Comença aquí · IA conversacional</p>
                   <h2 id="conversation-title">Conversa amb Aura</h2>
                 </div>
                 <span class="read-only-note">Llama + GPT · només lectura</span>
@@ -166,7 +72,128 @@
                 </div>
               </form>
             </section>
+
+            <aside class="action-panel" aria-labelledby="actions-title">
+              <div class="panel-intro">
+                <p class="section-eyebrow">Accions immediates</p>
+                <h2 id="actions-title">Continua el projecte</h2>
+                <p>Orienta't, revisa el dia o desa una decisió important.</p>
+              </div>
+
+              <div class="featured-actions" aria-label="Accions recomanades">
+                <button class="action-card action-card--primary" type="button" data-action="next-step">
+                  <span>Què faig ara?</span>
+                  <small>Recomanació concreta per continuar</small>
+                </button>
+                <button class="action-card" type="button" data-action="daily-report">
+                  <span>Informe d'avui</span>
+                  <small>Resum del projecte i pendents</small>
+                </button>
+                <button
+                  class="action-card action-card--write"
+                  type="button"
+                  data-action="new-record"
+                  aria-controls="record-form"
+                  aria-expanded="false"
+                >
+                  <span>Grava un record</span>
+                  <small>Desa una decisió a la memòria</small>
+                </button>
+              </div>
+            </aside>
           </div>
+
+          <section class="support-section" aria-labelledby="support-title">
+            <header class="section-heading">
+              <div>
+                <p class="section-eyebrow">Quan vulguis aprofundir</p>
+                <h2 id="support-title">Consulta i explora</h2>
+              </div>
+              <p>Memòria, funcionament, evolució i veus externes, agrupats per funció.</p>
+            </header>
+
+            <div class="support-grid">
+              <section class="action-group" aria-labelledby="memory-actions-title">
+                <h3 id="memory-actions-title">Memòria</h3>
+                <p>Consulta el que Aura conserva.</p>
+                <div class="compact-actions">
+                  <button type="button" data-action="list-records">Veure els records</button>
+                  <button type="button" data-action="last-record">Últim record</button>
+                </div>
+              </section>
+
+              <section class="action-group" aria-labelledby="understand-actions-title">
+                <h3 id="understand-actions-title">Entendre Aura</h3>
+                <p>Identitat, límits i estructura interna.</p>
+                <div class="compact-actions compact-actions--two-columns">
+                  <button type="button" data-action="what-is-aura">Què és Aura?</button>
+                  <button type="button" data-action="pulse">Estat d'Aura</button>
+                  <button type="button" data-action="core">Identitat i límits</button>
+                  <button type="button" data-action="digital-genome">Genoma d'Aura</button>
+                  <button type="button" data-action="synthetic-genome" aria-label="Què és la llavor d'Aura?">La llavor d'Aura</button>
+                </div>
+              </section>
+
+              <section class="action-group" aria-labelledby="evolution-actions-title">
+                <h3 id="evolution-actions-title">Evolució</h3>
+                <p>Indicadors calculats; no aplica cap canvi automàtic.</p>
+                <div class="compact-actions">
+                  <button type="button" data-action="evolution">Evolució d'Aura</button>
+                </div>
+              </section>
+
+              <section class="action-group" aria-labelledby="connected-voices-title">
+                <h3 id="connected-voices-title">Veus connectades</h3>
+                <p>Accés separat a l'obra pública de Sergi.</p>
+                <div class="compact-actions">
+                  <button type="button" data-action="sergi-avatar">Parla amb Sergi Avatar</button>
+                </div>
+                <p class="external-note">Per a llibres, filosofia i obra pública. Les converses del servei extern s'arxiven anònimament.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="identity-section" aria-labelledby="identity-status-title">
+            <header class="section-heading">
+              <div>
+                <p class="section-eyebrow">Representació</p>
+                <h2 id="identity-status-title">Identitat i estat</h2>
+              </div>
+              <p>La imatge expressa la identitat d'Aura; el cos digital mostra el seu estat tècnic.</p>
+            </header>
+
+            <div class="identity-grid">
+              <figure class="aura-identity-card">
+                <img
+                  src="aura_identity.jpg?v=20260719"
+                  alt="Identitat visual d'Aura: una escena il·lustrada de memòria, creativitat, viatges i tecnologia"
+                  width="1600"
+                  height="872"
+                >
+                <figcaption>
+                  <strong>Identitat d'Aura</strong>
+                  <span>Memòria, creativitat i continuïtat.</span>
+                </figcaption>
+              </figure>
+
+              <section class="aura-pulse-card" aria-labelledby="pulse-visual-title">
+                <div class="aura-pulse-card__head">
+                  <div>
+                    <h3 id="pulse-visual-title">Cos digital d'Aura</h3>
+                    <p>Mirall visual de memòria, genoma i integritat; només lectura.</p>
+                  </div>
+                  <button type="button" data-action="digital-body">Què representa?</button>
+                </div>
+                <canvas
+                  id="aura-visual"
+                  width="520"
+                  height="240"
+                  role="img"
+                  aria-label="Cos digital 2D d'Aura: una representació animada de l'estat operatiu, la memòria, el genoma i la integritat"
+                ></canvas>
+              </section>
+            </div>
+          </section>
         </section>
       </section>
 
@@ -195,6 +222,6 @@
       </dialog>
     </main>
 
-    <script src="aura_core.js?v=phase5-ai-20260719" defer></script>
+    <script src="aura_core.js?v=phase8-layout-20260719" defer></script>
   </body>
 </html>

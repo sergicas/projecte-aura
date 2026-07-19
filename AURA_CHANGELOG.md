@@ -2,6 +2,14 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Revalidació de la Fase 7 - 2026-07-19
+
+- Fa visible el botó `Evolució d'Aura` i combina estat i propostes en una única resposta entenedora.
+- Presenta curiositat, autonomia, coherència, continuïtat, integritat, pressió de canvi i maduresa operativa en percentatge, amb una explicació de cada càlcul.
+- Afegeix `phaseStatus` als contractes d'estat i propostes de Pages, fallback local i Worker de backups.
+- Confirma actius els sis gens de la fase i manté la política `derived-readonly`: cap consulta escriu o aplica mutacions.
+- Afegeix una migració d'auditoria i una prova contractual específica de la Fase 7.
+
 ## cloud-v5.3 — Fase 5 conversacional - 2026-07-19
 
 - Incorpora un xat generatiu real amb Workers AI i el model verificat `@cf/meta/llama-3.3-70b-instruct-fp8-fast`.

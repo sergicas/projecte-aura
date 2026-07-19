@@ -438,6 +438,8 @@ Regles:
 
 `cloud-v4.8` inicia la Fase 7: sistema d'evolució.
 
+A la web, prem `Evolució d'Aura`. Veuràs en una sola resposta els set indicadors explicats en percentatge, l'estat dominant, la maduresa, la pressió de canvi i les propostes actuals. És una consulta de només lectura: no modifica cap record ni aplica cap proposta.
+
 Consultes recomanades:
 
 ```text

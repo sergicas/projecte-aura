@@ -28,6 +28,13 @@ const EVOLUTION_STATE_METRICS = [
   "pressioCanvi",
   "maduresaOperativa",
 ];
+const PHASE_7_STATUS = Object.freeze({
+  state: "complete",
+  openedAt: "2026-06-26",
+  revalidatedAt: "2026-07-19",
+  mode: "derived-readonly",
+  genes: ["233168", "377377", "610987", "987159", "1597258", "2584181"],
+});
 const DOCUMENTED_GENOME_VERSION = "cloud-v5.3";
 const DATA_SAFETY_GENE_IDS = ["17711", "008", "089"];
 const DOCUMENTED_GENE_IDS = [
@@ -1358,7 +1365,7 @@ function buildDigitalGenome(genes, options = {}) {
       "aprenentatge",
       "continuïtat",
       "coherència",
-      "no-mimesi-humana",
+      "mimesi-humana",
       "preservació de memòria",
     ],
     policies: [
@@ -1730,6 +1737,7 @@ function buildEvolutionStateFromSignals(signals = {}, options = {}) {
     endpoint: "/api/evolution/state",
     format: "aura-evolution-state-v1",
     phase: "fase-7",
+    phaseStatus: PHASE_7_STATUS,
     mode: options.mode || "backup-worker-view",
     name: "Estat evolutiu traçable",
     source: {
@@ -1862,6 +1870,7 @@ function buildEvolutionProposalsFromState(state, options = {}) {
     endpoint: "/api/evolution/proposals",
     format: "aura-evolution-proposals-v1",
     phase: "fase-7",
+    phaseStatus: state.phaseStatus || PHASE_7_STATUS,
     mode: options.mode || "proposal-only",
     source: state.endpoint || "/api/evolution/state",
     stateSummary: state.summary || {},

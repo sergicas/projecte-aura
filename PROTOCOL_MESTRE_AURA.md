@@ -325,6 +325,8 @@ Gen de fase:
 
 Aura modifica el seu estat intern.
 
+Revalidació `cloud-v5.3` (2026-07-19): la Fase 7 continua completa i passa a ser visible a Aura Web amb el botó `Evolució d'Aura`. La vista combina l'estat calculat i les propostes, explica cada indicador en percentatge i manté tota l'operació en mode `derived-readonly`: cap consulta escriu a D1, modifica memòria o aplica una mutació.
+
 Exemple:
 
 ```yaml
@@ -428,6 +430,9 @@ maduresaOperativa: 0..1
 
 Contracte:
 
+- El botó `Evolució d'Aura` consulta conjuntament `GET /api/evolution/state` i `GET /api/evolution/proposals`.
+- La vista visible ha d'explicar els indicadors en llenguatge planer i deixar clar que cap proposta s'aplica sola.
+- API, fallback IndexedDB i snapshots del Worker han d'incloure el mateix estat de fase i la mateixa política de només lectura.
 - L'estat evolutiu és derivat de memòria, diari, genoma, metamemòria, candidats i integritat.
 - No modifica D1.
 - No modifica `AURA_GENOME.md` automàticament.

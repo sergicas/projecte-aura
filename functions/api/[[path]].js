@@ -56,6 +56,13 @@ const EVOLUTION_STATE_METRICS = [
   "pressioCanvi",
   "maduresaOperativa",
 ];
+const PHASE_7_STATUS = Object.freeze({
+  state: "complete",
+  openedAt: "2026-06-26",
+  revalidatedAt: "2026-07-19",
+  mode: "derived-readonly",
+  genes: ["233168", "377377", "610987", "987159", "1597258", "2584181"],
+});
 const DOCUMENTED_GENOME_VERSION = "cloud-v5.3";
 const HONESTY_TYPES = {
   real: "mecanisme real implementat",
@@ -3184,6 +3191,7 @@ function buildEvolutionStateFromSignals(signals = {}, options = {}) {
     endpoint: "/api/evolution/state",
     format: "aura-evolution-state-v1",
     phase: "fase-7",
+    phaseStatus: PHASE_7_STATUS,
     mode: options.mode || "derived-readonly",
     name: "Estat evolutiu traçable",
     source: {
@@ -3337,6 +3345,7 @@ function buildEvolutionProposalsFromState(state, options = {}) {
     endpoint: "/api/evolution/proposals",
     format: "aura-evolution-proposals-v1",
     phase: "fase-7",
+    phaseStatus: state.phaseStatus || PHASE_7_STATUS,
     mode: options.mode || "proposal-only",
     source: state.endpoint || "/api/evolution/state",
     stateSummary: state.summary || {},
@@ -4533,8 +4542,8 @@ function buildAuraWebInterface(options = {}) {
       label: "Aura simplificada",
       role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/estat-evolutiu", "/propostes-evolucio", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/evolution/state", "/api/evolution/proposals", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -4548,6 +4557,7 @@ function buildAuraWebInterface(options = {}) {
     "Últim record",
     "Genoma d'Aura",
     "La llavor d'Aura",
+    "Evolució d'Aura",
     "Parla amb Sergi Avatar",
   ];
 
@@ -4572,7 +4582,7 @@ function buildAuraWebInterface(options = {}) {
     visibleActions,
     modules,
     interactions: {
-      navigation: "11 botons visibles autoexplicatius: orientació, estat, identitat, genoma, llavor, veu externa, informe, memòria i una escriptura controlada",
+      navigation: "12 botons visibles autoexplicatius: orientació, estat, identitat, genoma, evolució, llavor, veu externa, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
       conversationalAI: {
         endpoint: "/api/chat",
@@ -4589,7 +4599,7 @@ function buildAuraWebInterface(options = {}) {
       "Cap escriptura persistent sense Mode Sergi.",
       "Les preguntes lliures són generatives però de només lectura i han de citar el context D1 utilitzat.",
       "Sergi Avatar és una font externa separada; només rep el text escrit després de `avatar:`.",
-      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
+      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, Evolució d'Aura, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
       "Grava record és l'única acció visible que pot escriure i activa Mode Sergi només quan cal.",
       "L'ampliació de botons no elimina dades ni endpoints.",
       "D1 continua sent la font de veritat i IndexedDB és fallback local.",
@@ -5121,7 +5131,7 @@ async function getCriterion(db, vault, options = {}) {
     priorities,
     nextAction: priorities[0] || "Mantenir observació i continuïtat.",
     limits: [
-      "No fingir humanitat.",
+      "No confondre presència humana amb consciència biològica verificable.",
       "No escriure a D1 sense Mode Sergi.",
       "No substituir backup verificable per memòria implícita del navegador.",
     ],

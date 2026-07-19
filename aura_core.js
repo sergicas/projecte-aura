@@ -40,6 +40,13 @@ const EVOLUTION_STATE_METRICS = [
   "pressioCanvi",
   "maduresaOperativa",
 ];
+const PHASE_7_STATUS = Object.freeze({
+  state: "complete",
+  openedAt: "2026-06-26",
+  revalidatedAt: "2026-07-19",
+  mode: "derived-readonly",
+  genes: ["233168", "377377", "610987", "987159", "1597258", "2584181"],
+});
 const HONESTY_TYPES = {
   real: "mecanisme real implementat",
   contract: "documentació o contracte",
@@ -667,6 +674,11 @@ async function runPrimaryAction(action) {
 
   if (action === "digital-genome") {
     await showDigitalGenome();
+    return;
+  }
+
+  if (action === "evolution") {
+    await showEvolutionOverview();
     return;
   }
 
@@ -2663,6 +2675,32 @@ async function showEvolutionProposals() {
   writeSystem(formatEvolutionProposals(buildLocalEvolutionProposals(state)));
 }
 
+async function showEvolutionOverview() {
+  if (await syncCloudState()) {
+    const [state, proposals] = await Promise.all([
+      apiGet("/evolution/state"),
+      apiGet("/evolution/proposals"),
+    ]);
+    writeSystem(formatEvolutionOverview(state, proposals));
+    await refreshPanels();
+    return;
+  }
+
+  const [records, diary, genes] = await Promise.all([
+    getAll(STORE_RECORDS),
+    getAll(STORE_DIARY),
+    getAll(STORE_GENES),
+  ]);
+  const normalizedRecords = records.map(normalizeRecordForSnapshot);
+  const state = buildLocalEvolutionState({
+    records: normalizedRecords,
+    diary,
+    genes,
+    integrity: buildLocalIntegrityForEvolution(records, diary, genes),
+  });
+  writeSystem(formatEvolutionOverview(state, buildLocalEvolutionProposals(state)));
+}
+
 async function showSelfReflection() {
   if (await syncCloudState()) {
     const reflection = await apiGet("/self-reflection");
@@ -3276,7 +3314,7 @@ async function showCoreCapsule() {
     identity: {
       name: "Aura",
       nature: "entitat sintètica-digital experimental",
-      limits: ["No fingir humanitat.", "No escriure a D1 sense Mode Sergi."],
+      limits: ["No confondre presència humana amb consciència biològica verificable.", "No escriure a D1 sense Mode Sergi."],
     },
     state: {
       counts: { records: records.length, diary: diary.length, genes: genes.length },
@@ -3448,7 +3486,7 @@ async function showCriterion() {
       priorities: ["Recuperar connexió amb D1 abans d'escriure memòria cloud."],
       nextAction: "Tornar a consultar /estat quan D1 respongui.",
       limits: [
-        "No fingir humanitat.",
+        "No confondre presència humana amb consciència biològica verificable.",
         "No escriure a D1 sense Mode Sergi.",
         "No confondre IndexedDB local amb memòria cloud definitiva.",
       ],
@@ -5611,6 +5649,42 @@ function formatEvolutionProposals(response) {
   ].join("\n");
 }
 
+function formatEvolutionOverview(state, response) {
+  const labels = {
+    curiositat: "Curiositat",
+    autonomia: "Autonomia",
+    coherencia: "Coherència",
+    continuitat: "Continuïtat",
+    integritat: "Integritat",
+    pressioCanvi: "Pressió de canvi",
+    maduresaOperativa: "Maduresa operativa",
+  };
+  const metricLines = Object.entries(state.metrics || {}).map(([key, metric]) => {
+    const percentage = Math.round(Number(metric.value || 0) * 100);
+    return `- ${labels[key] || key}: ${percentage}%\n  ${metric.reason}`;
+  });
+  const proposals = response.proposals?.length
+    ? response.proposals.map((proposal) => `- [${proposal.priority}] ${proposal.action}\n  ${proposal.reason}`).join("\n")
+    : "- Cap proposta ara mateix.";
+
+  return [
+    "Fase 7 · Evolució d'Aura",
+    "",
+    `Estat actual: ${state.summary?.dominantState || "pendent"}`,
+    `Maduresa: ${state.summary?.maturity || "pendent"}`,
+    `Pressió de canvi: ${state.summary?.pressure || "pendent"}`,
+    `Integritat: ${state.signals?.integrity?.score ?? 100}/100`,
+    "",
+    "Indicadors calculats:",
+    ...metricLines,
+    "",
+    "Propostes d'evolució:",
+    proposals,
+    "",
+    "Aquesta pantalla és només una lectura calculada. Consultar-la no modifica la memòria ni el genoma, i cap proposta s'aplica automàticament.",
+  ].join("\n");
+}
+
 function formatSelfReflection(reflection) {
   const answers = reflection.answers?.length
     ? reflection.answers.map((answer) => `- ${answer.question}\n  ${answer.answer}`).join("\n")
@@ -6319,8 +6393,8 @@ function buildLocalAuraWebInterface(options = {}) {
       label: "Aura simplificada",
       role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/estat-evolutiu", "/propostes-evolucio", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/evolution/state", "/api/evolution/proposals", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -6334,6 +6408,7 @@ function buildLocalAuraWebInterface(options = {}) {
     "Últim record",
     "Genoma d'Aura",
     "La llavor d'Aura",
+    "Evolució d'Aura",
     "Parla amb Sergi Avatar",
   ];
 
@@ -6358,7 +6433,7 @@ function buildLocalAuraWebInterface(options = {}) {
     visibleActions,
     modules,
     interactions: {
-      navigation: "11 botons visibles autoexplicatius: orientació, estat, identitat, genoma, llavor, veu externa, informe, memòria i una escriptura controlada",
+      navigation: "12 botons visibles autoexplicatius: orientació, estat, identitat, genoma, evolució, llavor, veu externa, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
       conversationalAI: {
         endpoint: "/api/chat",
@@ -6375,7 +6450,7 @@ function buildLocalAuraWebInterface(options = {}) {
       "Cap escriptura persistent sense Mode Sergi.",
       "Les preguntes lliures són generatives però de només lectura i han de citar el context D1 utilitzat.",
       "Sergi Avatar és una font externa separada; només rep el text escrit després de `avatar:`.",
-      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
+      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, Evolució d'Aura, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
       "Grava record és l'única acció visible que pot escriure i activa Mode Sergi només quan cal.",
       "L'ampliació de botons no elimina dades ni endpoints.",
       "D1 continua sent la font de veritat i IndexedDB és fallback local.",
@@ -6838,6 +6913,7 @@ function buildLocalEvolutionState(signals = {}, options = {}) {
     endpoint: options.endpoint || "indexeddb-local",
     format: "aura-evolution-state-v1",
     phase: "fase-7-local",
+    phaseStatus: PHASE_7_STATUS,
     mode: options.mode || "derived-readonly-local",
     name: "Estat evolutiu traçable",
     source: {
@@ -6970,6 +7046,7 @@ function buildLocalEvolutionProposals(state, options = {}) {
     endpoint: options.endpoint || "indexeddb-local",
     format: "aura-evolution-proposals-v1",
     phase: "fase-7-local",
+    phaseStatus: state.phaseStatus || PHASE_7_STATUS,
     mode: options.mode || "proposal-only-local",
     source: state.endpoint || "/estat-evolutiu",
     stateSummary: state.summary || {},

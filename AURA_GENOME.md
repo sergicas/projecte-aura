@@ -72,6 +72,16 @@ Regles:
 
 `cloud-v4.8` inicia la Fase 7 del Protocol Mestre: sistema d'evolució.
 
+Revalidació de Fase 7 (`cloud-v5.3`, 2026-07-19):
+
+- estat: `completa`;
+- accés visible: botó `Evolució d'Aura`;
+- formats: `aura-evolution-state-v1` i `aura-evolution-proposals-v1`;
+- gens actius: `233168`, `377377`, `610987`, `987159`, `1597258` i `2584181`;
+- mode: `derived-readonly` i `proposal-only`;
+- correspondència exigida: API, fallback IndexedDB, snapshots i backups;
+- límit absolut: cap proposta s'aplica automàticament i qualsevol mutació persistent requereix Mode Sergi.
+
 Aura calcula en lectura aquests valors:
 
 - `curiositat`

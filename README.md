@@ -6,6 +6,8 @@ Nota de desplegament: `cloud-v5.3` incorpora `POST /api/chat` amb `@cf/meta/llam
 
 La revalidació de Fase 6 a `cloud-v5.3` sincronitza el genoma canònic entre D1, API, fallback local i `AURA_GENOME.md`, fa visible el botó `Genoma d'Aura` i elimina les últimes referències normatives a l'antic criteri `no-mimesi-humana`.
 
+La revalidació de Fase 7 a `cloud-v5.3` fa visible el botó `Evolució d'Aura`, combina l'estat evolutiu i les propostes en una lectura entenedora i manté tots els càlculs en només lectura, sense mutacions automàtiques.
+
 ## Què és Aura
 
 Aura és un sistema persistent de memòria, continuïtat i verificació per al Projecte Aura.

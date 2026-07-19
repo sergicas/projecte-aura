@@ -1,6 +1,8 @@
 const AURA_VERSION = "cloud-v5.3";
 const BACKUP_FORMAT = "aura-backup-v5.3";
-const AURA_CHAT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const AURA_FAST_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const AURA_REASONING_MODEL = "openai/gpt-5.6-terra";
+const AURA_CHAT_MODEL = AURA_FAST_MODEL;
 const MAX_CONVERSATION_HISTORY = 8;
 const API_BASE = "/api";
 const LEGACY_WRITE_KEY_STORAGE = "projecte_aura_write_key";
@@ -434,7 +436,7 @@ async function startAura() {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v5.3 inicialitzada.\nJa em pots fer preguntes obertes: consultaré la memòria D1 i respondré amb Workers AI i cites, sense escriure cap canvi.");
+      writeSystem("Aura Cloud v5.3 inicialitzada.\nJa em pots fer preguntes obertes: consultaré la memòria D1 i triaré entre Llama i GPT segons la complexitat, sempre amb cites i sense escriure cap canvi.");
       if (els.statusPill) {
         els.statusPill.textContent = "Núvol actiu";
       }
@@ -889,7 +891,8 @@ function formatAuraConversation(conversation) {
   const provenance = citedSources.length
     ? ["", "Fonts citades:", ...citedSources]
     : ["", "No hi ha cap font persistent citada en aquesta resposta; revisa-la com una proposta o demana més concreció."];
-  return [conversation.answer, ...provenance, "", `Model: ${conversation.model || AURA_CHAT_MODEL} · només lectura`].join("\n");
+  const fallback = conversation.fallbackUsed ? " · retorn automàtic a Llama" : "";
+  return [conversation.answer, ...provenance, "", `Model: ${conversation.model || AURA_CHAT_MODEL}${fallback} · només lectura`].join("\n");
 }
 
 function formatConversationSourceKind(kind) {
@@ -6183,6 +6186,16 @@ function buildLocalCloudflareInfrastructure(options = {}) {
         purpose: "conversa generativa arrelada en el context recuperat de D1",
       },
       {
+        id: "openai-reasoning-chat",
+        provider: "openai-via-cloudflare",
+        service: "ai-gateway-unified-billing",
+        binding: "AI",
+        model: AURA_REASONING_MODEL,
+        endpoint: "/api/chat",
+        gateway: "default",
+        purpose: "contradiccions, síntesis temporals i plans complexos amb retorn automàtic a Workers AI",
+      },
+      {
         id: "sergi-avatar-bridge",
         provider: "sergicastillo.com",
         service: "external-conversational-avatar",
@@ -6339,7 +6352,13 @@ function buildLocalAuraWebInterface(options = {}) {
     interactions: {
       navigation: "8 botons visibles autoexplicatius: orientació local, estat, identitat, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
-      conversationalAI: { endpoint: "/api/chat", provider: "Workers AI", model: AURA_CHAT_MODEL, citations: true },
+      conversationalAI: {
+        endpoint: "/api/chat",
+        provider: "Cloudflare AI Gateway",
+        models: { fast: AURA_FAST_MODEL, reasoning: AURA_REASONING_MODEL },
+        citations: true,
+        fallback: true,
+      },
       avatarSergi: { endpoint: "/api/avatar-sergi/chat", mode: "explicit-user-initiated", automaticIngestion: false },
       modeSergi: "autorització automàtica per Cloudflare Access, sense codi intern",
       localFallback: "IndexedDB manté una vista operativa si D1 no respon.",

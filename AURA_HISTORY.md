@@ -6,6 +6,7 @@ Història viva del Projecte Aura.
 
 Aura entra a `cloud-v5.3` i completa la capa conversacional real de la Fase 5.
 
+- Cloudflare AI Gateway encamina les consultes habituals a Llama i reserva GPT-5.6 Terra per a contradiccions, síntesis temporals i plans complexos, amb retorn automàtic a Llama.
 - Workers AI transforma el camp principal en un xat generatiu arrelat en memòria, diari, coneixement i genoma de D1.
 - Les respostes mostren cites i no provoquen cap escriptura persistent.
 - Sergi Avatar queda connectat com a veu externa explícita i separada, sense compartir la memòria privada.

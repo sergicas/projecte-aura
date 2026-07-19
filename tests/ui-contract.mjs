@@ -34,7 +34,7 @@ assert.match(html, /class="console-head"/, "La conversa ha de tenir un títol vi
 assert.match(html, /<button type="submit">Envia<\/button>/, "El camp de conversa ha de tenir una acció d'enviament explícita.");
 assert.match(html, /Pregunta a Aura/, "La Fase 5 ha de presentar el camp com una conversa natural.");
 assert.match(html, /class="prompt-suggestions"/, "La Fase 5 ha d'oferir preguntes suggerides.");
-assert.match(html, /Workers AI · només lectura/, "La interfície ha d'explicar el motor i el límit d'escriptura.");
+assert.match(html, /Llama \+ GPT · només lectura/, "La interfície ha d'explicar l'encaminament híbrid i el límit d'escriptura.");
 assert.match(html, /aura_identity\.jpg/, "La interfície ha de mostrar la identitat visual d'Aura.");
 assert.match(core, /async function askAura\(question\)/, "El text lliure s'ha d'enviar al backend conversacional.");
 assert.match(core, /async function askSergiAvatar\(question\)/, "La connexió explícita amb Sergi Avatar ha de ser operativa.");

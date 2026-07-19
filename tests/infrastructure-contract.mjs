@@ -35,7 +35,7 @@ assert.equal(infrastructure.format, "aura-cloudflare-infrastructure-v1");
 assert.equal(infrastructure.document.required, "AURA_CLOUDFLARE_ARCHITECTURE.md");
 assert.deepEqual(
   infrastructure.resources.map((resource) => resource.id),
-  ["pages-project", "pages-functions-api", "workers-ai-chat", "sergi-avatar-bridge", "d1-memory", "backup-vault", "backup-worker", "browser-indexeddb"],
+  ["pages-project", "pages-functions-api", "workers-ai-chat", "openai-reasoning-chat", "sergi-avatar-bridge", "d1-memory", "backup-vault", "backup-worker", "browser-indexeddb"],
   "El contracte ha de conservar totes les peces necessàries per reconstruir Aura",
 );
 assert.deepEqual(

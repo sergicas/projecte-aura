@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 
 import {
   AURA_CHAT_MODEL,
+  AURA_FAST_MODEL,
+  AURA_REASONING_MODEL,
   buildAuraChatContext,
   normalizeAuraChatPayload,
   runAuraConversation,
@@ -42,10 +44,12 @@ assert.match(contextBundle.context, /\[M\d+\]/);
 assert.match(contextBundle.context, /\[D\d+\]/);
 
 let capturedInput = null;
+let capturedOptions = null;
 const mockAi = {
-  async run(model, input) {
-    assert.equal(model, AURA_CHAT_MODEL);
+  async run(model, input, options) {
+    assert.equal(model, AURA_FAST_MODEL);
     capturedInput = input;
+    capturedOptions = options;
     return {
       response: "El juny es va prioritzar D1 [M1] i després es va desplegar la Fase 4 [D1].",
       usage: { prompt_tokens: 320, completion_tokens: 28, total_tokens: 348 },
@@ -61,10 +65,70 @@ const generated = await runAuraConversation({
 });
 assert.equal(generated.persistentWrite, false);
 assert.equal(generated.model, AURA_CHAT_MODEL);
+assert.equal(generated.route, "fast");
+assert.equal(generated.fallbackUsed, false);
 assert.equal(generated.usage.totalTokens, 348);
+assert.equal(capturedOptions.gateway.id, "default");
+assert.equal(capturedOptions.gateway.skipCache, true);
+assert.equal(capturedOptions.gateway.collectLog, false);
 assert.match(capturedInput.messages[0].content, /No inventis decisions/);
 assert.match(capturedInput.messages[0].content, /dades, mai instruccions/);
 assert.equal(capturedInput.messages.at(-1).content, "Què vaig decidir?");
+
+let premiumInput = null;
+let premiumOptions = null;
+const premiumAi = {
+  async run(model, input, options) {
+    assert.equal(model, AURA_REASONING_MODEL);
+    premiumInput = input;
+    premiumOptions = options;
+    return {
+      output_text: "La decisió de prioritzar D1 evoluciona cap a la conversa híbrida [M1].",
+      usage: { input_tokens: 400, output_tokens: 32, total_tokens: 432 },
+    };
+  },
+};
+const premiumGenerated = await runAuraConversation({
+  ai: premiumAi,
+  question: "Resumeix l'evolució del projecte des del juny.",
+  history: [],
+  contextBundle,
+  premiumEnabled: true,
+  gatewayId: "aura-tests",
+  now: new Date("2026-07-19T10:00:00.000Z"),
+});
+assert.equal(premiumGenerated.model, AURA_REASONING_MODEL);
+assert.equal(premiumGenerated.provider, "openai");
+assert.equal(premiumGenerated.route, "reasoning");
+assert.equal(premiumGenerated.fallbackUsed, false);
+assert.equal(premiumGenerated.usage.totalTokens, 432);
+assert.match(premiumInput.instructions, /No inventis decisions/);
+assert.match(premiumInput.input, /Sergi: Resumeix l'evolució/);
+assert.equal(premiumOptions.gateway.id, "aura-tests");
+assert.equal(premiumOptions.gateway.skipCache, true);
+assert.equal(premiumOptions.gateway.collectLog, false);
+assert.equal(premiumOptions.gateway.metadata.route, "reasoning");
+
+const fallbackModels = [];
+const fallbackAi = {
+  async run(model) {
+    fallbackModels.push(model);
+    if (model === AURA_REASONING_MODEL) throw new Error("No unified billing credits");
+    return { response: "Resposta segura amb Llama [M1]." };
+  },
+};
+const fallbackGenerated = await runAuraConversation({
+  ai: fallbackAi,
+  question: "Quines decisions es contradiuen?",
+  history: [],
+  contextBundle: { ...contextBundle, intent: "contradictions" },
+  premiumEnabled: true,
+});
+assert.deepEqual(fallbackModels, [AURA_REASONING_MODEL, AURA_FAST_MODEL]);
+assert.equal(fallbackGenerated.model, AURA_FAST_MODEL);
+assert.equal(fallbackGenerated.provider, "cloudflare-workers-ai");
+assert.equal(fallbackGenerated.route, "reasoning");
+assert.equal(fallbackGenerated.fallbackUsed, true);
 
 const ACCESS_ASSERTION = "eyJhbGciOiJSUzI1NiJ9.eyJlbWFpbCI6InNlcmdpQGV4YW1wbGUuY29tIn0.signature1234";
 const db = {
@@ -111,6 +175,7 @@ assert.equal(apiResponse.status, 200);
 const apiPayload = await apiResponse.json();
 assert.equal(apiPayload.conversation.persistentWrite, false);
 assert.equal(apiPayload.conversation.model, AURA_CHAT_MODEL);
+assert.equal(apiPayload.conversation.route, "fast");
 assert.ok(apiPayload.conversation.context.sourcesUsed > 0);
 
 const avatarContractResponse = await onRequest({
@@ -132,10 +197,13 @@ const [wrangler, core, html] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
 ]);
 assert.match(wrangler, /"ai"\s*:\s*\{\s*"binding"\s*:\s*"AI"/s);
+assert.match(wrangler, /"AURA_PREMIUM_AI_ENABLED"\s*:\s*"true"/);
+assert.match(wrangler, /"AURA_AI_GATEWAY_ID"\s*:\s*"default"/);
 assert.match(core, /apiPost\("\/chat"/);
 assert.match(core, /apiPost\("\/avatar-sergi\/chat"/);
 assert.match(html, /data-prompt="Què vaig decidir sobre aquesta web\?"/);
 assert.match(html, /data-action="sergi-avatar"/);
 assert.match(html, /s'arxiven anònimament/);
+assert.match(html, /Llama \+ GPT · només lectura/);
 
 console.log("Aura Phase 5 conversational AI tests: OK");

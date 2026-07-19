@@ -338,6 +338,8 @@ Prepara el pla de treball de demà.
 
 La conversa no desa ni modifica res. Per parlar de llibres, filosofia o obra pública, prem `Parla amb Sergi Avatar` i completa la pregunta després del prefix `avatar:`. Només s'envia aquella pregunta; la memòria privada d'Aura no surt del projecte.
 
+Aura usa Llama per a les consultes habituals i reserva GPT-5.6 Terra per detectar contradiccions, resumir evolucions llargues i preparar plans complexos. Si el crèdit d'AI Gateway no està disponible o GPT falla, Aura respon automàticament amb Llama i ho indica al peu de la resposta.
+
 El contracte tècnic complet és `AURA_PHASE5_CONVERSATIONAL_AI.md`.
 
 La interfície conserva quatre àrees funcionals:

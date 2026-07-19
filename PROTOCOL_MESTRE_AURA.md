@@ -252,7 +252,7 @@ POST /api/avatar-sergi/chat
 Contracte:
 
 - Aura Web s'organitza en cinc mòduls: Xat, Memòria, Història, Estat i Cos.
-- Xat accepta preguntes naturals, recupera context limitat de D1 i respon amb Workers AI i cites.
+- Xat accepta preguntes naturals, recupera context limitat de D1 i respon amb encaminament híbrid Llama/GPT, cites i retorn automàtic a Llama.
 - Memòria concentra records, memòria canònica, mapa i genoma.
 - Història concentra diari, diari evolutiu, continuïtat i vault.
 - Estat concentra salut, integritat, infraestructura i restauració segura.

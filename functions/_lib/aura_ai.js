@@ -1,10 +1,15 @@
-export const AURA_CHAT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+export const AURA_FAST_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+export const AURA_REASONING_MODEL = "openai/gpt-5.6-terra";
+export const AURA_CHAT_MODEL = AURA_FAST_MODEL;
+
+const REASONING_INTENTS = new Set(["contradictions", "timeline-summary", "work-plan"]);
 
 const MAX_QUESTION_LENGTH = 4000;
 const MAX_HISTORY_MESSAGES = 8;
 const MAX_HISTORY_TEXT = 2400;
 const MAX_CONTEXT_CHARS = 14000;
 const AI_TIMEOUT_MS = 45000;
+const PREMIUM_AI_TIMEOUT_MS = 12000;
 const STOP_WORDS = new Set([
   "a", "al", "als", "amb", "aquesta", "aquest", "com", "de", "del", "dels", "des", "el", "els", "en",
   "i", "la", "les", "meu", "meva", "per", "que", "què", "sobre", "un", "una", "vaig", "vull",
@@ -96,7 +101,15 @@ export function buildAuraChatContext({ question, records = [], diary = [], knowl
   };
 }
 
-export async function runAuraConversation({ ai, question, history, contextBundle, now = new Date() }) {
+export async function runAuraConversation({
+  ai,
+  question,
+  history,
+  contextBundle,
+  now = new Date(),
+  premiumEnabled = false,
+  gatewayId = "default",
+}) {
   const systemPrompt = buildSystemPrompt(contextBundle, now);
   const messages = [
     { role: "system", content: systemPrompt },
@@ -104,20 +117,58 @@ export async function runAuraConversation({ ai, question, history, contextBundle
     { role: "user", content: question },
   ];
   const startedAt = Date.now();
-  const result = await withTimeout(
-    ai.run(AURA_CHAT_MODEL, {
-      messages,
-      max_tokens: 650,
-      temperature: 0.2,
-    }),
-    AI_TIMEOUT_MS,
-  );
+  const premiumRequested = premiumEnabled && REASONING_INTENTS.has(contextBundle.intent);
+  let model = premiumRequested ? AURA_REASONING_MODEL : AURA_FAST_MODEL;
+  let provider = premiumRequested ? "openai" : "cloudflare-workers-ai";
+  let fallbackUsed = false;
+  let result;
+
+  if (premiumRequested) {
+    try {
+      result = await withTimeout(
+        ai.run(
+          AURA_REASONING_MODEL,
+          {
+            instructions: systemPrompt,
+            input: formatReasoningInput(history, question),
+            max_output_tokens: 650,
+            reasoning: { effort: "low" },
+          },
+          buildGatewayOptions(gatewayId, contextBundle.intent, "reasoning"),
+        ),
+        PREMIUM_AI_TIMEOUT_MS,
+      );
+    } catch {
+      fallbackUsed = true;
+      model = AURA_FAST_MODEL;
+      provider = "cloudflare-workers-ai";
+    }
+  }
+
+  if (!result) {
+    result = await withTimeout(
+      ai.run(
+        AURA_FAST_MODEL,
+        {
+          messages,
+          max_tokens: 650,
+          temperature: 0.2,
+        },
+        buildGatewayOptions(gatewayId, contextBundle.intent, fallbackUsed ? "fallback" : "fast"),
+      ),
+      AI_TIMEOUT_MS,
+    );
+  }
   const answer = extractAiText(result);
-  if (!answer) throw new Error("Workers AI ha retornat una resposta buida.");
+  if (!answer) throw new Error("El motor conversacional ha retornat una resposta buida.");
 
   return {
     answer,
-    model: AURA_CHAT_MODEL,
+    model,
+    provider,
+    route: premiumRequested ? "reasoning" : "fast",
+    premiumRequested,
+    fallbackUsed,
     generatedAt: new Date().toISOString(),
     latencyMs: Date.now() - startedAt,
     grounded: contextBundle.sources.length > 0,
@@ -126,6 +177,22 @@ export async function runAuraConversation({ ai, question, history, contextBundle
     context: contextBundle.stats,
     usage: normalizeUsage(result?.usage),
     persistentWrite: false,
+  };
+}
+
+function formatReasoningInput(history, question) {
+  const turns = history.map((message) => `${message.role === "assistant" ? "Aura" : "Sergi"}: ${message.content}`);
+  return [...turns, `Sergi: ${question}`].join("\n\n");
+}
+
+function buildGatewayOptions(gatewayId, intent, route) {
+  return {
+    gateway: {
+      id: normalizeText(gatewayId, 120) || "default",
+      skipCache: true,
+      collectLog: false,
+      metadata: { application: "aura", intent, route },
+    },
   };
 }
 
@@ -245,6 +312,16 @@ function extractAiText(result) {
   if (typeof result === "string") return result.trim();
   if (typeof result?.response === "string") return result.response.trim();
   if (typeof result?.result?.response === "string") return result.result.response.trim();
+  if (typeof result?.output_text === "string") return result.output_text.trim();
+  if (typeof result?.result?.output_text === "string") return result.result.output_text.trim();
+  if (Array.isArray(result?.output)) {
+    return result.output
+      .flatMap((item) => Array.isArray(item?.content) ? item.content : [])
+      .filter((item) => item?.type === "output_text" && typeof item?.text === "string")
+      .map((item) => item.text.trim())
+      .filter(Boolean)
+      .join("\n\n");
+  }
   return "";
 }
 
@@ -264,10 +341,12 @@ async function withTimeout(promise, timeoutMs) {
 
 function normalizeUsage(usage) {
   if (!usage || typeof usage !== "object") return null;
+  const promptTokens = Number(usage.prompt_tokens ?? usage.input_tokens ?? 0);
+  const completionTokens = Number(usage.completion_tokens ?? usage.output_tokens ?? 0);
   return {
-    promptTokens: Number(usage.prompt_tokens || 0),
-    completionTokens: Number(usage.completion_tokens || 0),
-    totalTokens: Number(usage.total_tokens || 0),
+    promptTokens,
+    completionTokens,
+    totalTokens: Number(usage.total_tokens ?? (promptTokens + completionTokens)),
   };
 }
 

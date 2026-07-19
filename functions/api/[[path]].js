@@ -1,11 +1,20 @@
-const AURA_VERSION = "cloud-v5.2";
-const BACKUP_FORMAT = "aura-backup-v5.2";
+import {
+  AURA_CHAT_MODEL,
+  buildAuraChatContext,
+  normalizeAuraChatPayload,
+  runAuraConversation,
+} from "../_lib/aura_ai.js";
+
+const AURA_VERSION = "cloud-v5.3";
+const BACKUP_FORMAT = "aura-backup-v5.3";
 const VAULT_PREFIX = "aura/backups/";
 const AUTOMATION_META_KEY = "aura/automation/backup-worker";
 const INTEGRITY_PREFIX = "aura/integrity/snapshots/";
 const INTEGRITY_LATEST_KEY = "aura/integrity/latest";
 const MAX_JSON_BYTES = 2 * 1024 * 1024;
 const SESSION_COOKIE_NAME = "__Host-aura_session";
+const AVATAR_SERGI_URL = "https://avatar-sergi-481669294174.europe-west1.run.app/";
+const AVATAR_SERGI_CHAT_URL = "https://avatar-sergi-481669294174.europe-west1.run.app/chat";
 const GENE_STATES = ["actiu", "latent", "arxivat", "observacio"];
 const MEMORY_STATES = ["actiu", "latent", "arxivat", "observacio"];
 const RETENTION_POLICY = {
@@ -45,7 +54,7 @@ const EVOLUTION_STATE_METRICS = [
   "pressioCanvi",
   "maduresaOperativa",
 ];
-const DOCUMENTED_GENOME_VERSION = "cloud-v5.2";
+const DOCUMENTED_GENOME_VERSION = "cloud-v5.3";
 const HONESTY_TYPES = {
   real: "mecanisme real implementat",
   contract: "documentació o contracte",
@@ -135,6 +144,16 @@ const KNOWLEDGE_LIBRARY_SEED = [
     tags: ["cloudflare", "infraestructura", "reconstruccio"],
     status: "revisat",
     source: "repositori",
+  },
+  {
+    id: "knowledge-avatar-sergi",
+    title: "Sergi Avatar",
+    kind: "servei-extern",
+    locator: "https://sergicastillo.com/#avatar",
+    summary: "Avatar conversacional públic de Sergi Castillo, especialitzat en el corpus literari, filosofia i obra de l'autor. És una font externa separada de la memòria privada d'Aura.",
+    tags: ["avatar", "sergi", "obra", "filosofia", "font-externa"],
+    status: "revisat",
+    source: "sergicastillo.com",
   },
 ];
 
@@ -501,6 +520,79 @@ export async function onRequest(context) {
 
     if (method === "GET" && (route === "knowledge/schema" || route === "coneixement/schema")) {
       return json(getKnowledgeSchema());
+    }
+
+    if (method === "POST" && (route === "chat" || route === "conversation" || route === "conversa")) {
+      if (!context.env.AI) {
+        throw new HttpError(503, "Workers AI encara no està disponible en aquest desplegament d'Aura.");
+      }
+      const input = normalizeAuraChatPayload(await readJson(context.request, 64 * 1024));
+      if (!input.question) throw new HttpError(400, "Escriu una pregunta per a l'Aura.");
+      const [records, diary, knowledge, genes] = await Promise.all([
+        getRecords(context.env.DB, 240),
+        getDiary(context.env.DB, 300),
+        getKnowledgeItems(context.env.DB, 100),
+        getGenes(context.env.DB),
+      ]);
+      const contextBundle = buildAuraChatContext({
+        question: input.question,
+        records,
+        diary,
+        knowledge,
+        genes,
+      });
+      const conversation = await runAuraConversation({
+        ai: context.env.AI,
+        question: input.question,
+        history: input.history,
+        contextBundle,
+      });
+      console.log(JSON.stringify({
+        message: "Aura conversational response",
+        model: conversation.model,
+        intent: conversation.intent,
+        sources: conversation.context.sourcesUsed,
+        latencyMs: conversation.latencyMs,
+      }));
+      return json({ ok: true, conversation });
+    }
+
+    if (method === "GET" && (route === "avatar-sergi" || route === "sergi-avatar")) {
+      return json(buildAvatarSergiContract());
+    }
+
+    if (method === "POST" && (route === "avatar-sergi/chat" || route === "sergi-avatar/chat")) {
+      const body = await readJson(context.request, 16 * 1024);
+      const message = normalizeText(body?.message ?? body?.question, 2000);
+      const sessionId = normalizeText(body?.sessionId ?? body?.session_id, 200);
+      if (!message) throw new HttpError(400, "Escriu una pregunta per a Sergi Avatar.");
+
+      let avatarResponse;
+      try {
+        avatarResponse = await fetch(AVATAR_SERGI_CHAT_URL, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ message, session_id: sessionId || null }),
+        });
+      } catch {
+        throw new HttpError(502, "No s'ha pogut connectar amb Sergi Avatar.");
+      }
+      const avatarPayload = await readBoundedResponseJson(avatarResponse, 96 * 1024);
+      if (!avatarResponse.ok) {
+        throw new HttpError(502, "Sergi Avatar no ha pogut respondre ara mateix.");
+      }
+      const answer = normalizeText(avatarPayload?.response, 12000);
+      if (!answer) throw new HttpError(502, "Sergi Avatar ha retornat una resposta buida.");
+
+      return json({
+        ok: true,
+        avatar: "sergi",
+        response: answer,
+        sessionId: normalizeText(avatarPayload?.session_id, 200) || null,
+        source: AVATAR_SERGI_URL,
+        persistentWriteInAura: false,
+        externalConversationArchive: "anonymous-provider-policy",
+      });
     }
 
     if (method === "POST" && (route === "knowledge" || route === "coneixement" || route === "biblioteca")) {
@@ -931,6 +1023,13 @@ async function ensureSeeded(db) {
         "[audit:genoma] Aura ha formalitzat Cloud v5.2: orientació operativa per explicar què és Aura, per a què serveix avui i quin és el següent pas sense consciència ni mutació automàtica.",
         now,
       ),
+    db
+      .prepare("INSERT OR IGNORE INTO diary (id, text, created_at) VALUES (?, ?, ?)")
+      .bind(
+        "audit-cloud-v5-3-conversational-ai",
+        "[audit:sistema] Aura ha activat la Fase 5 conversacional amb Workers AI, context recuperat de D1, cites de fonts i cap escriptura persistent des del xat.",
+        now,
+      ),
     ...GENES.map((gene) =>
       db
         .prepare(
@@ -1036,6 +1135,28 @@ async function getStatus(db, vault) {
       embeddings: false,
       vectorDb: false,
       statuses: KNOWLEDGE_STATUSES,
+    },
+    conversation: {
+      endpoint: "/api/chat",
+      format: "aura-conversation-v1",
+      phase: "fase-5",
+      model: AURA_CHAT_MODEL,
+      provider: "cloudflare-workers-ai",
+      retrieval: "context limitat de records, diari, biblioteca i genoma D1",
+      embeddings: false,
+      vectorDb: false,
+      sessionHistory: "navegador, màxim 8 missatges",
+      persistentWrite: false,
+      citations: true,
+    },
+    avatarSergi: {
+      endpoint: "/api/avatar-sergi",
+      chatEndpoint: "/api/avatar-sergi/chat",
+      publicPage: "https://sergicastillo.com/#avatar",
+      role: "corpus literari i filosofia pública de Sergi",
+      automaticDelegation: false,
+      automaticIngestion: false,
+      persistentWriteInAura: false,
     },
     orientation: {
       endpoint: "/api/orientation",
@@ -2600,6 +2721,12 @@ function buildCapabilities() {
           caveat: "És una orientació derivada de lectura; no implica consciència, comprensió subjectiva ni escriptura automàtica.",
         },
         {
+          claim: "Respondre preguntes obertes sobre decisions, compromisos, evolució i contradiccions usant un model de llenguatge i context D1 citat.",
+          type: HONESTY_TYPES.real,
+          evidence: ["POST /api/chat", "AI binding", "D1", "AURA_PHASE5_CONVERSATIONAL_AI.md"],
+          caveat: "La resposta és generativa i pot equivocar-se; ha de citar dades registrades i el xat no escriu cap canvi persistent.",
+        },
+        {
           claim: "Mostrar un cos digital 2D derivat de senyals operatius.",
           type: HONESTY_TYPES.real,
           evidence: ["/api/body", "#aura-visual", "/cos-digital"],
@@ -2625,8 +2752,8 @@ function buildCapabilities() {
         "Aura no té autonomia persistent fora del codi desplegat, D1, KV, navegador i crons configurats.",
         "Aura no valida compromisos semàntics amb puntuacions objectives.",
         "Aura no promociona records a genoma automàticament.",
-        "Aura no té percepció pròpia, sensors, veu ni avatar 3D en v5.2.",
-        "Aura no executa RAG, embeddings, vector DB ni ingestió automàtica en v5.2.",
+        "Aura no té percepció pròpia, sensors, veu ni avatar 3D en v5.3.",
+        "Aura recupera context textual de D1 per conversar, però no usa embeddings, Vector DB ni ingestió automàtica de documents en v5.3.",
         "Aura no té autoreflexió subjectiva; només calcula una síntesi operativa verificable.",
         "Aura no té orientació subjectiva; només calcula una resposta pràctica verificable.",
         "Aura no executa proves destructives sobre dades reals.",
@@ -2718,12 +2845,12 @@ async function testVerifiableBackupGene(vault, simulate) {
 async function testMutationAuditGene(db, simulate) {
   const audit = simulate === "missing-audit" ? [] : await getAuditEntries(db, 80);
   const latest = audit[0] || null;
-  const hasPreviousAudit = audit.some((entry) => /v5\.(0|1)/.test(String(entry.text || "")));
-  const hasCurrentAudit = audit.some((entry) => String(entry.text || "").includes("v5.2"));
+  const hasPreviousAudit = audit.some((entry) => /v5\.(0|1|2)/.test(String(entry.text || "")));
+  const hasCurrentAudit = audit.some((entry) => String(entry.text || "").includes("v5.3"));
   const checks = [
     buildCheck("audit-table-accessible", "Taula d'auditoria accessible", simulate !== "missing-audit", "Consulta sobre diary [audit:*]."),
     buildCheck("latest-structural-mutation-detected", "Última mutació estructural detectada", Boolean(latest), latest?.id || "sense auditoria"),
-    buildCheck("corresponding-audit-entry-found", "Entrada d'auditoria corresponent trobada", hasCurrentAudit || hasPreviousAudit, "Busca formalització v5.2, v5.1 o v5.0."),
+    buildCheck("corresponding-audit-entry-found", "Entrada d'auditoria corresponent trobada", hasCurrentAudit || hasPreviousAudit, "Busca formalització v5.3 o una versió anterior."),
     buildCheck(
       "entry-has-date-category-description",
       "Entrada amb data, categoria i descripció",
@@ -4212,6 +4339,7 @@ function buildCloudflareInfrastructure(options = {}) {
       { id: "browser", layer: "client", role: "interfície web, consola Aura i IndexedDB local" },
       { id: "pages", layer: "edge", role: "Cloudflare Pages per HTML, CSS, JS i Functions API" },
       { id: "functions", layer: "api", role: "Pages Functions amb rutes /api/*" },
+      { id: "workers-ai", layer: "inference", role: "model conversacional multilingüe amb binding natiu AI" },
       { id: "d1", layer: "data", role: "memòria llarga, diari i genoma" },
       { id: "kv", layer: "backup", role: "vault de backups i historial d'integritat" },
       { id: "backup-worker", layer: "automation", role: "Worker cron de backup i integritat" },
@@ -4234,6 +4362,9 @@ function buildCloudflareInfrastructure(options = {}) {
         entrypoint: "functions/api/[[path]].js",
         routes: [
           "/api/status",
+          "/api/chat",
+          "/api/avatar-sergi",
+          "/api/avatar-sergi/chat",
           "/api/memory",
           "/api/evolution",
           "/api/infrastructure",
@@ -4251,7 +4382,24 @@ function buildCloudflareInfrastructure(options = {}) {
           "/api/self-reflection",
           "/api/orientation",
         ],
-        bindings: ["DB", "BACKUP_VAULT", "AURA_WRITE_KEY"],
+        bindings: ["DB", "BACKUP_VAULT", "AI", "AURA_WRITE_KEY"],
+      },
+      {
+        id: "workers-ai-chat",
+        provider: "cloudflare",
+        service: "workers-ai",
+        binding: "AI",
+        model: AURA_CHAT_MODEL,
+        endpoint: "/api/chat",
+        purpose: "conversa generativa arrelada en el context recuperat de D1",
+      },
+      {
+        id: "sergi-avatar-bridge",
+        provider: "sergicastillo.com",
+        service: "external-conversational-avatar",
+        publicUrl: "https://sergicastillo.com/#avatar",
+        endpoint: "/api/avatar-sergi",
+        purpose: "pont explícit i de només lectura amb el corpus literari i filosòfic públic de Sergi",
       },
       {
         id: "d1-memory",
@@ -4295,6 +4443,7 @@ function buildCloudflareInfrastructure(options = {}) {
       required: [
         { name: "DB", type: "d1", configuredIn: ["wrangler.jsonc", "wrangler.backup.jsonc"] },
         { name: "BACKUP_VAULT", type: "workers-kv", configuredIn: ["wrangler.jsonc", "wrangler.backup.jsonc"] },
+        { name: "AI", type: "workers-ai", configuredIn: ["wrangler.jsonc"] },
         { name: "AURA_WRITE_KEY", type: "secret", configuredIn: ["Cloudflare Pages secrets", "Worker secrets"] },
       ],
       secretPolicy: "AURA_WRITE_KEY queda reservat a automatitzacions i manteniment; no s'exposa ni es demana al navegador.",
@@ -4325,16 +4474,19 @@ function buildCloudflareInfrastructure(options = {}) {
       "Instal·lar dependències amb npm install.",
       "Verificar wrangler.jsonc i wrangler.backup.jsonc.",
       "Configurar Cloudflare Access per protegir Aura Web i /api/* amb la identitat autoritzada.",
+      "Verificar el binding AI de Workers AI a wrangler.jsonc.",
       "Aplicar migracions D1 amb npm run migrate:remote.",
       "Desplegar Pages amb npm run deploy.",
       "Desplegar el Worker amb npm run deploy:backup-worker.",
       "Configurar AURA_WRITE_KEY com a secret tècnic de Pages i Worker sense exposar-lo al navegador.",
-      "Validar /api/status, /api/infrastructure, /api/integrity i /health del Worker.",
+      "Validar /api/status, POST /api/chat, /api/infrastructure, /api/integrity i /health del Worker.",
       "Crear backup i snapshot d'integritat després del desplegament.",
     ],
     safeguards: [
       "Cloudflare Access autoritza l'ús humà; Mode Sergi és el permís de canvi persistent, sense cap codi intern al web.",
       "D1 és la font de veritat de memòria, diari i genoma.",
+      "El xat usa dades de D1 com a context, cita fonts i no escriu canvis persistents.",
+      "Sergi Avatar només rep preguntes explícites; no rep records privats ni alimenta D1 automàticament.",
       "KV conserva backups fora de D1.",
       "IndexedDB és còpia local, no autoritat final.",
       "La restauració requereix previsualització i confirmació.",
@@ -4342,6 +4494,8 @@ function buildCloudflareInfrastructure(options = {}) {
     ],
     verification: {
       status: "/api/status",
+      chat: "/api/chat",
+      avatarSergi: "/api/avatar-sergi",
       infrastructure: "/api/infrastructure",
       backupExport: "/api/backup",
       vault: "/api/backups",
@@ -4356,10 +4510,10 @@ function buildAuraWebInterface(options = {}) {
     {
       id: "simple",
       label: "Aura simplificada",
-      role: "orientació de sessió, informe del dia, escriptura controlada i consulta de records",
+      role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/orientation", "/api/pulse", "/api/core", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -4396,11 +4550,15 @@ function buildAuraWebInterface(options = {}) {
     interactions: {
       navigation: "8 botons visibles autoexplicatius: orientació local, estat, identitat, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
+      conversationalAI: { endpoint: "/api/chat", provider: "Workers AI", model: AURA_CHAT_MODEL, citations: true },
+      avatarSergi: { endpoint: "/api/avatar-sergi/chat", mode: "explicit-user-initiated", automaticIngestion: false },
       modeSergi: "autorització automàtica per Cloudflare Access, sense codi intern",
       localFallback: "IndexedDB manté una vista operativa si D1 no respon.",
     },
     safeguards: [
       "Cap escriptura persistent sense Mode Sergi.",
+      "Les preguntes lliures són generatives però de només lectura i han de citar el context D1 utilitzat.",
+      "Sergi Avatar és una font externa separada; només rep el text escrit després de `avatar:`.",
       "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Informe del dia, Veure records i Últim record són accions de lectura.",
       "Grava record és l'única acció visible que pot escriure i activa Mode Sergi només quan cal.",
       "L'ampliació de botons no elimina dades ni endpoints.",
@@ -4488,13 +4646,14 @@ function buildDigitalGenome(genes, options = {}) {
     },
     objectives: {
       shortTerm: [
-        "Consolidar l'ús de cloud-v5.2.",
+        "Consolidar l'ús de la conversa de només lectura de cloud-v5.3.",
         "Usar /que-es-aura i /proxim-pas perquè l'orientació sigui clara abans d'obrir Fase 11.",
         "Usar /autoreflexio per revisar una síntesi operativa abans d'obrir cap capa nova.",
         "Usar /coneixement per revisar la biblioteca de coneixement verificable.",
         "Mantenir AURA_KNOWLEDGE.md sincronitzat amb el catàleg D1.",
         "Mantenir AURA_SELF_REFLECTION.md sincronitzat amb la Fase 10.",
-        "Mantenir AURA_ORIENTATION.md sincronitzat amb la Fase v5.2.",
+        "Mantenir AURA_ORIENTATION.md com a contracte històric de la Fase v5.2.",
+        "Usar preguntes naturals amb cites per revisar decisions i compromisos abans de crear dades noves.",
         "Usar /cos-digital per revisar el cos digital 2D derivat de senyals reals.",
         "Usar /capacitats per revisar capacitats honestes.",
         "Usar /prova-gen 17711, /prova-gen 008 i /prova-gen 089 per verificar seguretat de dades.",
@@ -5794,7 +5953,7 @@ function buildStructuralIntegrityChecks({ records = [], diary = [], genes = [], 
 function getIntegrityFormula() {
   return {
     format: "aura-integrity-formula-v2",
-    version: "cloud-v5.2",
+    version: "cloud-v5.3",
     scoring: "mitjana ponderada de components mecànics menys penalització lleu per riscos",
     okStates: ["ok", "fresh", "verified"],
     defaultWeight: 10,
@@ -5957,6 +6116,65 @@ async function readJson(request, maxBytes) {
   } catch {
     throw new HttpError(400, "JSON invalid.");
   }
+}
+
+async function readBoundedResponseJson(response, maxBytes) {
+  const length = Number(response.headers.get("content-length") || 0);
+  if (length > maxBytes) throw new HttpError(502, "La resposta externa és massa gran.");
+  if (!response.body) return {};
+
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel("response-too-large");
+      throw new HttpError(502, "La resposta externa és massa gran.");
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new HttpError(502, "Sergi Avatar ha retornat una resposta no vàlida.");
+  }
+}
+
+function buildAvatarSergiContract() {
+  return {
+    ok: true,
+    version: AURA_VERSION,
+    endpoint: "/api/avatar-sergi",
+    chatEndpoint: "/api/avatar-sergi/chat",
+    format: "aura-avatar-sergi-bridge-v1",
+    phase: "fase-5",
+    name: "Sergi Avatar",
+    publicPage: "https://sergicastillo.com/#avatar",
+    serviceUrl: AVATAR_SERGI_URL,
+    role: "veu pública sobre el corpus literari, la filosofia i l'obra de Sergi Castillo",
+    auraRole: "memòria privada, continuïtat i orientació del Projecte Aura",
+    mode: "explicit-user-initiated-readonly-bridge",
+    automaticDelegation: false,
+    automaticIngestion: false,
+    persistentWriteInAura: false,
+    privacy: "El servei extern informa que les converses s'arxiven anònimament per millorar el bot.",
+    safeguards: [
+      "Aura i Sergi Avatar mantenen identitats, memòries i funcions separades.",
+      "Només es contacta Sergi Avatar quan l'usuari ho demana explícitament.",
+      "La resposta externa es mostra amb procedència i no entra automàticament a D1.",
+      "No s'envien records privats d'Aura al servei extern.",
+    ],
+  };
 }
 
 function getSegments(path) {

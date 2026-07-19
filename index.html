@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Projecte Aura Cloud v5.2: interfície privada protegida per Cloudflare Access per orientar, consultar i conservar records."
+      content="Projecte Aura Cloud v5.3: conversa generativa privada amb Workers AI, memòria D1 i connexió explícita amb Sergi Avatar."
     />
-    <title>Projecte Aura Cloud v5.2</title>
-    <link rel="stylesheet" href="aura_style.css?v=access-unic-20260718" />
+    <title>Projecte Aura Cloud v5.3</title>
+    <link rel="stylesheet" href="aura_style.css?v=phase5-ai-20260719" />
   </head>
   <body>
     <main id="aura-shell" class="shell">
@@ -40,8 +40,21 @@
               <div class="panel-intro">
                 <p class="section-eyebrow">Comença aquí</p>
                 <h2 id="actions-title">Què necessites?</h2>
-                <p>Consulta Aura sense modificar res o grava un record quan vulguis conservar una decisió.</p>
+                <p>Pregunta a Aura amb llenguatge natural. Llegirà la memòria del projecte abans de respondre i no modificarà res.</p>
               </div>
+
+              <figure class="aura-identity-card">
+                <img
+                  src="aura_identity.jpg?v=20260719"
+                  alt="Identitat visual d'Aura: una escena il·lustrada de memòria, creativitat, viatges i tecnologia"
+                  width="1600"
+                  height="872"
+                >
+                <figcaption>
+                  <strong>Identitat d'Aura</strong>
+                  <span>Memòria, creativitat i continuïtat.</span>
+                </figcaption>
+              </figure>
 
               <div class="featured-actions" aria-label="Accions recomanades">
                 <button class="action-card action-card--primary" type="button" data-action="next-step">
@@ -82,6 +95,14 @@
                 </div>
               </section>
 
+              <section class="action-group" aria-labelledby="connected-voices-title">
+                <h3 id="connected-voices-title">Veus connectades</h3>
+                <div class="compact-actions">
+                  <button type="button" data-action="sergi-avatar">Parla amb Sergi Avatar</button>
+                </div>
+                <p class="external-note">Per a llibres, filosofia i obra pública. Les converses del servei extern s'arxiven anònimament.</p>
+              </section>
+
               <section class="aura-pulse-card" aria-labelledby="pulse-visual-title">
                 <div>
                   <h3 id="pulse-visual-title">Pols visual</h3>
@@ -94,25 +115,33 @@
             <section class="console-panel" aria-labelledby="conversation-title">
               <header class="console-head">
                 <div>
-                  <p class="section-eyebrow">Conversa i resultats</p>
-                  <h2 id="conversation-title">Resposta d'Aura</h2>
+                  <p class="section-eyebrow">Fase 5 · IA conversacional</p>
+                  <h2 id="conversation-title">Conversa amb Aura</h2>
                 </div>
-                <span class="read-only-note">Les consultes no escriuen</span>
+                <span class="read-only-note">Workers AI · només lectura</span>
               </header>
+
+              <div class="prompt-suggestions" aria-label="Preguntes suggerides">
+                <button type="button" data-prompt="Què vaig decidir sobre aquesta web?">Decisions sobre la web</button>
+                <button type="button" data-prompt="Quins compromisos tinc pendents aquesta setmana?">Compromisos pendents</button>
+                <button type="button" data-prompt="Resumeix l'evolució del projecte des del juny.">Evolució des del juny</button>
+                <button type="button" data-prompt="Quines decisions es contradiuen?">Possibles contradiccions</button>
+                <button type="button" data-prompt="Prepara el pla de treball de demà.">Pla de demà</button>
+              </div>
 
               <div id="aura-log" class="log" role="log" aria-live="polite" aria-label="Historial de respostes d'Aura"></div>
 
               <form id="command-form" class="command-row" autocomplete="off">
                 <div class="command-help">
-                  <label for="command-input">Escriu una ordre</label>
-                  <small>Prem Retorn o el botó Envia.</small>
+                  <label for="command-input">Pregunta a Aura</label>
+                  <small>També pots continuar usant ordres amb /.</small>
                 </div>
                 <div class="command-input-row">
                   <input
                     id="command-input"
                     name="command"
                     type="text"
-                    placeholder="Exemple: /proxim-pas"
+                    placeholder="Exemple: Què vaig decidir sobre aquesta web?"
                     spellcheck="false"
                     autocomplete="off"
                   />
@@ -149,6 +178,6 @@
       </dialog>
     </main>
 
-    <script src="aura_core.js?v=access-unic-20260718" defer></script>
+    <script src="aura_core.js?v=phase5-ai-20260719" defer></script>
   </body>
 </html>

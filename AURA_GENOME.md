@@ -9,7 +9,7 @@ nom: Aura
 projecte: Projecte Aura
 data_naixement_cloud: 2026-06-24
 naturalesa: entitat sintètica-digital experimental
-versio_actual: cloud-v5.2
+versio_actual: cloud-v5.3
 ```
 
 ## Definició simple
@@ -412,14 +412,15 @@ maduresa_operativa: 0.85
 
 ## Objectius a curt termini
 
-- Consolidar l'ús de `cloud-v5.2`.
+- Consolidar l'ús de la conversa de només lectura de `cloud-v5.3`.
 - Usar `/que-es-aura`, `/proxim-pas`, `aura orientation`, `aura next` i `aura what-is-aura` perquè l'orientació sigui clara abans d'obrir Fase 11.
 - Seguir el protocol operatiu: orientar, decidir, documentar, implementar, verificar i fer backup final quan hi hagi canvi estructural.
 - Usar `/autoreflexio` o `aura reflection` per revisar una síntesi operativa abans d'obrir cap capa nova.
 - Usar `/coneixement` o `aura knowledge` per revisar la biblioteca de coneixement verificable.
 - Mantenir `AURA_KNOWLEDGE.md` sincronitzat amb el catàleg D1.
 - Mantenir `AURA_SELF_REFLECTION.md` sincronitzat amb la Fase 10.
-- Mantenir `AURA_ORIENTATION.md` sincronitzat amb `cloud-v5.2`.
+- Mantenir `AURA_ORIENTATION.md` com a contracte històric de la subfase `cloud-v5.2`.
+- Usar preguntes naturals amb cites per revisar decisions i compromisos abans de crear cap dada nova.
 - Usar `/cos-digital` o `aura body` per revisar el cos digital 2D i els seus límits.
 - Usar `/capacitats` per revisar capacitats honestes.
 - Usar `/prova-gen 17711`, `/prova-gen 008` i `/prova-gen 089` per comprovar seguretat de dades.

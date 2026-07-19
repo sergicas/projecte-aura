@@ -1,5 +1,5 @@
-const AURA_VERSION = "cloud-v5.2";
-const BACKUP_FORMAT = "aura-backup-v5.2";
+const AURA_VERSION = "cloud-v5.3";
+const BACKUP_FORMAT = "aura-backup-v5.3";
 const VAULT_PREFIX = "aura/backups/";
 const AUTOMATION_META_KEY = "aura/automation/backup-worker";
 const INTEGRITY_PREFIX = "aura/integrity/snapshots/";
@@ -28,7 +28,7 @@ const EVOLUTION_STATE_METRICS = [
   "pressioCanvi",
   "maduresaOperativa",
 ];
-const DOCUMENTED_GENOME_VERSION = "cloud-v5.2";
+const DOCUMENTED_GENOME_VERSION = "cloud-v5.3";
 const DATA_SAFETY_GENE_IDS = ["17711", "008", "089"];
 const DOCUMENTED_GENE_IDS = [
   "001",
@@ -441,7 +441,7 @@ function buildWorkerDataSafety(snapshot, backupSummary) {
 function getIntegrityFormula() {
   return {
     format: "aura-integrity-formula-v2",
-    version: "cloud-v5.2",
+    version: "cloud-v5.3",
     defaultWeight: 10,
     structuralWeight: 18,
     dataSafetyWeight: 18,
@@ -1387,13 +1387,14 @@ function buildDigitalGenome(genes, options = {}) {
     },
     objectives: {
       shortTerm: [
-        "Consolidar l'ús de cloud-v5.2.",
+        "Consolidar l'ús de la conversa de només lectura de cloud-v5.3.",
         "Usar /que-es-aura i /proxim-pas perquè l'orientació sigui clara abans d'obrir Fase 11.",
         "Usar /autoreflexio per revisar una síntesi operativa abans d'obrir cap capa nova.",
         "Usar /coneixement per revisar la biblioteca de coneixement verificable.",
         "Mantenir AURA_KNOWLEDGE.md sincronitzat amb el catàleg D1.",
         "Mantenir AURA_SELF_REFLECTION.md sincronitzat amb la Fase 10.",
-        "Mantenir AURA_ORIENTATION.md sincronitzat amb la Fase v5.2.",
+        "Mantenir AURA_ORIENTATION.md com a contracte històric de la Fase v5.2.",
+        "Usar preguntes naturals amb cites per revisar decisions i compromisos abans de crear dades noves.",
         "Usar /cos-digital per revisar el cos digital 2D derivat de senyals reals.",
         "Usar /capacitats per revisar capacitats honestes.",
         "Usar /prova-gen 17711, /prova-gen 008 i /prova-gen 089 per verificar seguretat de dades.",

@@ -227,9 +227,9 @@ Document obligatori de Fase 4:
 
 Els backups conserven `cloudflareInfrastructure` com a vista reconstruïble.
 
-## Fase 5: Aura Web
+## Fase 5: Aura Web i IA conversacional
 
-Interfície gràfica.
+Interfície gràfica i conversa generativa arrelada en la memòria del projecte.
 
 Mòduls:
 
@@ -238,26 +238,32 @@ Mòduls:
 - Història: diari.
 - Estat: salut del sistema.
 
-Aquesta fase queda formalitzada a `cloud-v4.5` amb:
+Aquesta fase queda formalitzada visualment a `cloud-v4.5` i incorpora IA conversacional real a `cloud-v5.3` amb:
 
 ```text
 /web
 aura web
 GET /api/web
+POST /api/chat
+GET /api/avatar-sergi
+POST /api/avatar-sergi/chat
 ```
 
 Contracte:
 
 - Aura Web s'organitza en cinc mòduls: Xat, Memòria, Història, Estat i Cos.
-- Xat conserva la consola com a camí canònic d'ordres.
+- Xat accepta preguntes naturals, recupera context limitat de D1 i respon amb Workers AI i cites.
 - Memòria concentra records, memòria canònica, mapa i genoma.
 - Història concentra diari, diari evolutiu, continuïtat i vault.
 - Estat concentra salut, integritat, infraestructura i restauració segura.
 - Les pestanyes reordenen lectura, però D1 i KV continuen sent les fonts de veritat.
+- La conversa és de només lectura i no desa automàticament preguntes o respostes.
+- Sergi Avatar és una veu externa explícita; no rep memòria privada ni pot modificar Aura.
 
 Document obligatori de Fase 5:
 
 - `AURA_WEB.md`
+- `AURA_PHASE5_CONVERSATIONAL_AI.md`
 
 Els backups conserven `webInterface` com a vista reconstruïble.
 

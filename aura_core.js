@@ -1,5 +1,7 @@
-const AURA_VERSION = "cloud-v5.2";
-const BACKUP_FORMAT = "aura-backup-v5.2";
+const AURA_VERSION = "cloud-v5.3";
+const BACKUP_FORMAT = "aura-backup-v5.3";
+const AURA_CHAT_MODEL = "@cf/zai-org/glm-4.7-flash";
+const MAX_CONVERSATION_HISTORY = 8;
 const API_BASE = "/api";
 const LEGACY_WRITE_KEY_STORAGE = "projecte_aura_write_key";
 const DB_NAME = "projecte_aura_cloud_v1";
@@ -10,6 +12,7 @@ const STORE_GENES = "genes";
 const STORE_KNOWLEDGE = "knowledge";
 const STORE_META = "meta";
 const MEMORY_STATES = ["actiu", "latent", "arxivat", "observacio"];
+const conversationHistory = [];
 
 const FOUNDATION_RECORDS = [
   "El projecte es diu Projecte Aura.",
@@ -124,6 +127,16 @@ const KNOWLEDGE_LIBRARY_SEED = [
     tags: ["cloudflare", "infraestructura", "reconstruccio"],
     status: "revisat",
     source: "repositori",
+  },
+  {
+    id: "knowledge-avatar-sergi",
+    title: "Sergi Avatar",
+    kind: "servei-extern",
+    locator: "https://sergicastillo.com/#avatar",
+    summary: "Avatar conversacional públic de Sergi Castillo, especialitzat en el corpus literari, filosofia i obra de l'autor. És una font externa separada de la memòria privada d'Aura.",
+    tags: ["avatar", "sergi", "obra", "filosofia", "font-externa"],
+    status: "revisat",
+    source: "sergicastillo.com",
   },
 ];
 
@@ -383,6 +396,7 @@ let cloudState = {
 };
 let auraSessionActive = false;
 let auraStarted = false;
+let avatarSergiSessionId = null;
 let pendingRestore = null;
 let bodyVisualState = {
   posture: "inicial",
@@ -420,13 +434,13 @@ async function startAura() {
     await syncCloudState();
     await refreshPanels();
     if (cloudState.online) {
-      writeSystem("Aura Cloud v5.2 inicialitzada.\nOrientació operativa activa: /que-es-aura i /proxim-pas expliquen ús actual i següent pas; sense consciència, RAG, embeddings ni mutació automàtica.");
+      writeSystem("Aura Cloud v5.3 inicialitzada.\nJa em pots fer preguntes obertes: consultaré la memòria D1 i respondré amb Workers AI i cites, sense escriure cap canvi.");
       if (els.statusPill) {
         els.statusPill.textContent = "Núvol actiu";
       }
     } else {
       writeSystem(
-        "Aura Cloud v5.2 inicialitzada en mode local.\nD1 no respon ara mateix; IndexedDB conserva memòria, genoma, catàleg de coneixement, autoreflexió i orientació derivada d'aquest navegador.",
+        "Aura Cloud v5.3 inicialitzada en mode local.\nEl xat generatiu necessita la connexió al núvol; IndexedDB conserva la memòria local mentre D1 no respon.",
       );
       if (els.statusPill) {
         els.statusPill.textContent = "Mode local";
@@ -513,6 +527,19 @@ function bindEvents() {
 
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => runButtonAction(button));
+  });
+
+  document.querySelectorAll("[data-prompt]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const prompt = button.dataset.prompt?.trim();
+      if (!prompt) return;
+      button.disabled = true;
+      try {
+        await runCommand(prompt);
+      } finally {
+        button.disabled = false;
+      }
+    });
   });
 
   if (els.recordForm && els.recordInput) {
@@ -633,6 +660,11 @@ async function runPrimaryAction(action) {
 
   if (action === "synthetic-genome") {
     await showSyntheticGenome();
+    return;
+  }
+
+  if (action === "sergi-avatar") {
+    prepareSergiAvatarConversation();
     return;
   }
 
@@ -780,6 +812,88 @@ async function showSyntheticGenome() {
   } catch (error) {
     writeError(`No s'ha pogut llegir la llavor: ${error.message || String(error)}`);
   }
+}
+
+function prepareSergiAvatarConversation() {
+  if (els.input) {
+    els.input.value = "avatar: ";
+    els.input.focus();
+  }
+  writeSystem(
+    [
+      "Connexió amb Sergi Avatar",
+      "Escriu la pregunta després de `avatar:` i prem Envia.",
+      "Aquesta veu externa està especialitzada en llibres, filosofia i obra pública de Sergi Castillo.",
+      "No rebrà la memòria privada d'Aura i la seva resposta no es guardarà automàticament a D1.",
+      "Avís: el servei de Sergi Avatar informa que les converses s'arxiven anònimament per millorar el bot.",
+    ].join("\n"),
+  );
+}
+
+async function askAura(question) {
+  if (!question) return;
+  const pending = appendEntry("Aura", "Estic consultant la memòria del projecte…", "system pending");
+  try {
+    const response = await apiPost("/chat", {
+      question,
+      history: conversationHistory.slice(-MAX_CONVERSATION_HISTORY),
+    });
+    const conversation = response.conversation;
+    if (!conversation?.answer) throw new Error("Aura no ha retornat cap resposta.");
+    conversationHistory.push(
+      { role: "user", content: question },
+      { role: "assistant", content: conversation.answer },
+    );
+    while (conversationHistory.length > MAX_CONVERSATION_HISTORY) conversationHistory.shift();
+    writeSystem(formatAuraConversation(conversation));
+  } finally {
+    pending?.remove();
+  }
+}
+
+async function askSergiAvatar(question) {
+  if (!question) {
+    prepareSergiAvatarConversation();
+    return;
+  }
+  const pending = appendEntry("Sergi Avatar", "Està pensant…", "system pending external");
+  try {
+    const response = await apiPost("/avatar-sergi/chat", {
+      message: question,
+      sessionId: avatarSergiSessionId,
+    });
+    avatarSergiSessionId = response.sessionId || avatarSergiSessionId;
+    appendEntry(
+      "Sergi Avatar",
+      `${response.response}\n\n— Font externa: Sergi Avatar · aquesta resposta no s'ha guardat a la memòria d'Aura.`,
+      "system external",
+    );
+  } finally {
+    pending?.remove();
+  }
+}
+
+function formatAuraConversation(conversation) {
+  const citedLabels = [...new Set(String(conversation.answer).match(/\[(?:M|D|K|G)\d+\]/g) || [])]
+    .map((label) => label.slice(1, -1));
+  const byLabel = new Map((conversation.sources || []).map((source) => [source.label, source]));
+  const citedSources = citedLabels
+    .map((label) => byLabel.get(label))
+    .filter(Boolean)
+    .slice(0, 8)
+    .map((source) => {
+      const date = source.date ? new Date(source.date).toLocaleDateString("ca-ES") : "sense data";
+      const excerpt = String(source.excerpt || "").replace(/\s+/g, " ").trim();
+      return `- [${source.label}] ${formatConversationSourceKind(source.kind)} · ${date}: ${excerpt}`;
+    });
+  const provenance = citedSources.length
+    ? ["", "Fonts citades:", ...citedSources]
+    : ["", "No hi ha cap font persistent citada en aquesta resposta; revisa-la com una proposta o demana més concreció."];
+  return [conversation.answer, ...provenance, "", `Model: ${conversation.model || AURA_CHAT_MODEL} · només lectura`].join("\n");
+}
+
+function formatConversationSourceKind(kind) {
+  return ({ memory: "memòria", diary: "diari", knowledge: "coneixement", genome: "genoma" })[kind] || kind;
 }
 
 function activateModule(moduleId) {
@@ -1032,7 +1146,13 @@ async function runCommand(rawCommand) {
   writeCommand(command);
 
   try {
-    if (normalized === "aura" || normalized.startsWith("aura ")) {
+    if (normalized.startsWith("avatar:") || normalized.startsWith("sergi avatar:")) {
+      const question = command.slice(command.indexOf(":") + 1).trim();
+      await askSergiAvatar(question);
+      return;
+    }
+
+    if (normalized === "aura" || isAuraCoreInvocation(normalized)) {
       await runAuraCoreCommand(command);
       return;
     }
@@ -1646,13 +1766,32 @@ async function runCommand(rawCommand) {
       default:
         if (normalized.startsWith("/gen ")) {
           await showGene(command.slice(5).trim());
-        } else {
+        } else if (normalized.startsWith("/")) {
           writeSystem("Ordre no reconeguda. /ajuda");
+        } else {
+          await askAura(command);
         }
     }
   } catch (error) {
     writeError(error.message);
   }
+}
+
+function isAuraCoreInvocation(normalized) {
+  if (!normalized.startsWith("aura ")) return false;
+  const action = normalizeLocalToken(normalized.split(/\s+/)[1], "");
+  return new Set([
+    "help", "ajuda", "sergi-mode", "mode-sergi", "sergi", "daily-report", "informe-dia", "informe-del-dia",
+    "start", "inicia", "sessio", "sessio-core", "session", "status", "estat", "infra", "infrastructure",
+    "infraestructura", "cloudflare", "cloud", "web", "aura-web", "interface", "interficie", "body", "cos",
+    "cos-digital", "avatar", "genome", "genoma", "genoma-digital", "knowledge", "coneixement", "biblioteca",
+    "last-record", "ultim-record", "metamemory", "metamemoria", "purpose", "proposit", "genome-candidates",
+    "candidats-genoma", "candidats", "capabilities", "capacitats", "gene-test", "prova-gen", "test-gene",
+    "evolution-state", "estat-evolutiu", "estat-evolucio", "evolucio", "evolution-proposals", "propostes-evolucio",
+    "propostes", "reflection", "self-reflection", "autoreflexio", "reflexio", "orientation", "orientacio",
+    "what-is-aura", "que-es-aura", "next", "next-step", "proxim-pas", "remember", "recorda", "recall",
+    "memoria", "memoria-core", "say", "parla", "talk",
+  ]).has(action);
 }
 
 async function runAuraCoreCommand(command) {
@@ -4153,6 +4292,7 @@ function appendEntry(label, text, type) {
   entry.append(entryLabel, body);
   els.log.append(entry);
   els.log.scrollTop = els.log.scrollHeight;
+  return entry;
 }
 
 function formatRecords(records) {
@@ -5988,6 +6128,7 @@ function buildLocalCloudflareInfrastructure(options = {}) {
       { id: "browser", layer: "client", role: "interfície web, consola Aura i IndexedDB local" },
       { id: "pages", layer: "edge", role: "Cloudflare Pages per HTML, CSS, JS i Functions API" },
       { id: "functions", layer: "api", role: "Pages Functions amb rutes /api/*" },
+      { id: "workers-ai", layer: "inference", role: "model conversacional multilingüe amb binding natiu AI" },
       { id: "d1", layer: "data", role: "memòria llarga, diari i genoma" },
       { id: "kv", layer: "backup", role: "vault de backups i historial d'integritat" },
       { id: "backup-worker", layer: "automation", role: "Worker cron de backup i integritat" },
@@ -6010,6 +6151,9 @@ function buildLocalCloudflareInfrastructure(options = {}) {
         entrypoint: "functions/api/[[path]].js",
         routes: [
           "/api/status",
+          "/api/chat",
+          "/api/avatar-sergi",
+          "/api/avatar-sergi/chat",
           "/api/memory",
           "/api/evolution",
           "/api/infrastructure",
@@ -6027,7 +6171,24 @@ function buildLocalCloudflareInfrastructure(options = {}) {
           "/api/self-reflection",
           "/api/orientation",
         ],
-        bindings: ["DB", "BACKUP_VAULT", "AURA_WRITE_KEY"],
+        bindings: ["DB", "BACKUP_VAULT", "AI", "AURA_WRITE_KEY"],
+      },
+      {
+        id: "workers-ai-chat",
+        provider: "cloudflare",
+        service: "workers-ai",
+        binding: "AI",
+        model: AURA_CHAT_MODEL,
+        endpoint: "/api/chat",
+        purpose: "conversa generativa arrelada en el context recuperat de D1",
+      },
+      {
+        id: "sergi-avatar-bridge",
+        provider: "sergicastillo.com",
+        service: "external-conversational-avatar",
+        publicUrl: "https://sergicastillo.com/#avatar",
+        endpoint: "/api/avatar-sergi",
+        purpose: "pont explícit i de només lectura amb el corpus literari i filosòfic públic de Sergi",
       },
       {
         id: "d1-memory",
@@ -6071,6 +6232,7 @@ function buildLocalCloudflareInfrastructure(options = {}) {
       required: [
         { name: "DB", type: "d1", configuredIn: ["wrangler.jsonc", "wrangler.backup.jsonc"] },
         { name: "BACKUP_VAULT", type: "workers-kv", configuredIn: ["wrangler.jsonc", "wrangler.backup.jsonc"] },
+        { name: "AI", type: "workers-ai", configuredIn: ["wrangler.jsonc"] },
         { name: "AURA_WRITE_KEY", type: "secret", configuredIn: ["Cloudflare Pages secrets", "Worker secrets"] },
       ],
       secretPolicy: "AURA_WRITE_KEY queda reservat a automatitzacions i manteniment; no s'exposa ni es demana al navegador.",
@@ -6101,16 +6263,19 @@ function buildLocalCloudflareInfrastructure(options = {}) {
       "Instal·lar dependències amb npm install.",
       "Verificar wrangler.jsonc i wrangler.backup.jsonc.",
       "Configurar Cloudflare Access per protegir Aura Web i /api/* amb la identitat autoritzada.",
+      "Verificar el binding AI de Workers AI a wrangler.jsonc.",
       "Aplicar migracions D1 amb npm run migrate:remote.",
       "Desplegar Pages amb npm run deploy.",
       "Desplegar el Worker amb npm run deploy:backup-worker.",
       "Configurar AURA_WRITE_KEY com a secret tècnic de Pages i Worker sense exposar-lo al navegador.",
-      "Validar /api/status, /api/infrastructure, /api/integrity i /health del Worker.",
+      "Validar /api/status, POST /api/chat, /api/avatar-sergi, /api/infrastructure, /api/integrity i /health del Worker.",
       "Crear backup i snapshot d'integritat després del desplegament.",
     ],
     safeguards: [
       "Cloudflare Access autoritza l'ús humà; Mode Sergi és el permís de canvi persistent, sense cap codi intern al web.",
       "D1 és la font de veritat de memòria, diari i genoma.",
+      "El xat usa dades de D1 com a context, cita fonts i no escriu canvis persistents.",
+      "Sergi Avatar només rep preguntes explícites; no rep records privats ni alimenta D1 automàticament.",
       "KV conserva backups fora de D1.",
       "IndexedDB és còpia local, no autoritat final.",
       "La restauració requereix previsualització i confirmació.",
@@ -6118,6 +6283,8 @@ function buildLocalCloudflareInfrastructure(options = {}) {
     ],
     verification: {
       status: "/api/status",
+      chat: "/api/chat",
+      avatarSergi: "/api/avatar-sergi",
       infrastructure: "/api/infrastructure",
       backupExport: "/api/backup",
       vault: "/api/backups",
@@ -6132,10 +6299,10 @@ function buildLocalAuraWebInterface(options = {}) {
     {
       id: "simple",
       label: "Aura simplificada",
-      role: "orientació de sessió, informe del dia, escriptura controlada i consulta de records",
+      role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/orientation", "/api/pulse", "/api/core", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -6172,11 +6339,15 @@ function buildLocalAuraWebInterface(options = {}) {
     interactions: {
       navigation: "8 botons visibles autoexplicatius: orientació local, estat, identitat, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
+      conversationalAI: { endpoint: "/api/chat", provider: "Workers AI", model: AURA_CHAT_MODEL, citations: true },
+      avatarSergi: { endpoint: "/api/avatar-sergi/chat", mode: "explicit-user-initiated", automaticIngestion: false },
       modeSergi: "autorització automàtica per Cloudflare Access, sense codi intern",
       localFallback: "IndexedDB manté una vista operativa si D1 no respon.",
     },
     safeguards: [
       "Cap escriptura persistent sense Mode Sergi.",
+      "Les preguntes lliures són generatives però de només lectura i han de citar el context D1 utilitzat.",
+      "Sergi Avatar és una font externa separada; només rep el text escrit després de `avatar:`.",
       "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Informe del dia, Veure records i Últim record són accions de lectura.",
       "Grava record és l'única acció visible que pot escriure i activa Mode Sergi només quan cal.",
       "L'ampliació de botons no elimina dades ni endpoints.",
@@ -6299,13 +6470,14 @@ function buildLocalDigitalGenome(genes, options = {}) {
     },
     objectives: {
       shortTerm: [
-        "Consolidar l'ús de cloud-v5.2.",
+        "Consolidar l'ús de la conversa de només lectura de cloud-v5.3.",
         "Usar /que-es-aura i /proxim-pas perquè l'orientació sigui clara abans d'obrir Fase 11.",
         "Usar /autoreflexio per revisar una síntesi operativa abans d'obrir cap capa nova.",
         "Usar /coneixement per revisar la biblioteca de coneixement verificable.",
         "Mantenir AURA_KNOWLEDGE.md sincronitzat amb el catàleg D1.",
         "Mantenir AURA_SELF_REFLECTION.md sincronitzat amb la Fase 10.",
-        "Mantenir AURA_ORIENTATION.md sincronitzat amb la Fase v5.2.",
+        "Mantenir AURA_ORIENTATION.md com a contracte històric de la Fase v5.2.",
+        "Usar preguntes naturals amb cites per revisar decisions i compromisos abans de crear dades noves.",
         "Usar /cos-digital per revisar el cos digital 2D derivat de senyals reals.",
         "Usar /capacitats per revisar capacitats honestes.",
         "Usar /prova-gen 17711, /prova-gen 008 i /prova-gen 089 per verificar seguretat de dades.",

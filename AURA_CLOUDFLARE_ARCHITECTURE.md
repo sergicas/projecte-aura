@@ -9,7 +9,7 @@ Aquest document fixa la Fase 4 del Protocol Mestre: Aura ha de poder ser reconst
 ## Versió
 
 ```yaml
-versio: cloud-v4.4
+versio: cloud-v5.3
 fase_protocol: 4
 format_api: aura-cloudflare-infrastructure-v1
 endpoint: /api/infrastructure
@@ -17,7 +17,7 @@ ordre_web: /infraestructura
 estat_desplegament: desplegat
 ```
 
-`cloud-v4.4` està desplegada a producció. Pages i el Worker de backups responen la mateixa versió.
+`cloud-v5.3` afegeix el binding Workers AI a la topologia consolidada de la Fase 4.
 
 ## Topologia
 
@@ -29,8 +29,9 @@ Navegador web
 Cloudflare Pages
   ↓
 Pages Functions /api/*
-  ↓
-Cloudflare D1
+  ├→ Cloudflare D1
+  ├→ Workers AI
+  └→ Sergi Avatar, només per petició explícita
 
 Worker cron
   ↓
@@ -43,6 +44,8 @@ D1 + Workers KV
 | --- | --- | --- | --- |
 | Frontend | Cloudflare Pages | `projecte-aura` | `index.html`, `aura_core.js`, `aura_style.css` |
 | API | Pages Functions | `/api/*` | `functions/api/[[path]].js` |
+| Conversa | Workers AI | `AI` | `functions/_lib/aura_ai.js`, `wrangler.jsonc` |
+| Veu externa | Servei públic de Sergi Avatar | `/api/avatar-sergi/*` | `functions/api/[[path]].js` |
 | Memòria | D1 | `DB`, `projecte-aura-memory` | `wrangler.jsonc` |
 | Vault | Workers KV | `BACKUP_VAULT` | `wrangler.jsonc` |
 | Worker backups | Workers cron | `projecte-aura-backup-worker` | `workers/aura_backup_worker.js` |
@@ -61,6 +64,7 @@ Bindings obligatoris:
 
 - `DB`: base de dades D1.
 - `BACKUP_VAULT`: namespace KV per backups i integritat.
+- `AI`: binding de Workers AI per a la conversa generativa de només lectura.
 - `AURA_WRITE_KEY`: secret tècnic per al Worker de backups i les eines de manteniment.
 
 Cloudflare Access protegeix l'accés humà a Aura Web i a `/api/*`. Després d'identificar Sergi, Pages Functions rep la capçalera `Cf-Access-Jwt-Assertion`; el navegador no demana cap segona clau. `AURA_WRITE_KEY` es conserva com a Bearer exclusivament per a automatitzacions autoritzades i no s'ha d'imprimir, documentar ni exposar al navegador.
@@ -107,6 +111,8 @@ GET https://projecte-aura.pages.dev/api/evolution/state
 GET https://projecte-aura.pages.dev/api/evolution/proposals
 GET https://projecte-aura.pages.dev/api/body
 GET https://projecte-aura.pages.dev/api/capabilities
+POST https://projecte-aura.pages.dev/api/chat
+GET https://projecte-aura.pages.dev/api/avatar-sergi
 GET https://projecte-aura.pages.dev/api/gene-tests/001
 GET https://projecte-aura.pages.dev/api/gene-tests/034
 GET https://projecte-aura.pages.dev/api/gene-tests/1597
@@ -177,6 +183,13 @@ Verificació `cloud-v5.2`:
 - Backup Worker final: `backup-auto-2026-06-27T15-44-00-145Z-45b3adaa6e44`.
 - Snapshot Worker final: `integrity-2026-06-27T15-44-00-251Z-100`.
 - SHA-256 final compartit: `45b3adaa6e440509a7af1650f2cba92b9c92a27a61f966597697ffb7d74cc75c`.
+
+Verificació `cloud-v5.3`:
+
+- Pages Functions exposen `POST /api/chat` amb context limitat de D1 i binding `AI`.
+- Les respostes inclouen cites i `persistentWrite: false`.
+- `GET /api/avatar-sergi` documenta un pont explícit que no comparteix memòria privada.
+- La identitat visual optimitzada forma part del paquet estàtic de Pages.
 
 Després, en Mode Sergi:
 

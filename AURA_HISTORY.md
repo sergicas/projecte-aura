@@ -4,6 +4,15 @@ Història viva del Projecte Aura.
 
 ## 2026-07-19
 
+Aura entra a `cloud-v5.3` i completa la capa conversacional real de la Fase 5.
+
+- Workers AI transforma el camp principal en un xat generatiu arrelat en memòria, diari, coneixement i genoma de D1.
+- Les respostes mostren cites i no provoquen cap escriptura persistent.
+- Sergi Avatar queda connectat com a veu externa explícita i separada, sense compartir la memòria privada.
+- La il·lustració aportada per Sergi es converteix en la identitat visual d'Aura a la web.
+
+## 2026-07-19 — Revalidació de la Fase 4
+
 Es revalida la Fase 4 sense reobrir-la.
 
 - La infraestructura ja estava completa des de `cloud-v4.4`; el manteniment actual elimina el desfasament amb el model d'accés vigent.

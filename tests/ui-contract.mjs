@@ -31,7 +31,13 @@ assert.match(html, /class="app-header"/, "La fase 3 ha de tenir una capçalera c
 assert.match(html, /class="phase3-layout"/, "La fase 3 ha de separar accions i resultats.");
 assert.match(html, /class="action-panel"/, "Les accions han d'estar agrupades abans de la conversa.");
 assert.match(html, /class="console-head"/, "La conversa ha de tenir un títol visible.");
-assert.match(html, /<button type="submit">Envia<\/button>/, "El camp d'ordres ha de tenir una acció d'enviament explícita.");
+assert.match(html, /<button type="submit">Envia<\/button>/, "El camp de conversa ha de tenir una acció d'enviament explícita.");
+assert.match(html, /Pregunta a Aura/, "La Fase 5 ha de presentar el camp com una conversa natural.");
+assert.match(html, /class="prompt-suggestions"/, "La Fase 5 ha d'oferir preguntes suggerides.");
+assert.match(html, /Workers AI · només lectura/, "La interfície ha d'explicar el motor i el límit d'escriptura.");
+assert.match(html, /aura_identity\.jpg/, "La interfície ha de mostrar la identitat visual d'Aura.");
+assert.match(core, /async function askAura\(question\)/, "El text lliure s'ha d'enviar al backend conversacional.");
+assert.match(core, /async function askSergiAvatar\(question\)/, "La connexió explícita amb Sergi Avatar ha de ser operativa.");
 assert.doesNotMatch(html, /class="identity-band"/, "La capçalera antiga no ha de continuar ocupant la primera pantalla.");
 assert.match(styles, /@media \(max-width: 620px\)/, "La interfície ha de tenir una composició mòbil específica.");
 assert.match(styles, /prefers-reduced-motion: reduce/, "La interfície ha de respectar el moviment reduït.");
@@ -51,5 +57,7 @@ await assert.rejects(
   (error) => error?.code === "ENOENT",
   "El fitxer de la fotografia no ha de continuar al repositori.",
 );
+
+await access(new URL("../aura_identity.jpg", import.meta.url));
 
 console.log("Aura UI contract tests: OK");

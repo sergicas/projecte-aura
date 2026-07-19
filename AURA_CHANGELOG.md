@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## cloud-v5.3 — Fase 5 conversacional - 2026-07-19
+
+- Incorpora un xat generatiu real amb Workers AI i el model `@cf/zai-org/glm-4.7-flash`.
+- Recupera context limitat de D1, cita records, diari, coneixement i gens, i manté el xat en només lectura.
+- Afegeix cinc preguntes suggerides i historial curt només durant la sessió del navegador.
+- Activa un pont explícit amb Sergi Avatar sense enviar-li memòria privada ni permetre escriptures.
+- Incorpora `aura_identity.jpg` com a identitat visual optimitzada d'Aura.
+- Afegeix proves contractuals de conversa, configuració AI, interfície i separació del servei extern.
+
 ## Revalidació de la Fase 4 - 2026-07-19
 
 - Confirma que la Fase 4 ja estava formalitzada i desplegada des de `cloud-v4.4`; no s'obre cap subfase nova.

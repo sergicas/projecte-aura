@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "projecte-aura",
-  "compatibility_date": "2026-06-27",
+  "compatibility_date": "2026-07-19",
   "compatibility_flags": ["nodejs_compat"],
   "pages_build_output_dir": ".deploy/projecte-aura",
   "d1_databases": [
@@ -18,6 +18,10 @@
       "id": "f99db03ccf7d4da291bcfffea2acc905"
     }
   ],
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
   "observability": {
     "enabled": true
   }

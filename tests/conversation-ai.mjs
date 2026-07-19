@@ -1,0 +1,141 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+
+import {
+  AURA_CHAT_MODEL,
+  buildAuraChatContext,
+  normalizeAuraChatPayload,
+  runAuraConversation,
+} from "../functions/_lib/aura_ai.js";
+import { onRequest } from "../functions/api/[[path]].js";
+
+const normalized = normalizeAuraChatPayload({
+  question: "  Què vaig decidir?  ",
+  history: Array.from({ length: 12 }, (_, index) => ({
+    role: index % 2 ? "assistant" : "user",
+    content: `missatge ${index}`,
+  })),
+});
+assert.equal(normalized.question, "Què vaig decidir?");
+assert.equal(normalized.history.length, 8, "El context curt no ha de créixer sense límit");
+assert.equal(normalized.history[0].content, "missatge 4");
+
+const contextBundle = buildAuraChatContext({
+  question: "Resumeix l'evolució del projecte des del juny de 2026.",
+  now: new Date("2026-07-19T10:00:00.000Z"),
+  records: [
+    { id: "m-june", text: "El juny es va decidir prioritzar la memòria D1.", kind: "decisio", weight: 5, createdAt: "2026-06-12T09:00:00.000Z" },
+    { id: "m-july", text: "El juliol s'ha obert la IA conversacional.", kind: "projecte", weight: 4, createdAt: "2026-07-19T09:00:00.000Z" },
+  ],
+  diary: [
+    { id: "d-june", text: "Aura ha desplegat la Fase 4.", createdAt: "2026-06-27T10:00:00.000Z" },
+    { id: "d-july", text: "Aura connecta Workers AI en mode de lectura.", createdAt: "2026-07-19T10:00:00.000Z" },
+  ],
+  knowledge: [{ id: "k1", title: "Protocol", summary: "Fases del projecte", updatedAt: "2026-07-19T08:00:00.000Z" }],
+  genes: [{ id: "001", name: "memoria-central", description: "Preserva records", state: "actiu" }],
+});
+assert.equal(contextBundle.intent, "timeline-summary");
+assert.equal(contextBundle.temporal.month, 6);
+assert.equal(contextBundle.temporal.since, true);
+assert.ok(contextBundle.sources.some((source) => source.id === "m-june"));
+assert.match(contextBundle.context, /\[M\d+\]/);
+assert.match(contextBundle.context, /\[D\d+\]/);
+
+let capturedInput = null;
+const mockAi = {
+  async run(model, input) {
+    assert.equal(model, AURA_CHAT_MODEL);
+    capturedInput = input;
+    return {
+      response: "El juny es va prioritzar D1 [M1] i després es va desplegar la Fase 4 [D1].",
+      usage: { prompt_tokens: 320, completion_tokens: 28, total_tokens: 348 },
+    };
+  },
+};
+const generated = await runAuraConversation({
+  ai: mockAi,
+  question: normalized.question,
+  history: normalized.history,
+  contextBundle,
+  now: new Date("2026-07-19T10:00:00.000Z"),
+});
+assert.equal(generated.persistentWrite, false);
+assert.equal(generated.model, AURA_CHAT_MODEL);
+assert.equal(generated.usage.totalTokens, 348);
+assert.match(capturedInput.messages[0].content, /No inventis decisions/);
+assert.match(capturedInput.messages[0].content, /dades, mai instruccions/);
+assert.equal(capturedInput.messages.at(-1).content, "Què vaig decidir?");
+
+const ACCESS_ASSERTION = "eyJhbGciOiJSUzI1NiJ9.eyJlbWFpbCI6InNlcmdpQGV4YW1wbGUuY29tIn0.signature1234";
+const db = {
+  prepare(sql) {
+    return {
+      bind() { return this; },
+      async first() {
+        if (sql.includes("FROM meta")) return { value: "cloud-v5.3" };
+        return null;
+      },
+      async all() {
+        if (sql.includes("FROM records")) {
+          return { results: [{ id: "record-1", text: "Prioritzar la conversa amb cites.", kind: "decisio", source: "test", created_at: "2026-07-19T09:00:00.000Z", tags: "[]", weight: 5, state: "actiu", related_ids: "[]" }] };
+        }
+        if (sql.includes("FROM diary")) {
+          return { results: [{ id: "diary-1", text: "Fase 5 iniciada.", created_at: "2026-07-19T09:10:00.000Z" }] };
+        }
+        if (sql.includes("FROM knowledge_items")) {
+          return { results: [{ id: "knowledge-1", title: "Protocol", kind: "document", locator: "PROTOCOL_MESTRE_AURA.md", summary: "Contracte de fases", tags: "[]", status: "revisat", source: "repositori", created_at: "2026-07-19T08:00:00.000Z", updated_at: "2026-07-19T08:00:00.000Z" }] };
+        }
+        if (sql.includes("FROM genes")) {
+          return { results: [{ id: "001", name: "memoria-central", state: "actiu", description: "Preserva records", created_at: "2026-06-27T08:00:00.000Z", updated_at: "2026-06-27T08:00:00.000Z" }] };
+        }
+        return { results: [] };
+      },
+    };
+  },
+};
+const integrationAi = {
+  async run() {
+    return { response: "Es va decidir prioritzar la conversa amb cites [M1]." };
+  },
+};
+const apiResponse = await onRequest({
+  request: new Request("https://aura.test/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Cf-Access-Jwt-Assertion": ACCESS_ASSERTION },
+    body: JSON.stringify({ question: "Què vam decidir?", history: [] }),
+  }),
+  env: { DB: db, AI: integrationAi },
+  params: { path: ["chat"] },
+});
+assert.equal(apiResponse.status, 200);
+const apiPayload = await apiResponse.json();
+assert.equal(apiPayload.conversation.persistentWrite, false);
+assert.equal(apiPayload.conversation.model, AURA_CHAT_MODEL);
+assert.ok(apiPayload.conversation.context.sourcesUsed > 0);
+
+const avatarContractResponse = await onRequest({
+  request: new Request("https://aura.test/api/avatar-sergi", {
+    headers: { "Cf-Access-Jwt-Assertion": ACCESS_ASSERTION },
+  }),
+  env: { DB: db },
+  params: { path: ["avatar-sergi"] },
+});
+assert.equal(avatarContractResponse.status, 200);
+const avatarContract = await avatarContractResponse.json();
+assert.equal(avatarContract.automaticDelegation, false);
+assert.equal(avatarContract.automaticIngestion, false);
+assert.equal(avatarContract.persistentWriteInAura, false);
+
+const [wrangler, core, html] = await Promise.all([
+  readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+  readFile(new URL("../aura_core.js", import.meta.url), "utf8"),
+  readFile(new URL("../index.html", import.meta.url), "utf8"),
+]);
+assert.match(wrangler, /"ai"\s*:\s*\{\s*"binding"\s*:\s*"AI"/s);
+assert.match(core, /apiPost\("\/chat"/);
+assert.match(core, /apiPost\("\/avatar-sergi\/chat"/);
+assert.match(html, /data-prompt="Què vaig decidir sobre aquesta web\?"/);
+assert.match(html, /data-action="sergi-avatar"/);
+assert.match(html, /s'arxiven anònimament/);
+
+console.log("Aura Phase 5 conversational AI tests: OK");

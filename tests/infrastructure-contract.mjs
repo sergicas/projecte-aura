@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { onRequest } from "../functions/api/[[path]].js";
 
 const ACCESS_ASSERTION = "eyJhbGciOiJSUzI1NiJ9.eyJlbWFpbCI6InNlcmdpQGV4YW1wbGUuY29tIn0.signature1234";
-const currentVersion = "cloud-v5.2";
+const currentVersion = "cloud-v5.3";
 
 const db = {
   prepare() {
@@ -35,12 +35,12 @@ assert.equal(infrastructure.format, "aura-cloudflare-infrastructure-v1");
 assert.equal(infrastructure.document.required, "AURA_CLOUDFLARE_ARCHITECTURE.md");
 assert.deepEqual(
   infrastructure.resources.map((resource) => resource.id),
-  ["pages-project", "pages-functions-api", "d1-memory", "backup-vault", "backup-worker", "browser-indexeddb"],
+  ["pages-project", "pages-functions-api", "workers-ai-chat", "sergi-avatar-bridge", "d1-memory", "backup-vault", "backup-worker", "browser-indexeddb"],
   "El contracte ha de conservar totes les peces necessàries per reconstruir Aura",
 );
 assert.deepEqual(
   infrastructure.bindings.required.map((binding) => binding.name),
-  ["DB", "BACKUP_VAULT", "AURA_WRITE_KEY"],
+  ["DB", "BACKUP_VAULT", "AI", "AURA_WRITE_KEY"],
 );
 assert.equal(infrastructure.authentication.web.provider, "cloudflare-access");
 assert.equal(infrastructure.authentication.web.browserKeyRequired, false);

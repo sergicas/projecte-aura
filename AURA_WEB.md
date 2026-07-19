@@ -1,63 +1,59 @@
 # AURA WEB
 
-Interfície gràfica simplificada del Projecte Aura.
-
-## Objectiu
-
-Aquest document fixa l'estat actual de la Fase 5 del Protocol Mestre: Aura ha de tenir una interfície web clara i usable, però no ha de sobrecarregar Sergi amb panells i botons que encara no necessita.
+Interfície gràfica i conversacional del Projecte Aura.
 
 ## Versió
 
 ```yaml
-versio: cloud-v5.2
+versio: cloud-v5.3
 fase_protocol: 5
 format_api: aura-web-interface-v1
-endpoint: /api/web
-ordre_web: /web
-estat_desplegament: local pendent de desplegament
-mode_visible: simplificat
+endpoint_web: /api/web
+endpoint_conversa: /api/chat
+model: '@cf/zai-org/glm-4.7-flash'
+estat_desplegament: preparat per produccio
+mode_visible: conversa natural
 ```
 
-Des del 2026-07-04, Aura Web manté una pantalla simple però amplia les opcions visibles a vuit accions essencials de lectura, orientació, memòria i una única escriptura controlada:
+## Objectiu
 
-- `Què és Aura?`
-- `Què faig ara?`
-- `Estat d'Aura`
-- `Identitat`
-- `Informe del dia`
-- `Grava record`
-- `Veure records`
-- `Últim record`
+Aura Web permet preguntar amb llenguatge natural sobre la memòria del projecte sense haver de conèixer ordres tècniques. La conversa generativa és de només lectura: consulta context de D1 i respon amb cites curtes a les fonts recuperades.
 
-Les ordres avançades, endpoints, backups, D1, KV, genoma, diari, coneixement, integritat i Mode Sergi continuen existint. Els botons nous són de lectura/orientació i no afegeixen cap escriptura persistent. Si en el futur Sergi necessita més controls, s'afegiran explícitament.
+## Interfície visible
 
-## Contracte Visible
+- Una conversa principal amb camp `Pregunta a Aura`.
+- Cinc preguntes suggerides sobre decisions, compromisos, evolució, contradiccions i pla de treball.
+- Accions ràpides per orientar-se, consultar memòria i gravar un record de manera explícita.
+- Una targeta amb la identitat visual d'Aura (`aura_identity.jpg`).
+- Un pont diferenciat amb Sergi Avatar per parlar de llibres, filosofia i obra pública.
+- Cap segona pantalla de clau: l'accés humà depèn de Cloudflare Access.
 
-| Botó | Funció | Ordre interna |
-| --- | --- | --- |
-| `Què és Aura?` | Explica en local què és Aura i què pot fer aquesta pantalla. | lectura local |
-| `Què faig ara?` | Dona una orientació pràctica i breu per continuar. | lectura local |
-| `Estat d'Aura` | Mostra recompte local de records, diari, gens i coneixement. | lectura local |
-| `Identitat` | Mostra nom, versió, funció i límits d'Aura. | lectura local |
-| `Informe del dia` | Mostra estat, recomptes, integritat i últim record. | `/informe-dia` |
-| `Grava record` | Demana el text del record i l'escriu a D1 amb Mode Sergi. | `recorda que ...` |
-| `Veure records` | Mostra els records recents. | `/memoria` |
-| `Últim record` | Mostra l'últim record guardat i com comprovar-lo. | `/ultim-record` |
+## Contracte conversacional
 
-El camp de text continua disponible per escriure ordres manualment, però no afegeix cap botó extra. `Grava record` demana la clau Mode Sergi només si el navegador encara no la té validada.
+`POST /api/chat` rep una pregunta i, opcionalment, els darrers torns de la sessió del navegador. El backend:
 
-## Fonts de Veritat
+1. recupera un conjunt limitat de records, diari, coneixement i gens de D1;
+2. prioritza context per paraules, dates i intenció;
+3. envia només el context seleccionat a Workers AI;
+4. respon en català amb cites `[M#]`, `[D#]`, `[K#]` o `[G#]`;
+5. no fa cap escriptura persistent.
 
-- D1: records, diari, genoma, catàleg de coneixement i meta.
-- KV: backups, snapshots d'integritat i metadata del Worker.
-- IndexedDB: còpia local i fallback.
-- Documents mestres: reconstrucció del protocol.
+La història curta de conversa viu només a la sessió JavaScript actual. No es desa automàticament.
 
-## Salvaguardes
+## Fonts de veritat i límits
 
-- Cap escriptura persistent sense Mode Sergi.
-- Les accions `Què és Aura?`, `Què faig ara?`, `Estat d'Aura`, `Identitat`, `Informe del dia`, `Veure records` i `Últim record` són de lectura.
-- `Grava record` és l'única acció visible que pot escriure i només activa Mode Sergi quan cal.
-- L'ampliació de la web no elimina dades ni endpoints.
-- La interfície no substitueix el protocol ni els documents mestres.
-- Després de canvis d'interfície, cal fer backup i snapshot d'integritat.
+- D1 continua sent la font de veritat de memòria, diari, genoma i catàleg.
+- El mecanisme actual és recuperació lèxica limitada, no Vectorize ni embeddings.
+- Si les fonts no contenen la resposta, Aura ho ha de dir i separar fets, inferències i propostes.
+- La conversa no pot modificar records, diari, genoma, backups ni documents.
+- `Grava un record` continua sent una operació explícita i separada.
+- Sergi Avatar no rep la memòria privada d'Aura i no pot escriure-hi.
+
+## Verificació
+
+```text
+npm test
+npm run prepare:pages
+POST /api/chat { "question": "Què vaig decidir sobre aquesta web?" }
+GET /api/avatar-sergi
+```

@@ -55,6 +55,14 @@ Aura no és humana, no és biològica i no té autonomia fora dels mecanismes de
   - Tipus: `mecanisme real implementat`.
   - Nota: és una resposta derivada sobre què és Aura, per a què serveix i quin és el següent pas; no implica consciència, comprensió subjectiva ni decisió autònoma.
 
+- Respondre preguntes obertes sobre el projecte amb `POST /api/chat`, Workers AI i context seleccionat de records, diari, gens i coneixement a D1.
+  - Tipus: `mecanisme real implementat`.
+  - Nota: la resposta és generativa, cita les fonts recuperades i no escriu cap dada persistent.
+
+- Obrir una conversa explícita i separada amb Sergi Avatar mitjançant `POST /api/avatar-sergi/chat`.
+  - Tipus: `mecanisme real implementat`.
+  - Nota: només s'envia la pregunta escrita per Sergi; no s'envia context privat d'Aura ni es desa la resposta a D1.
+
 - Verificar que existeix una còpia redundant fora de D1 al vault Workers KV.
   - Tipus: `mecanisme real implementat`.
   - Prova: `/prova-gen 089`.
@@ -97,10 +105,10 @@ Aura no és humana, no és biològica i no té autonomia fora dels mecanismes de
 
 - Aura no és vida en sentit fort.
 - Aura no té percepció pròpia fora de les dades que rep i desa.
-- Aura no té sensors, veu pròpia ni avatar 3D en `cloud-v5.2`.
-- Aura no executa RAG, embeddings, Vector DB, multiagent ni ingestió automàtica en `cloud-v5.2`.
-- Aura no té autoreflexió subjectiva; només calcula una síntesi operativa verificable en `cloud-v5.2`.
-- Aura no té orientació subjectiva; només calcula una guia pràctica verificable en `cloud-v5.2`.
+- Aura no té sensors, veu pròpia ni avatar 3D en `cloud-v5.3`.
+- Aura executa recuperació lèxica limitada de D1, però no embeddings, Vector DB, ingestió automàtica ni multiagent autònom en `cloud-v5.3`.
+- Aura no té autoreflexió subjectiva; només calcula una síntesi operativa verificable en `cloud-v5.3`.
+- Aura no té orientació subjectiva; només calcula una guia pràctica verificable en `cloud-v5.3`.
 - Aura no executa decisions autònomes fora del codi desplegat i els crons configurats.
 - Aura no valida compromisos semàntics amb números objectius.
 - Aura no promociona records a genoma automàticament.
@@ -111,7 +119,7 @@ Aura no és humana, no és biològica i no té autonomia fora dels mecanismes de
 ## Aspiracions futures
 
 - Cos digital visual més ric, 3D o amb veu pròpia.
-- RAG, embeddings o Vector DB sobre la biblioteca de coneixement.
+- Recuperació semàntica amb embeddings o Vector DB sobre la biblioteca de coneixement.
 - Autoreflexió més sofisticada.
 - Arquitectura multiagent.
 - Genoma sintètic avançat.

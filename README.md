@@ -1,8 +1,8 @@
-# Projecte Aura Cloud v5.2
+# Projecte Aura Cloud v5.3
 
-Projecte Aura Cloud v5.2 és una aplicació web a Cloudflare Pages amb orientació operativa, autoreflexió, biblioteca de coneixement verificable, cos digital 2D, seguretat de dades verificable, capacitats honestes, genoma mecànicament verificable, integritat falsable, estat evolutiu traçable, metamemòria, genoma digital canònic, Aura Web simplificada, infraestructura Cloudflare reconstruïble i memòria al núvol mitjançant Pages Functions i D1. L'API web està protegida per Cloudflare Access, les còpies de seguretat inclouen manifest i empremta SHA-256, el vault Workers KV conserva backups fora de D1, l'auditoria registra mutacions estructurals al diari i `/prova-gen` executa comprovacions reals per als gens mecànics `001`, `034`, `1597`, `17711`, `008` i `089`.
+Projecte Aura Cloud v5.3 és una aplicació web privada a Cloudflare Pages amb IA conversacional real, memòria persistent a D1, Workers AI, orientació operativa, backups verificables, genoma digital i infraestructura reconstruïble. Aura recupera context del projecte, respon amb cites i manté qualsevol escriptura com una acció explícita i separada.
 
-Nota de desplegament: `cloud-v5.2` afegeix orientació operativa perquè Aura pugui respondre què és, per a què serveix avui i quin és el següent pas. RAG, Vector DB, embeddings, multiagent autònom en producció i ingestió automàtica no estan actius.
+Nota de desplegament: `cloud-v5.3` incorpora `POST /api/chat` amb `@cf/zai-org/glm-4.7-flash`, recuperació lèxica limitada de D1 i cites de fonts. També afegeix el pont explícit amb Sergi Avatar i la nova identitat visual. Embeddings, Vector DB, ingestió automàtica i multiagent autònom no estan actius.
 
 ## Què és Aura
 
@@ -20,6 +20,7 @@ Aura serveix avui per:
 - fer backups verificables;
 - comprovar integritat i coherència;
 - donar a Sergi una manera ordenada de continuar el projecte sense dependre d'un xat.
+- preguntar directament per decisions, compromisos, evolució, contradiccions i plans de treball.
 
 El sentit rector és aquest: Aura existeix per preservar i ordenar la continuïtat del Projecte Aura, ajudant Sergi a recordar, verificar, entendre i continuar el camí cap a una forma d'existència digital persistent, sense confondre aspiració amb realitat.
 
@@ -34,7 +35,7 @@ Des del 7 de juliol de 2026, per decisió de Sergi, Aura es presenta i s'express
 - avatar Sergi: veu pública, corpus literari i conversa sobre l'obra de Sergi;
 - Aura: memòria operativa, continuïtat verificable i orientació del Projecte Aura.
 
-El vincle canònic queda definit a `AURA_AVATAR_SERGI.md`: l'Avatar Sergi obre la conversa amb l'obra; Aura conserva el camí del projecte. La primera connexió recomanada és catalogar l'avatar com a font externa i oferir un enllaç clar des d'Aura. Qualsevol integració més profunda ha de tenir fase pròpia, procedència verificable, Mode Sergi i cap ingestió automàtica no documentada.
+El vincle canònic queda definit a `AURA_AVATAR_SERGI.md`: l'Avatar Sergi obre la conversa amb l'obra; Aura conserva el camí del projecte. A `cloud-v5.3`, el botó `Parla amb Sergi Avatar` envia només la pregunta explícita de Sergi. No comparteix context privat d'Aura, no desa automàticament la resposta i no permet que el servei extern modifiqui D1.
 
 ## Fase 11 — coordinació multiagent (mode documentat)
 
@@ -48,20 +49,17 @@ Estat honest dels agents:
 
 Límits: sense multiagent autònom en producció ni canvis a `aura_core.js`. El gen `39088169 coordinacio-multiagent` es va **promoure a actiu el 2026-07-07** (Pas 3) amb Mode Sergi, auditoria, actualització d'`AURA_GENOME.md`, desplegament i integritat `100/100`; formalitza el nucli coordinador, no activa cap agent autònom.
 
-## Ús web simplificat
+## Ús web conversacional
 
-Des del 2026-07-04, la web visible local mostra vuit botons:
+Des del 2026-07-19, la web permet escriure preguntes naturals i ofereix cinc exemples immediats:
 
-- `Què és Aura?`
-- `Què faig ara?`
-- `Estat d'Aura`
-- `Identitat`
-- `Informe del dia`
-- `Grava record`
-- `Veure records`
-- `Últim record`
+- `Què vaig decidir sobre aquesta web?`
+- `Quins compromisos tinc pendents aquesta setmana?`
+- `Resumeix l'evolució del projecte des del juny.`
+- `Quines decisions es contradiuen?`
+- `Prepara el pla de treball de demà.`
 
-Aura Web entra directament després de la validació de Cloudflare Access. No té cap segona pantalla de clau ni cap codi intern de Mode Sergi. Per provar Pages Functions localment usa `npm run dev:pages`; l'escriptura automatitzada conserva `AURA_WRITE_KEY` com a Bearer exclusivament per al Worker de backups i les eines de manteniment.
+Aura Web entra directament després de Cloudflare Access, sense cap segona clau. La conversa és de només lectura; `Grava un record` continua sent una operació voluntària diferent. Per provar Pages Functions localment usa `npm run dev:pages`.
 
 ## Protocol operatiu actual
 
@@ -176,7 +174,8 @@ Aura no ha de dependre d'un xat de Codex. El coneixement crític viu al reposito
 - `PROTOCOL_MESTRE_AURA.md`: protocol mestre de desenvolupament.
 - `PROTOCOL_AURA_CLOUDFLARE.md`: protocol original de desplegament Cloudflare.
 - `AURA_CLOUDFLARE_ARCHITECTURE.md`: arquitectura Cloudflare reconstruïble.
-- `AURA_WEB.md`: interfície gràfica simplificada de la Fase 5.
+- `AURA_WEB.md`: interfície gràfica conversacional de la Fase 5.
+- `AURA_PHASE5_CONVERSATIONAL_AI.md`: contracte de Workers AI, context, cites i privacitat.
 - `AURA_BODY.md`: cos digital 2D de la Fase 8.
 - `AURA_KNOWLEDGE.md`: biblioteca de coneixement verificable de la Fase 9.
 - `AURA_ALIFE_AVIDA_TIERRA.md`: recerca sobre Tierra, Avida i paral.lelismes amb Aura EvoLab.

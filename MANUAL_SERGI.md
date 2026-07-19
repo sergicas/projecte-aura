@@ -322,9 +322,25 @@ Ha de quedar clar:
 - quins secrets cal configurar sense revelar-ne el valor,
 - quines ordres reconstrueixen i despleguen el sistema.
 
-## Aura Web
+## Aura Web i conversa natural
 
-La Fase 5 organitza la pantalla principal en quatre mòduls:
+La Fase 5 permet parlar amb Aura sense memoritzar ordres. Escriu una pregunta al camp `Pregunta a Aura` o prem una pregunta suggerida. Aura buscarà context a records, diari, coneixement i gens, i mostrarà una resposta amb cites.
+
+Exemples:
+
+```text
+Què vaig decidir sobre aquesta web?
+Quins compromisos tinc pendents aquesta setmana?
+Resumeix l'evolució del projecte des del juny.
+Quines decisions es contradiuen?
+Prepara el pla de treball de demà.
+```
+
+La conversa no desa ni modifica res. Per parlar de llibres, filosofia o obra pública, prem `Parla amb Sergi Avatar` i completa la pregunta després del prefix `avatar:`. Només s'envia aquella pregunta; la memòria privada d'Aura no surt del projecte.
+
+El contracte tècnic complet és `AURA_PHASE5_CONVERSATIONAL_AI.md`.
+
+La interfície conserva quatre àrees funcionals:
 
 - Xat,
 - Memòria,

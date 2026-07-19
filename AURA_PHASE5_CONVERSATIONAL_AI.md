@@ -17,7 +17,7 @@ Pregunta de Sergi
   → historial curt només durant la sessió del navegador
 ```
 
-El mòdul `functions/_lib/aura_ai.js` valida l'entrada, classifica la intenció, puntua el context, limita la mida enviada al model i normalitza la resposta.
+El mòdul `functions/_lib/aura_ai.js` valida l'entrada, classifica la intenció, puntua el context, limita la mida enviada al model i normalitza la resposta. El paquet de context queda acotat a 14.000 caràcters i una resposta no pot mantenir la interfície esperant més de 45 segons.
 
 ## Contracte de resposta
 

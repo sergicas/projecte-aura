@@ -3,7 +3,8 @@ export const AURA_CHAT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MAX_QUESTION_LENGTH = 4000;
 const MAX_HISTORY_MESSAGES = 8;
 const MAX_HISTORY_TEXT = 2400;
-const MAX_CONTEXT_CHARS = 48000;
+const MAX_CONTEXT_CHARS = 14000;
+const AI_TIMEOUT_MS = 45000;
 const STOP_WORDS = new Set([
   "a", "al", "als", "amb", "aquesta", "aquest", "com", "de", "del", "dels", "des", "el", "els", "en",
   "i", "la", "les", "meu", "meva", "per", "que", "què", "sobre", "un", "una", "vaig", "vull",
@@ -103,11 +104,14 @@ export async function runAuraConversation({ ai, question, history, contextBundle
     { role: "user", content: question },
   ];
   const startedAt = Date.now();
-  const result = await ai.run(AURA_CHAT_MODEL, {
-    messages,
-    max_tokens: 1100,
-    temperature: 0.2,
-  });
+  const result = await withTimeout(
+    ai.run(AURA_CHAT_MODEL, {
+      messages,
+      max_tokens: 650,
+      temperature: 0.2,
+    }),
+    AI_TIMEOUT_MS,
+  );
   const answer = extractAiText(result);
   if (!answer) throw new Error("Workers AI ha retornat una resposta buida.");
 
@@ -164,7 +168,7 @@ function normalizeSource(item, prefix, kind, index) {
   const id = String(item?.id || `${kind}-${index + 1}`);
   const text = normalizeText(
     item?.text ?? item?.summary ?? item?.description ?? item?.content ?? item?.value,
-    4000,
+    1200,
   );
   const title = normalizeText(item?.title ?? item?.name ?? item?.kind ?? kind, 300);
   const date = normalizeDate(item?.createdAt ?? item?.created_at ?? item?.updatedAt ?? item?.updated_at);
@@ -242,6 +246,20 @@ function extractAiText(result) {
   if (typeof result?.response === "string") return result.response.trim();
   if (typeof result?.result?.response === "string") return result.result.response.trim();
   return "";
+}
+
+async function withTimeout(promise, timeoutMs) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Workers AI ha superat el temps màxim de resposta.")), timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function normalizeUsage(usage) {

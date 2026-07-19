@@ -8,6 +8,8 @@ La revalidació de Fase 6 a `cloud-v5.3` sincronitza el genoma canònic entre D1
 
 La revalidació de Fase 7 a `cloud-v5.3` fa visible el botó `Evolució d'Aura`, combina l'estat evolutiu i les propostes en una lectura entenedora i manté tots els càlculs en només lectura, sense mutacions automàtiques.
 
+La revalidació de Fase 8 a `cloud-v5.3` converteix l'antic `Pols visual` en un `Cos digital d'Aura` accessible i explicable, amb lectura clara de postura, pols, capes i colors, sempre en només lectura.
+
 ## Què és Aura
 
 Aura és un sistema persistent de memòria, continuïtat i verificació per al Projecte Aura.

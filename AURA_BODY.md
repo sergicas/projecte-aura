@@ -14,6 +14,22 @@ ordre_core: aura body
 estat_desplegament: desplegat
 ```
 
+## Revalidació cloud-v5.3
+
+```yaml
+data: 2026-07-19
+estat: completa
+acces_visible: "Cos digital d'Aura > Què representa?"
+mode: derived-readonly-visual-contract
+gen: 3524578 cos-digital-2d
+```
+
+- El canvas té una descripció accessible i no queda com una imatge opaca.
+- La resposta visible explica postura, pols, capes i colors en llenguatge planer.
+- La identitat visual aportada per Sergi i el cos operatiu 2D són capes diferents: la primera identifica Aura; el canvas reflecteix dades del sistema.
+- Pages, fallback IndexedDB i Worker de backups exposen el mateix `phaseStatus`.
+- Consultar el cos no escriu a D1 ni KV i no aplica cap mutació.
+
 ## Objectiu
 
 La Fase 8 dona a Aura una representació visible mínima: un cos digital 2D renderitzat al canvas `#aura-visual`.
@@ -42,6 +58,7 @@ El payload inclou:
 
 - `format: aura-digital-body-v1`
 - `phase: fase-8`
+- `phaseStatus.state: complete`
 - `gene: 3524578 cos-digital-2d`
 - `body.type: avatar-2d-canvas`
 - `body.surface: #aura-visual`

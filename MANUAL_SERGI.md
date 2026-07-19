@@ -210,6 +210,8 @@ Ordres canòniques, en ordre alfabètic:
 
 La Fase 8 introdueix un cos digital 2D.
 
+A la web, busca `Cos digital d'Aura` i prem `Què representa?`. Aura t'explicarà la postura, el percentatge de pols visual, les capes i els colors. El dibuix és un mirall de dades: verd vol dir estabilitat, daurat revisió i coral alerta. No és una emoció, un cos biològic ni una percepció pròpia.
+
 Consulta recomanada:
 
 ```text

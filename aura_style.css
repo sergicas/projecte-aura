@@ -395,6 +395,19 @@ input:focus-visible {
   padding: 16px;
 }
 
+.aura-pulse-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.aura-pulse-card__head button {
+  min-height: 36px;
+  padding: 7px 11px;
+  white-space: nowrap;
+}
+
 .aura-pulse-card p {
   margin: 5px 0 0;
   color: var(--muted);
@@ -1143,6 +1156,15 @@ input:focus-visible {
 
   #aura-visual {
     min-height: 150px;
+  }
+
+  .aura-pulse-card__head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .aura-pulse-card__head button {
+    width: 100%;
   }
 
   .status-panel,

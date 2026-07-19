@@ -35,6 +35,13 @@ const PHASE_7_STATUS = Object.freeze({
   mode: "derived-readonly",
   genes: ["233168", "377377", "610987", "987159", "1597258", "2584181"],
 });
+const PHASE_8_STATUS = Object.freeze({
+  state: "complete",
+  openedAt: "2026-06-27",
+  revalidatedAt: "2026-07-19",
+  mode: "derived-readonly-visual-contract",
+  gene: "3524578 cos-digital-2d",
+});
 const DOCUMENTED_GENOME_VERSION = "cloud-v5.3";
 const DATA_SAFETY_GENE_IDS = ["17711", "008", "089"];
 const DOCUMENTED_GENE_IDS = [
@@ -1473,6 +1480,7 @@ function buildDigitalBody({ records = [], diary = [], genes = [], integrity = nu
     endpoint: "/api/body",
     format: "aura-digital-body-v1",
     phase: "fase-8",
+    phaseStatus: PHASE_8_STATUS,
     mode: options.mode || "backup-worker-view",
     name: "Cos digital 2D",
     document: {

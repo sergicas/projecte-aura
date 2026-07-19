@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Revalidació de la Fase 8 - 2026-07-19
+
+- Reanomena l'antic `Pols visual` com a `Cos digital d'Aura` i hi afegeix el botó `Què representa?`.
+- Explica postura, pols, capes i colors en llenguatge planer, sense confondre activitat tècnica amb emocions o biologia.
+- Afegeix descripció accessible al canvas i una alternativa textual completa.
+- Sincronitza `phaseStatus` entre Pages, fallback IndexedDB i Worker de backups.
+- Confirma actiu el gen `3524578 cos-digital-2d` i manté el cos en només lectura.
+- Afegeix una migració d'auditoria i una prova contractual específica de la Fase 8.
+
 ## Revalidació de la Fase 7 - 2026-07-19
 
 - Fa visible el botó `Evolució d'Aura` i combina estat i propostes en una única resposta entenedora.

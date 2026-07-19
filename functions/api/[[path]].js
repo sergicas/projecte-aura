@@ -63,6 +63,13 @@ const PHASE_7_STATUS = Object.freeze({
   mode: "derived-readonly",
   genes: ["233168", "377377", "610987", "987159", "1597258", "2584181"],
 });
+const PHASE_8_STATUS = Object.freeze({
+  state: "complete",
+  openedAt: "2026-06-27",
+  revalidatedAt: "2026-07-19",
+  mode: "derived-readonly-visual-contract",
+  gene: "3524578 cos-digital-2d",
+});
 const DOCUMENTED_GENOME_VERSION = "cloud-v5.3";
 const HONESTY_TYPES = {
   real: "mecanisme real implementat",
@@ -4542,8 +4549,8 @@ function buildAuraWebInterface(options = {}) {
       label: "Aura simplificada",
       role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/estat-evolutiu", "/propostes-evolucio", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/evolution/state", "/api/evolution/proposals", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/estat-evolutiu", "/propostes-evolucio", "/cos-digital", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/evolution/state", "/api/evolution/proposals", "/api/body", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -4558,6 +4565,7 @@ function buildAuraWebInterface(options = {}) {
     "Genoma d'Aura",
     "La llavor d'Aura",
     "Evolució d'Aura",
+    "Què representa el cos digital?",
     "Parla amb Sergi Avatar",
   ];
 
@@ -4582,7 +4590,7 @@ function buildAuraWebInterface(options = {}) {
     visibleActions,
     modules,
     interactions: {
-      navigation: "12 botons visibles autoexplicatius: orientació, estat, identitat, genoma, evolució, llavor, veu externa, informe, memòria i una escriptura controlada",
+      navigation: "13 botons visibles autoexplicatius: orientació, estat, identitat, genoma, evolució, cos digital, llavor, veu externa, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
       conversationalAI: {
         endpoint: "/api/chat",
@@ -4599,7 +4607,7 @@ function buildAuraWebInterface(options = {}) {
       "Cap escriptura persistent sense Mode Sergi.",
       "Les preguntes lliures són generatives però de només lectura i han de citar el context D1 utilitzat.",
       "Sergi Avatar és una font externa separada; només rep el text escrit després de `avatar:`.",
-      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, Evolució d'Aura, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
+      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, Evolució d'Aura, Què representa el cos digital?, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
       "Grava record és l'única acció visible que pot escriure i activa Mode Sergi només quan cal.",
       "L'ampliació de botons no elimina dades ni endpoints.",
       "D1 continua sent la font de veritat i IndexedDB és fallback local.",
@@ -4608,7 +4616,7 @@ function buildAuraWebInterface(options = {}) {
       command: "/web",
       endpoint: "/api/web",
       requiredPanels: ["simple"],
-      visibleButtonCount: 8,
+      visibleButtonCount: visibleActions.length,
       visibleButtons: visibleActions,
       backupField: "webInterface",
     },
@@ -4847,6 +4855,7 @@ function buildDigitalBody({ records = [], diary = [], genes = [], integrity = nu
     endpoint: "/api/body",
     format: "aura-digital-body-v1",
     phase: "fase-8",
+    phaseStatus: PHASE_8_STATUS,
     mode: options.mode || "derived-readonly-visual-contract",
     name: "Cos digital 2D",
     document: {

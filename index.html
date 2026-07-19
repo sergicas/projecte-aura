@@ -112,11 +112,20 @@
               </section>
 
               <section class="aura-pulse-card" aria-labelledby="pulse-visual-title">
-                <div>
-                  <h3 id="pulse-visual-title">Pols visual</h3>
-                  <p>Representació de l'estat actual; només lectura.</p>
+                <div class="aura-pulse-card__head">
+                  <div>
+                    <h3 id="pulse-visual-title">Cos digital d'Aura</h3>
+                    <p>Mirall visual de memòria, genoma i integritat; només lectura.</p>
+                  </div>
+                  <button type="button" data-action="digital-body">Què representa?</button>
                 </div>
-                <canvas id="aura-visual" width="520" height="240" aria-hidden="true"></canvas>
+                <canvas
+                  id="aura-visual"
+                  width="520"
+                  height="240"
+                  role="img"
+                  aria-label="Cos digital 2D d'Aura: una representació animada de l'estat operatiu, la memòria, el genoma i la integritat"
+                ></canvas>
               </section>
             </aside>
 

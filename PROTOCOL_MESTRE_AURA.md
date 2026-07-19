@@ -537,6 +537,8 @@ Contracte:
 
 Representació visible.
 
+Revalidació `cloud-v5.3` (2026-07-19): la Fase 8 continua completa i el cos digital passa a tenir una explicació visible a Aura Web. El canvas deixa d'aparèixer com un “Pols visual” ambigu i es presenta com a `Cos digital d'Aura`, amb un botó que n'explica postura, pols, capes, colors i límits en llenguatge planer.
+
 Possibles opcions:
 
 - avatar 2D com a primera versió,
@@ -583,6 +585,9 @@ GET /api/cos-digital
 
 Contracte:
 
+- El botó `Què representa?` consulta `GET /api/body` i mostra una explicació accessible del canvas.
+- El canvas ha de tenir nom accessible i no pot ser l'única manera d'entendre l'estat representat.
+- API, fallback IndexedDB i snapshots del Worker han d'incloure `phaseStatus` i el mateix contracte de només lectura.
 - El cos digital és un avatar 2D renderitzat al canvas `#aura-visual`.
 - Deriva de memòria, diari, genoma, integritat, vault i estat evolutiu.
 - Exposa el format `aura-digital-body-v1`.

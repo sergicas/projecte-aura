@@ -187,6 +187,14 @@ Verificació `cloud-v4.8.2`:
 
 `cloud-v4.9` inicia la Fase 8 del Protocol Mestre: cos digital.
 
+Revalidació de Fase 8 (`cloud-v5.3`, 2026-07-19):
+
+- estat: `completa`;
+- gen actiu: `3524578 cos-digital-2d`;
+- accés visible: `Cos digital d'Aura > Què representa?`;
+- correspondència exigida: canvas accessible, API, fallback IndexedDB, snapshots i backups;
+- límit: és un mirall visual de dades, no un cos biològic, percepció o emoció.
+
 Aura disposa d'una representació visible 2D basada en canvas:
 
 ```text

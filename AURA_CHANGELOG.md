@@ -9,6 +9,7 @@ Canvis rellevants del Projecte Aura.
 - Afegeix cinc preguntes suggerides i historial curt només durant la sessió del navegador.
 - Activa un pont explícit amb Sergi Avatar sense enviar-li memòria privada ni permetre escriptures.
 - Incorpora `aura_identity.jpg` com a identitat visual optimitzada d'Aura.
+- Incorpora el logo circular aportat per Sergi a la capçalera com `aura_logo.jpg`, optimitzat per web.
 - Afegeix proves contractuals de conversa, configuració AI, interfície i separació del servei extern.
 
 ## Revalidació de la Fase 4 - 2026-07-19

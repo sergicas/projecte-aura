@@ -25,6 +25,7 @@ Aura Web permet preguntar amb llenguatge natural sobre la memòria del projecte 
 - Cinc preguntes suggerides sobre decisions, compromisos, evolució, contradiccions i pla de treball.
 - Accions ràpides per orientar-se, consultar memòria i gravar un record de manera explícita.
 - Una targeta amb la identitat visual d'Aura (`aura_identity.jpg`).
+- El logo circular oficial d'Aura a la capçalera (`aura_logo.jpg`).
 - Un pont diferenciat amb Sergi Avatar per parlar de llibres, filosofia i obra pública.
 - Cap segona pantalla de clau: l'accés humà depèn de Cloudflare Access.
 

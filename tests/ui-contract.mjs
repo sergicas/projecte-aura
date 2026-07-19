@@ -26,7 +26,7 @@ assert.match(
 assert.doesNotMatch(html, /aura_face|aura-face|Rostre d'Aura/, "La interfície no ha de carregar la fotografia.");
 assert.doesNotMatch(styles, /aura-face|aura-mark--face/, "Els estils de la fotografia s'han d'eliminar.");
 assert.doesNotMatch(packageJson, /aura_face\.jpg/, "El desplegament no ha d'incloure la fotografia.");
-assert.match(html, /<span class="aura-mark-core">A<\/span>/, "Aura ha de conservar una marca abstracta sense fotografia.");
+assert.match(html, /aura_logo\.jpg/, "La capçalera ha de mostrar el logo oficial d'Aura.");
 assert.match(html, /class="app-header"/, "La fase 3 ha de tenir una capçalera compacta.");
 assert.match(html, /class="phase3-layout"/, "La fase 3 ha de separar accions i resultats.");
 assert.match(html, /class="action-panel"/, "Les accions han d'estar agrupades abans de la conversa.");
@@ -59,5 +59,6 @@ await assert.rejects(
 );
 
 await access(new URL("../aura_identity.jpg", import.meta.url));
+await access(new URL("../aura_logo.jpg", import.meta.url));
 
 console.log("Aura UI contract tests: OK");

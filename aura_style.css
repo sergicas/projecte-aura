@@ -110,60 +110,23 @@ input:focus-visible {
 }
 
 .aura-mark {
-  position: relative;
-  display: grid;
   flex: 0 0 auto;
   width: clamp(78px, 10vw, 126px);
   aspect-ratio: 1;
-  place-items: center;
+  overflow: hidden;
   border: 1px solid rgba(24, 35, 31, 0.18);
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 44% 34%, rgba(251, 255, 252, 0.98), rgba(238, 247, 242, 0.72) 34%, rgba(111, 201, 167, 0.2) 61%, rgba(47, 111, 159, 0.12)),
-    linear-gradient(145deg, rgba(251, 255, 252, 0.86), rgba(111, 201, 167, 0.08));
+  background: #f4e8ce;
   box-shadow:
-    0 24px 55px rgba(47, 111, 159, 0.14),
-    inset 0 0 28px rgba(255, 255, 255, 0.68);
+    0 12px 30px rgba(86, 52, 31, 0.16),
+    0 0 0 4px rgba(201, 151, 47, 0.1);
 }
 
-.aura-mark::before,
-.aura-mark::after {
-  content: "";
-  position: absolute;
-  border: 1px solid rgba(47, 111, 159, 0.28);
-  border-radius: 50%;
-  inset: 10%;
-  transform: rotate(-24deg) scaleX(1.38);
-}
-
-.aura-mark::after {
-  border-color: rgba(201, 151, 47, 0.28);
-  transform: rotate(31deg) scaleX(1.24);
-}
-
-.aura-mark-ring {
-  position: absolute;
-  inset: 18%;
-  border: 2px solid rgba(111, 201, 167, 0.34);
-  border-radius: 50%;
-  box-shadow: 0 0 22px rgba(111, 201, 167, 0.28);
-}
-
-.aura-mark-core {
-  position: relative;
-  display: grid;
-  width: 55%;
-  aspect-ratio: 1;
-  place-items: center;
-  border-radius: 50%;
-  background: rgba(17, 22, 20, 0.92);
-  color: #edf7ee;
-  font-size: clamp(2rem, 5vw, 4rem);
-  font-weight: 800;
-  line-height: 1;
-  box-shadow:
-    0 0 22px rgba(111, 201, 167, 0.32),
-    inset 0 0 16px rgba(111, 201, 167, 0.26);
+.aura-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .brand-lockup h1 {
@@ -196,10 +159,6 @@ input:focus-visible {
 
 .app-header .aura-mark {
   width: 62px;
-}
-
-.app-header .aura-mark-core {
-  font-size: 1.65rem;
 }
 
 .brand-copy {

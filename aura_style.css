@@ -407,6 +407,10 @@ input:focus-visible {
   padding: 16px;
 }
 
+.action-group--wide {
+  grid-column: 1 / -1;
+}
+
 .action-group h3,
 .aura-pulse-card h3 {
   font-size: 0.92rem;

@@ -54,6 +54,13 @@ const PHASE_8_STATUS = Object.freeze({
   mode: "derived-readonly-visual-contract",
   gene: "3524578 cos-digital-2d",
 });
+const PHASE_9_STATUS = Object.freeze({
+  state: "complete",
+  openedAt: "2026-06-27",
+  revalidatedAt: "2026-07-20",
+  mode: "catalog-verifiable-readonly",
+  gene: "5702887 biblioteca-coneixement",
+});
 const HONESTY_TYPES = {
   real: "mecanisme real implementat",
   contract: "documentació o contracte",
@@ -5433,34 +5440,41 @@ function formatDigitalGenome(genome) {
 }
 
 function formatKnowledgeLibrary(library) {
+  const statusLabels = {
+    catalogat: "catalogada",
+    pendent: "pendent de revisió",
+    revisat: "revisada",
+    arxivat: "arxivada",
+  };
   const items = library.items?.length
     ? library.items
         .map(
           (item) =>
-            `- ${item.title}\n  id:${item.id} tipus:${item.kind} estat:${item.status} font:${item.locator || "sense-localitzador"}\n  ${item.summary || "sense resum"}`,
+            `- ${item.title} · ${statusLabels[item.status] || item.status}\n  Tipus: ${item.kind} · Procedència: ${item.locator || item.source || "no indicada"}\n  ${item.summary || "Encara no té resum."}`,
         )
         .join("\n")
-    : "- cap";
+    : "- Encara no hi ha cap font catalogada.";
+
+  const reviewed = library.summary?.byStatus?.revisat || 0;
+  const pending = library.summary?.byStatus?.pendent || 0;
 
   return [
-    `Biblioteca de coneixement Aura — ${library.version}`,
-    `Format: ${library.format}`,
-    `Fase: ${library.phase}`,
-    `Mode: ${library.mode}`,
-    `Document: ${library.document || "AURA_KNOWLEDGE.md"}`,
-    `Fonts: ${library.summary?.totalItems ?? 0}`,
-    "",
-    "Indexació:",
-    `- RAG: ${library.indexing?.rag ? "sí" : "no"}`,
-    `- Vector DB: ${library.indexing?.vectorDb ? "sí" : "no"}`,
-    `- Embeddings: ${library.indexing?.embeddings ? "sí" : "no"}`,
-    `- Ingestió automàtica: ${library.indexing?.automaticIngestion ? "sí" : "no"}`,
-    "",
-    "Límits:",
-    ...(library.boundaries || []).map((item) => `- ${item}`),
+    "Fase 9 · Coneixement d'Aura",
+    "Aquesta és la biblioteca de fonts que Aura pot identificar i citar amb procedència.",
+    `Resum: ${library.summary?.totalItems ?? 0} fonts · ${reviewed} revisades · ${pending} pendents.`,
     "",
     "Fonts catalogades:",
     items,
+    "",
+    "Què vol dir cada estat:",
+    "- revisada: Sergi o el projecte n'ha comprovat la coherència;",
+    "- pendent de revisió: està registrada, però encara no s'ha validat;",
+    "- catalogada: té referència i procedència;",
+    "- arxivada: es conserva, però no es considera activa.",
+    "",
+    "Límit actual:",
+    "Aura encara no ingereix automàticament aquestes fonts ni usa RAG, embeddings o una base vectorial.",
+    "Consultar la biblioteca és de només lectura i no modifica cap dada.",
   ].join("\n");
 }
 
@@ -6406,8 +6420,8 @@ function buildLocalAuraWebInterface(options = {}) {
       label: "Aura simplificada",
       role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/estat-evolutiu", "/propostes-evolucio", "/cos-digital", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/evolution/state", "/api/evolution/proposals", "/api/body", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/coneixement", "/estat-evolutiu", "/propostes-evolucio", "/cos-digital", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/knowledge", "/api/evolution/state", "/api/evolution/proposals", "/api/body", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -6419,6 +6433,7 @@ function buildLocalAuraWebInterface(options = {}) {
     "Grava record",
     "Veure records",
     "Últim record",
+    "Coneixement d'Aura",
     "Genoma d'Aura",
     "La llavor d'Aura",
     "Evolució d'Aura",
@@ -6448,7 +6463,7 @@ function buildLocalAuraWebInterface(options = {}) {
     visibleActions,
     modules,
     interactions: {
-      navigation: "13 botons visibles autoexplicatius: orientació, estat, identitat, genoma, evolució, cos digital, llavor, veu externa, informe, memòria i una escriptura controlada",
+      navigation: "14 botons visibles autoexplicatius: orientació, estat, identitat, genoma, coneixement, evolució, cos digital, llavor, veu externa, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
       conversationalAI: {
         endpoint: "/api/chat",
@@ -6501,6 +6516,7 @@ function buildLocalKnowledgeLibrary(items, options = {}) {
     phase: "fase-9-local",
     mode: options.mode || "catalog-verifiable-readonly-local",
     document: "AURA_KNOWLEDGE.md",
+    phaseStatus: PHASE_9_STATUS,
     summary: {
       totalItems: normalizedItems.length,
       byKind: countByLocal(normalizedItems, "kind"),

@@ -10,6 +10,8 @@ La revalidació de Fase 7 a `cloud-v5.3` fa visible el botó `Evolució d'Aura`,
 
 La revalidació de Fase 8 a `cloud-v5.3` converteix l'antic `Pols visual` en un `Cos digital d'Aura` accessible i explicable, amb lectura clara de postura, pols, capes i colors, sempre en només lectura.
 
+La revalidació de Fase 9 a `cloud-v5.3` incorpora el botó `Coneixement d'Aura`: mostra les fonts catalogades amb procedència, resum i estat de revisió, sense ingestió automàtica ni confondre catalogació amb comprensió.
+
 La interfície de `cloud-v5.3` segueix un ordre d'ús explícit: conversa principal, accions immediates, consulta agrupada i, al final, identitat i estat. Aquesta jerarquia elimina el buit excessiu del xat inicial i evita que la imatge interrompi el recorregut operatiu.
 
 ## Què és Aura
@@ -67,7 +69,7 @@ Des del 2026-07-19, la web permet escriure preguntes naturals i ofereix cinc exe
 - `Quines decisions es contradiuen?`
 - `Prepara el pla de treball de demà.`
 
-Aura Web entra directament després de Cloudflare Access, sense cap segona clau. La conversa és de només lectura; `Grava un record` continua sent una operació voluntària diferent. Per provar Pages Functions localment usa `npm run dev:pages`.
+Aura Web entra directament després de Cloudflare Access, sense cap segona clau. L'aplicació de producció manté una sessió de 7 dies i la política continua limitada al correu autoritzat de Sergi. La conversa és de només lectura; `Grava un record` continua sent una operació voluntària diferent. Per provar Pages Functions localment usa `npm run dev:pages`.
 
 ## Protocol operatiu actual
 

@@ -2,6 +2,14 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Revalidació de la Fase 9 i accés menys repetitiu - 2026-07-20
+
+- Fa visible `Coneixement d'Aura` dins `Consulta i explora` i explica procedència, resum i estat de cada font.
+- Manté la biblioteca en només lectura, sense RAG, embeddings, base vectorial ni ingestió automàtica.
+- Sincronitza `phaseStatus`, el contracte web, el fallback local, l'API i el Worker de backups.
+- Amplia a 7 dies la sessió de l'aplicació Cloudflare Access, sense obrir Aura a cap usuari nou.
+- Afegeix una migració d'auditoria i una prova contractual específica de la Fase 9.
+
 ## Reordenació lògica d'Aura Web - 2026-07-19
 
 - Situa la conversa com a primera acció de la pantalla i redueix l'alçada buida inicial del xat.

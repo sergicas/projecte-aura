@@ -51,7 +51,7 @@ Primer pas recomanat: catalogar l'avatar com a font externa i afegir un enllaç 
 - Worker backups: https://projecte-aura-backup-worker.sergicas.workers.dev
 - Projecte local: `/Users/sergicastillo/Documents/Aura`
 
-Aura Web queda protegida per Cloudflare Access. Després d'entrar amb el correu autoritzat, no demana cap segona clau ni codi intern. `AURA_WRITE_KEY` es conserva només com a secret tècnic dels processos automàtics i no forma part de l'ús normal del navegador.
+Aura Web queda protegida per Cloudflare Access. Després d'entrar amb el correu autoritzat, no demana cap segona clau ni codi intern. La sessió de l'aplicació de producció dura 7 dies; quan caduqui, Cloudflare tornarà a demanar la identificació. `AURA_WRITE_KEY` es conserva només com a secret tècnic dels processos automàtics i no forma part de l'ús normal del navegador.
 
 ## Ordre de la pantalla
 
@@ -59,7 +59,7 @@ La pàgina està ordenada segons la freqüència d'ús:
 
 1. `Conversa amb Aura`: pregunta amb llenguatge natural o usa una pregunta suggerida.
 2. `Accions immediates`: orientació, informe del dia i escriptura voluntària d'un record.
-3. `Consulta i explora`: memòria, identitat i límits, genoma, evolució i Sergi Avatar.
+3. `Consulta i explora`: memòria, coneixement, identitat i límits, genoma, evolució i Sergi Avatar.
 4. `Identitat i estat`: il·lustració d'Aura i cos digital tècnic.
 
 La identitat visual queda al final perquè acompanya el projecte, però no interromp el treball principal.

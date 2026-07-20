@@ -1,6 +1,6 @@
 # AURA_KNOWLEDGE.md
 
-versio: cloud-v5.0
+versio: cloud-v5.3
 fase_protocol: 9
 nom: Biblioteca de coneixement verificable
 
@@ -13,7 +13,7 @@ No es una base vectorial.
 No son embeddings.
 No implica que Aura hagi llegit, entes o sentit una font.
 
-En `cloud-v5.0`, una font catalogada vol dir nomes:
+En `cloud-v5.3`, una font catalogada vol dir nomes:
 
 - existeix una referencia estable;
 - te procedencia;
@@ -30,6 +30,17 @@ En `cloud-v5.0`, una font catalogada vol dir nomes:
 - Cap font s'esborra automaticament.
 - Les escriptures persistents requereixen Mode Sergi.
 - Els backups i el Worker han d'incloure el camp `knowledge`.
+
+## Revalidació cloud-v5.3
+
+Data: 2026-07-20.
+
+- Aura Web mostra `Coneixement d'Aura` dins `Consulta i explora`.
+- La resposta separa fonts revisades, pendents, catalogades i arxivades.
+- Cada font visible conserva títol, tipus, procedència i resum.
+- Pages, fallback local i Worker comparteixen `phaseStatus` amb el gen `5702887 biblioteca-coneixement`.
+- Consultar la biblioteca no escriu a D1 ni modifica cap font.
+- RAG, Vector DB, embeddings i ingestió automàtica continuen desactivats.
 
 ## Esquema D1
 
@@ -102,7 +113,7 @@ L'avatar Sergi es cataloga com a pont potencial entre el corpus literari de Serg
 
 ## Indexacio futura
 
-RAG, Vector DB i embeddings son possibilitats futures, no actives en `cloud-v5.0`.
+RAG, Vector DB i embeddings son possibilitats futures, no actives en `cloud-v5.3`.
 
 Abans d'activar-les caldra:
 

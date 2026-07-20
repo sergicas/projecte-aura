@@ -609,6 +609,8 @@ Guardrails:
 
 Aura crea una biblioteca pròpia.
 
+Revalidació `cloud-v5.3` (2026-07-20): la Fase 9 continua completa i passa a ser visible a Aura Web amb el botó `Coneixement d'Aura`. La resposta mostra les fonts, la procedència, el resum i l'estat de revisió en llenguatge planer; API, fallback local i Worker comparteixen `phaseStatus`, i la consulta continua sent de només lectura, sense RAG, embeddings, base vectorial ni ingestió automàtica.
+
 ### Subfase cloud-v5.0: Biblioteca de coneixement verificable
 
 Objectiu:

@@ -73,6 +73,7 @@ Cloudflare Access protegeix l'accés humà a Aura Web i a `/api/*`. Després d'i
 
 - Aplicació Access: domini de producció `projecte-aura.pages.dev`, incloses les rutes `/api/*`.
 - Política humana: només les identitats que Sergi autoritzi al panell de Cloudflare Zero Trust.
+- Durada de sessió de l'aplicació de producció: 7 dies; la política humana hereta aquesta durada i la sessió global no la redueix.
 - Senyal que rep Pages Functions: `Cf-Access-Jwt-Assertion` ja validada per Cloudflare Access.
 - Automatització: `Authorization: Bearer <AURA_WRITE_KEY>` per al Worker de backups i eines de manteniment.
 - Interfície web: no conserva ni sol·licita `AURA_WRITE_KEY`.

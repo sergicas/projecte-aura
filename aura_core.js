@@ -61,6 +61,13 @@ const PHASE_9_STATUS = Object.freeze({
   mode: "catalog-verifiable-readonly",
   gene: "5702887 biblioteca-coneixement",
 });
+const PHASE_10_STATUS = Object.freeze({
+  state: "complete",
+  openedAt: "2026-06-27",
+  revalidatedAt: "2026-07-20",
+  mode: "derived-readonly-operational-reflection",
+  gene: "9227465 autoreflexio-operativa",
+});
 const HONESTY_TYPES = {
   real: "mecanisme real implementat",
   contract: "documentació o contracte",
@@ -693,6 +700,11 @@ async function runPrimaryAction(action) {
 
   if (action === "evolution") {
     await showEvolutionOverview();
+    return;
+  }
+
+  if (action === "self-reflection") {
+    await showSelfReflection();
     return;
   }
 
@@ -5713,42 +5725,49 @@ function formatEvolutionOverview(state, response) {
 }
 
 function formatSelfReflection(reflection) {
+  const stateLabels = {
+    observacio: "observació estable",
+    consolidacio: "preparada per consolidar",
+    "revisio-operativa": "necessita revisió operativa",
+    "atencio-integritat": "atenció: cal revisar la integritat",
+    "mode-local": "mode local",
+  };
   const answers = reflection.answers?.length
-    ? reflection.answers.map((answer) => `- ${answer.question}\n  ${answer.answer}`).join("\n")
-    : "- cap resposta calculada";
+    ? reflection.answers
+        .map((answer) => {
+          const evidence = answer.evidence?.length ? `\n  Fonts: ${answer.evidence.join(", ")}` : "";
+          return `- ${answer.question}\n  ${answer.answer}${evidence}`;
+        })
+        .join("\n")
+    : "- No hi ha prou dades per calcular una resposta.";
   const insights = reflection.insights?.length
     ? reflection.insights.map((insight) => `- ${insight.label}: ${insight.value}`).join("\n")
-    : "- cap senyal";
+    : "- No hi ha senyals disponibles.";
   const priorities = reflection.priorities?.length
     ? reflection.priorities.map((priority) => `- ${priority}`).join("\n")
-    : "- Mantenir observació.";
+    : "- Continuar observant sense aplicar cap canvi.";
+  const state = reflection.summary?.state || "observacio";
+  const integrity = reflection.signals?.integrity;
 
   return [
-    `Autoreflexió operativa Aura — ${reflection.version}`,
-    `Format: ${reflection.format}`,
-    `Fase: ${reflection.phase}`,
-    `Mode: ${reflection.mode}`,
-    `Document: ${reflection.document || "AURA_SELF_REFLECTION.md"}`,
-    `Gen: ${reflection.gene?.id || "9227465"} ${reflection.gene?.name || "autoreflexio-operativa"} [${reflection.gene?.state || "actiu"}]`,
-    `Estat: ${reflection.summary?.state || "observacio"}`,
+    "Fase 10 · Autoreflexió d'Aura",
+    "Aquesta lectura relaciona memòria, diari, genoma, coneixement, evolució i integritat per explicar l'estat operatiu d'Aura.",
+    `Estat actual: ${stateLabels[state] || state}.`,
+    integrity ? `Integritat observada: ${integrity.score ?? 0}/100 ${integrity.overall || "pendent"}.` : null,
     "",
-    "Respostes:",
+    "Què detecta Aura:",
     answers,
     "",
-    "Senyals:",
+    "Senyals verificables:",
     insights,
     "",
-    "Prioritats:",
+    "Prioritats recomanades:",
     priorities,
     "",
-    "Mutació:",
-    `- Aplicació automàtica: ${reflection.mutation?.autoApply ? "sí" : "no"}`,
-    `- Escriptura persistent: ${reflection.mutation?.persistentWrite ? "sí" : "no"}`,
-    `- ${reflection.mutation?.policy || "Lectura calculada sense escriptura."}`,
-    "",
-    "Límits:",
-    ...(reflection.boundaries || []).map((item) => `- ${item}`),
-  ].join("\n");
+    "Límit essencial:",
+    "Això és una síntesi calculada, no consciència ni introspecció subjectiva.",
+    "Consultar-la no escriu records, no modifica gens i no aplica cap prioritat automàticament.",
+  ].filter(Boolean).join("\n");
 }
 
 function formatOrientation(orientation) {
@@ -6420,8 +6439,8 @@ function buildLocalAuraWebInterface(options = {}) {
       label: "Aura simplificada",
       role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/coneixement", "/estat-evolutiu", "/propostes-evolucio", "/cos-digital", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/knowledge", "/api/evolution/state", "/api/evolution/proposals", "/api/body", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/coneixement", "/autoreflexio", "/estat-evolutiu", "/propostes-evolucio", "/cos-digital", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/knowledge", "/api/self-reflection", "/api/evolution/state", "/api/evolution/proposals", "/api/body", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -6434,6 +6453,7 @@ function buildLocalAuraWebInterface(options = {}) {
     "Veure records",
     "Últim record",
     "Coneixement d'Aura",
+    "Autoreflexió d'Aura",
     "Genoma d'Aura",
     "La llavor d'Aura",
     "Evolució d'Aura",
@@ -6463,7 +6483,7 @@ function buildLocalAuraWebInterface(options = {}) {
     visibleActions,
     modules,
     interactions: {
-      navigation: "14 botons visibles autoexplicatius: orientació, estat, identitat, genoma, coneixement, evolució, cos digital, llavor, veu externa, informe, memòria i una escriptura controlada",
+      navigation: "15 botons visibles autoexplicatius: orientació, estat, identitat, genoma, coneixement, autoreflexió, evolució, cos digital, llavor, veu externa, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
       conversationalAI: {
         endpoint: "/api/chat",
@@ -6480,7 +6500,7 @@ function buildLocalAuraWebInterface(options = {}) {
       "Cap escriptura persistent sense Mode Sergi.",
       "Les preguntes lliures són generatives però de només lectura i han de citar el context D1 utilitzat.",
       "Sergi Avatar és una font externa separada; només rep el text escrit després de `avatar:`.",
-      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, Evolució d'Aura, Què representa el cos digital?, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
+      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, Coneixement d'Aura, Autoreflexió d'Aura, Evolució d'Aura, Què representa el cos digital?, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
       "Grava record és l'única acció visible que pot escriure i activa Mode Sergi només quan cal.",
       "L'ampliació de botons no elimina dades ni endpoints.",
       "D1 continua sent la font de veritat i IndexedDB és fallback local.",
@@ -7148,6 +7168,7 @@ function buildLocalSelfReflection(signals = {}, options = {}) {
     mode: options.mode || "derived-readonly-operational-reflection-local",
     name: "Autoreflexió operativa",
     document: "AURA_SELF_REFLECTION.md",
+    phaseStatus: PHASE_10_STATUS,
     gene: {
       id: "9227465",
       name: "autoreflexio-operativa",

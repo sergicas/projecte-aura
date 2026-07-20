@@ -77,6 +77,13 @@ const PHASE_9_STATUS = Object.freeze({
   mode: "catalog-verifiable-readonly",
   gene: "5702887 biblioteca-coneixement",
 });
+const PHASE_10_STATUS = Object.freeze({
+  state: "complete",
+  openedAt: "2026-06-27",
+  revalidatedAt: "2026-07-20",
+  mode: "derived-readonly-operational-reflection",
+  gene: "9227465 autoreflexio-operativa",
+});
 const DOCUMENTED_GENOME_VERSION = "cloud-v5.3";
 const HONESTY_TYPES = {
   real: "mecanisme real implementat",
@@ -3647,6 +3654,7 @@ function buildSelfReflection(signals = {}, options = {}) {
     mode: options.mode || "derived-readonly-operational-reflection",
     name: "Autoreflexió operativa",
     document: "AURA_SELF_REFLECTION.md",
+    phaseStatus: PHASE_10_STATUS,
     gene: {
       id: "9227465",
       name: "autoreflexio-operativa",
@@ -4557,8 +4565,8 @@ function buildAuraWebInterface(options = {}) {
       label: "Aura simplificada",
       role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/coneixement", "/estat-evolutiu", "/propostes-evolucio", "/cos-digital", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/knowledge", "/api/evolution/state", "/api/evolution/proposals", "/api/body", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/coneixement", "/autoreflexio", "/estat-evolutiu", "/propostes-evolucio", "/cos-digital", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/knowledge", "/api/self-reflection", "/api/evolution/state", "/api/evolution/proposals", "/api/body", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -4571,6 +4579,7 @@ function buildAuraWebInterface(options = {}) {
     "Veure records",
     "Últim record",
     "Coneixement d'Aura",
+    "Autoreflexió d'Aura",
     "Genoma d'Aura",
     "La llavor d'Aura",
     "Evolució d'Aura",
@@ -4600,7 +4609,7 @@ function buildAuraWebInterface(options = {}) {
     visibleActions,
     modules,
     interactions: {
-      navigation: "14 botons visibles autoexplicatius: orientació, estat, identitat, genoma, coneixement, evolució, cos digital, llavor, veu externa, informe, memòria i una escriptura controlada",
+      navigation: "15 botons visibles autoexplicatius: orientació, estat, identitat, genoma, coneixement, autoreflexió, evolució, cos digital, llavor, veu externa, informe, memòria i una escriptura controlada",
       commandInput: "#command-input",
       conversationalAI: {
         endpoint: "/api/chat",
@@ -4617,7 +4626,7 @@ function buildAuraWebInterface(options = {}) {
       "Cap escriptura persistent sense Mode Sergi.",
       "Les preguntes lliures són generatives però de només lectura i han de citar el context D1 utilitzat.",
       "Sergi Avatar és una font externa separada; només rep el text escrit després de `avatar:`.",
-      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, Evolució d'Aura, Què representa el cos digital?, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
+      "Què és Aura?, Què faig ara?, Estat d'Aura, Identitat, Genoma d'Aura, Coneixement d'Aura, Autoreflexió d'Aura, Evolució d'Aura, Què representa el cos digital?, La llavor d'Aura, Informe del dia, Veure records i Últim record són accions de lectura.",
       "Grava record és l'única acció visible que pot escriure i activa Mode Sergi només quan cal.",
       "L'ampliació de botons no elimina dades ni endpoints.",
       "D1 continua sent la font de veritat i IndexedDB és fallback local.",

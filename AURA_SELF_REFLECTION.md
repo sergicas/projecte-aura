@@ -1,6 +1,6 @@
 # AURA_SELF_REFLECTION.md
 
-versio: cloud-v5.1
+versio: cloud-v5.3
 fase_protocol: 10
 nom: Autoreflexio operativa
 
@@ -13,7 +13,7 @@ No es introspeccio subjectiva.
 No implica que Aura senti, entengui o visqui res.
 No aplica mutacions automatiques.
 
-En `cloud-v5.1`, una autoreflexio vol dir nomes:
+En `cloud-v5.3`, una autoreflexio vol dir nomes:
 
 - llegeix memoria persistent;
 - llegeix diari evolutiu;
@@ -32,6 +32,16 @@ En `cloud-v5.1`, una autoreflexio vol dir nomes:
 - Cap afirmacio de comprensio autonoma.
 - Cap decisio autonoma fora del codi desplegat.
 - Qualsevol mutacio real continua requerint Mode Sergi, auditoria i documentacio.
+
+## Revalidació cloud-v5.3
+
+Data: 2026-07-20.
+
+- Aura Web mostra `Autoreflexió d'Aura` dins `Entendre Aura`.
+- La resposta tradueix l'estat intern a preguntes, respostes, evidències, senyals i prioritats llegibles.
+- Pages, fallback local i Worker comparteixen `phaseStatus` amb el gen `9227465 autoreflexio-operativa`.
+- La consulta relaciona memòria, diari, genoma, coneixement, evolució i integritat sense escriure cap dada.
+- L'autoreflexió continua sent una síntesi calculada: no és consciència, introspecció subjectiva ni decisió autònoma.
 
 ## Gen
 

@@ -12,6 +12,8 @@ La revalidació de Fase 8 a `cloud-v5.3` converteix l'antic `Pols visual` en un 
 
 La revalidació de Fase 9 a `cloud-v5.3` incorpora el botó `Coneixement d'Aura`: mostra les fonts catalogades amb procedència, resum i estat de revisió, sense ingestió automàtica ni confondre catalogació amb comprensió.
 
+La revalidació de Fase 10 a `cloud-v5.3` incorpora el botó `Autoreflexió d'Aura`: relaciona memòria, diari, genoma, coneixement, evolució i integritat, mostra les evidències i proposa prioritats sense aplicar-les ni afirmar consciència.
+
 La interfície de `cloud-v5.3` segueix un ordre d'ús explícit: conversa principal, accions immediates, consulta agrupada i, al final, identitat i estat. Aquesta jerarquia elimina el buit excessiu del xat inicial i evita que la imatge interrompi el recorregut operatiu.
 
 ## Què és Aura

@@ -681,6 +681,8 @@ En `cloud-v5.0` aquestes tres opcions no estan actives.
 
 Aura analitza la seva activitat.
 
+Revalidació `cloud-v5.3` (2026-07-20): la Fase 10 continua completa i passa a ser visible a Aura Web amb el botó `Autoreflexió d'Aura`. La lectura presenta activitat recent, aprenentatge operatiu, records importants, objectius, relacions i fonts en llenguatge planer. Pages, fallback local i Worker comparteixen `phaseStatus`; consultar-la continua sent de només lectura i no afirma consciència, introspecció subjectiva ni capacitat de decidir o mutar dades autònomament.
+
 Preguntes exemple:
 
 - Què he après avui?

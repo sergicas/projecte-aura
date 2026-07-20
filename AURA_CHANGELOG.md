@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Revalidació de la Fase 10 - 2026-07-20
+
+- Fa visible `Autoreflexió d'Aura` dins `Entendre Aura`.
+- Reescriu la resposta en llenguatge planer amb estat, preguntes, evidències, senyals i prioritats.
+- Sincronitza `phaseStatus` entre Pages, fallback IndexedDB i Worker de backups.
+- Confirma actiu el gen `9227465 autoreflexio-operativa` i manté tota la lectura en mode derivat de només lectura.
+- Conserva explícit que no és consciència, introspecció subjectiva ni mutació automàtica.
+- Afegeix una migració d'auditoria i una prova contractual específica de la Fase 10.
+
 ## Revalidació de la Fase 9 i accés menys repetitiu - 2026-07-20
 
 - Fa visible `Coneixement d'Aura` dins `Consulta i explora` i explica procedència, resum i estat de cada font.

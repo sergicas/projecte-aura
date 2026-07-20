@@ -49,6 +49,13 @@ const PHASE_9_STATUS = Object.freeze({
   mode: "catalog-verifiable-readonly",
   gene: "5702887 biblioteca-coneixement",
 });
+const PHASE_10_STATUS = Object.freeze({
+  state: "complete",
+  openedAt: "2026-06-27",
+  revalidatedAt: "2026-07-20",
+  mode: "derived-readonly-operational-reflection",
+  gene: "9227465 autoreflexio-operativa",
+});
 const DOCUMENTED_GENOME_VERSION = "cloud-v5.3";
 const DATA_SAFETY_GENE_IDS = ["17711", "008", "089"];
 const DOCUMENTED_GENE_IDS = [
@@ -909,8 +916,8 @@ function buildAuraWebInterface(options = {}) {
       label: "Aura simplificada",
       role: "conversa generativa arrelada en D1, orientació de sessió, informe del dia, escriptura controlada i consulta de records",
       primaryElement: "console-panel",
-      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/coneixement", "/estat-evolutiu", "/propostes-evolucio", "/cos-digital", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
-      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/knowledge", "/api/evolution/state", "/api/evolution/proposals", "/api/body", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
+      commands: ["pregunta lliure a Aura", "avatar: pregunta literària", "lectura local: què és Aura", "lectura local: què faig ara", "lectura local: estat d'Aura", "lectura local: identitat", "/genoma-digital", "/genoma-sintetic", "/coneixement", "/autoreflexio", "/estat-evolutiu", "/propostes-evolucio", "/cos-digital", "/informe-dia", "recorda que ...", "/memoria", "/ultim-record"],
+      endpoints: ["/api/chat", "/api/avatar-sergi", "/api/avatar-sergi/chat", "/api/orientation", "/api/pulse", "/api/core", "/api/genome", "/api/genome/synthetic", "/api/knowledge", "/api/self-reflection", "/api/evolution/state", "/api/evolution/proposals", "/api/body", "/api/snapshot", "/api/memory", "/api/integrity", "/api/status"],
     },
   ];
   const visibleActions = [
@@ -923,6 +930,7 @@ function buildAuraWebInterface(options = {}) {
     "Veure records",
     "Últim record",
     "Coneixement d'Aura",
+    "Autoreflexió d'Aura",
     "Genoma d'Aura",
     "La llavor d'Aura",
     "Evolució d'Aura",
@@ -952,7 +960,7 @@ function buildAuraWebInterface(options = {}) {
     visibleActions,
     modules,
     interactions: {
-      navigation: "14 botons visibles autoexplicatius, agrupats per funció sota la conversa principal",
+      navigation: "15 botons visibles autoexplicatius, agrupats per funció sota la conversa principal",
       commandInput: "#command-input",
       conversationalAI: {
         endpoint: "/api/chat",
@@ -1064,6 +1072,7 @@ function buildSelfReflection(signals = {}, options = {}) {
     mode: options.mode || "backup-worker-derived-readonly",
     name: "Autoreflexió operativa",
     document: "AURA_SELF_REFLECTION.md",
+    phaseStatus: PHASE_10_STATUS,
     gene: {
       id: "9227465",
       name: "autoreflexio-operativa",

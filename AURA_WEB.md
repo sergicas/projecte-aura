@@ -24,7 +24,7 @@ Aura Web permet preguntar amb llenguatge natural sobre la memòria del projecte 
 - La conversa principal apareix primer, amb el camp `Pregunta a Aura` i menys espai buit quan encara hi ha poques respostes.
 - Cinc preguntes suggerides sobre decisions, compromisos, evolució, contradiccions i pla de treball.
 - Al costat de la conversa hi ha només les tres accions immediates: orientar-se, consultar l'informe del dia i gravar un record.
-- A sota, `Consulta i explora` agrupa per funció la memòria, la comprensió d'Aura, l'evolució i Sergi Avatar.
+- A sota, `Consulta i explora` agrupa per funció la memòria, el coneixement, la comprensió d'Aura, l'autoreflexió, l'evolució i Sergi Avatar.
 - L'últim nivell, `Identitat i estat`, reuneix la identitat visual (`aura_identity.jpg`) i el cos digital, diferenciant expressió visual i estat tècnic.
 - El logo circular oficial d'Aura a la capçalera (`aura_logo.jpg`).
 - Un pont diferenciat amb Sergi Avatar per parlar de llibres, filosofia i obra pública.

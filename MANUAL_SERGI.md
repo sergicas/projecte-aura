@@ -59,7 +59,7 @@ La pàgina està ordenada segons la freqüència d'ús:
 
 1. `Conversa amb Aura`: pregunta amb llenguatge natural o usa una pregunta suggerida.
 2. `Accions immediates`: orientació, informe del dia i escriptura voluntària d'un record.
-3. `Consulta i explora`: memòria, coneixement, identitat i límits, genoma, evolució i Sergi Avatar.
+3. `Consulta i explora`: memòria, coneixement, identitat i límits, genoma, autoreflexió, evolució i Sergi Avatar.
 4. `Identitat i estat`: il·lustració d'Aura i cos digital tècnic.
 
 La identitat visual queda al final perquè acompanya el projecte, però no interromp el treball principal.

@@ -11,6 +11,12 @@ Aura fa visible i entenedora la Fase 9.
 - La biblioteca continua sent un catàleg verificable: no hi ha RAG, embeddings, base vectorial ni ingestió automàtica.
 - La sessió de l'aplicació Cloudflare Access s'amplia de 24 hores a 7 dies, mantenint la política només per a Sergi.
 
+Aura també revalida la Fase 10.
+
+- `Autoreflexió d'Aura` entra a `Entendre Aura` i converteix el contracte tècnic en una lectura amb estat, evidències, senyals i prioritats.
+- El gen `9227465 autoreflexio-operativa` continua actiu i sincronitzat entre D1, API, fallback i backups.
+- La lectura no escriu ni aplica propostes; continua sent una síntesi calculada, no consciència ni introspecció subjectiva.
+
 ## 2026-07-19
 
 Aura entra a `cloud-v5.3` i completa la capa conversacional real de la Fase 5.

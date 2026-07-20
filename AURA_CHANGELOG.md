@@ -9,6 +9,7 @@ Canvis rellevants del Projecte Aura.
 - Sincronitza `phaseStatus`, el contracte web, el fallback local, l'API i el Worker de backups.
 - Amplia a 7 dies la sessió de l'aplicació Cloudflare Access, sense obrir Aura a cap usuari nou.
 - Afegeix una migració d'auditoria i una prova contractual específica de la Fase 9.
+- Normalitza els identificadors antics numèrics del fallback IndexedDB i evita que bloquegin l'arrencada local.
 
 ## Reordenació lògica d'Aura Web - 2026-07-19
 

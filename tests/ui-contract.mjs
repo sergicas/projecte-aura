@@ -72,6 +72,11 @@ assert.match(html, /<dialog id="record-dialog"/, "El formulari ha d'aparèixer e
 assert.match(html, />Desa el record<\/button>/, "El formulari de record ha de tenir una acció explícita.");
 assert.match(core, /openRecordComposer\(\)/, "El botó de gravar ha d'obrir el formulari integrat.");
 assert.match(core, /recordDialog\.showModal\(\)/, "El formulari s'ha de mostrar immediatament com a diàleg modal.");
+assert.doesNotMatch(
+  core,
+  /record\.id\?\.startsWith/,
+  "El fallback local ha de normalitzar els IDs antics numèrics abans d'usar startsWith().",
+);
 
 await assert.rejects(
   access(new URL("../aura_face.jpg", import.meta.url)),

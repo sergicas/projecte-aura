@@ -7462,7 +7462,7 @@ function classifyLocalMemoryRecord(record) {
   let category = "operatiu";
   let action = "conservar";
 
-  if (record.id?.startsWith("foundation-") || localTextHasAny(lower, ["l'objectiu és", "no ha de fingir", "forma pròpia", "memòria és central", "pot tenir un genoma", "silici"])) {
+  if (String(record.id || "").startsWith("foundation-") || localTextHasAny(lower, ["l'objectiu és", "no ha de fingir", "forma pròpia", "memòria és central", "pot tenir un genoma", "silici"])) {
     category = "fundacional";
     action = "preservar";
     reasons.push("defineix identitat o principi fundacional");

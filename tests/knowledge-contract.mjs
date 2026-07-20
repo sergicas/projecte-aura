@@ -90,6 +90,8 @@ assert.match(core, /Consultar la biblioteca és de només lectura/);
 assert.match(protocol, /Revalidació `cloud-v5\.3` \(2026-07-20\): la Fase 9 continua completa/);
 assert.match(knowledgeDocument, /## Revalidació cloud-v5\.3/);
 assert.match(worker, /phaseStatus: PHASE_9_STATUS/);
+assert.match(worker, /"39088169"/);
+assert.match(worker, /"63245986"/);
 assert.match(migration, /audit-cloud-v5-3-phase9-revalidated/);
 assert.match(migration, /phase9-revalidation-2026-07-20/);
 

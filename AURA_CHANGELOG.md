@@ -10,6 +10,7 @@ Canvis rellevants del Projecte Aura.
 - Amplia a 7 dies la sessió de l'aplicació Cloudflare Access, sense obrir Aura a cap usuari nou.
 - Afegeix una migració d'auditoria i una prova contractual específica de la Fase 9.
 - Normalitza els identificadors antics numèrics del fallback IndexedDB i evita que bloquegin l'arrencada local.
+- Sincronitza al Worker els gens `39088169` i `63245986`, que D1 ja tenia actius, i elimina el fals risc `gen-fantasma-a-d1` dels snapshots futurs.
 
 ## Reordenació lògica d'Aura Web - 2026-07-19
 

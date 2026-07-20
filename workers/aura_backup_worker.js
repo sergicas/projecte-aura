@@ -91,6 +91,8 @@ const DOCUMENTED_GENE_IDS = [
   "5702887",
   "9227465",
   "14930352",
+  "39088169",
+  "63245986",
 ];
 
 export default {

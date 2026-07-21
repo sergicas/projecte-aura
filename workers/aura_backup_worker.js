@@ -951,10 +951,10 @@ function buildAuraWebInterface(options = {}) {
       related: ["README.md", "PROTOCOL_MESTRE_AURA.md", "AURA_HISTORY.md"],
     },
     layout: {
-      shell: "app-header + primary-conversation + immediate-actions + support-grid + identity-grid",
+      shell: "app-header + primary-conversation + immediate-actions + support-grid + status-grid",
       modules: modules.map((module) => module.id),
       defaultModule: "simple",
-      readingOrder: ["conversation", "immediate-actions", "consult-and-explore", "identity-and-status"],
+      readingOrder: ["conversation", "immediate-actions", "consult-and-explore", "digital-body-and-status"],
       responsive: ["desktop-conversation-first", "tablet-stack", "mobile-linear"],
     },
     visibleActions,

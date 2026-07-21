@@ -34,7 +34,7 @@ assert.match(html, /class="phase3-layout"/, "La fase 3 ha de separar accions i r
 assert.match(html, /class="action-panel"/, "Les accions immediates han d'estar agrupades al costat de la conversa.");
 assert.match(html, /class="console-head"/, "La conversa ha de tenir un títol visible.");
 assert.match(html, /class="support-grid"/, "Les consultes secundàries han d'estar agrupades per funció.");
-assert.match(html, /class="identity-grid"/, "La identitat visual i el cos digital han de compartir un últim nivell.");
+assert.match(html, /class="status-grid"/, "El cos digital ha de tenir un últim nivell funcional a tota amplada.");
 const conversationIndex = html.indexOf('class="console-panel"');
 const immediateActionsIndex = html.indexOf('class="action-panel"');
 const supportIndex = html.indexOf('class="support-section"');
@@ -47,17 +47,18 @@ assert.match(html, /<button type="submit">Envia<\/button>/, "El camp de conversa
 assert.match(html, /Pregunta a Aura/, "La Fase 5 ha de presentar el camp com una conversa natural.");
 assert.match(html, /class="prompt-suggestions"/, "La Fase 5 ha d'oferir preguntes suggerides.");
 assert.match(html, /Llama \+ GPT · només lectura/, "La interfície ha d'explicar l'encaminament híbrid i el límit d'escriptura.");
-assert.match(html, /aura_identity\.jpg/, "La interfície ha de mostrar la identitat visual d'Aura.");
+assert.doesNotMatch(html, /aura_identity\.jpg|aura-identity-card/, "La interfície no ha de mostrar la il·lustració decorativa.");
 assert.match(core, /async function askAura\(question\)/, "El text lliure s'ha d'enviar al backend conversacional.");
 assert.match(core, /async function askSergiAvatar\(question\)/, "La connexió explícita amb Sergi Avatar ha de ser operativa.");
 assert.doesNotMatch(html, /class="identity-band"/, "La capçalera antiga no ha de continuar ocupant la primera pantalla.");
 assert.match(styles, /@media \(max-width: 620px\)/, "La interfície ha de tenir una composició mòbil específica.");
 assert.match(styles, /\.support-grid/, "La interfície ha de definir la graella de consulta secundària.");
-assert.match(styles, /\.identity-grid/, "La interfície ha de definir la graella d'identitat i estat.");
+assert.match(styles, /\.status-grid/, "La interfície ha de definir el nivell del cos digital i estat.");
+assert.doesNotMatch(styles, /\.aura-identity-card/, "Els estils de la il·lustració decorativa s'han d'eliminar.");
 for (const source of [core, api, backupWorker]) {
   assert.match(
     source,
-    /readingOrder: \["conversation", "immediate-actions", "consult-and-explore", "identity-and-status"\]/,
+    /readingOrder: \["conversation", "immediate-actions", "consult-and-explore", "digital-body-and-status"\]/,
     "El client, l'API i el backup han de conservar el mateix ordre lògic.",
   );
 }
@@ -84,7 +85,11 @@ await assert.rejects(
   "El fitxer de la fotografia no ha de continuar al repositori.",
 );
 
-await access(new URL("../aura_identity.jpg", import.meta.url));
+await assert.rejects(
+  access(new URL("../aura_identity.jpg", import.meta.url)),
+  (error) => error?.code === "ENOENT",
+  "La il·lustració decorativa no ha de continuar al repositori.",
+);
 await access(new URL("../aura_logo.jpg", import.meta.url));
 
 console.log("Aura UI contract tests: OK");

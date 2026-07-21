@@ -2,6 +2,13 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Simplificació de la identitat visual - 2026-07-21
+
+- Retira la il·lustració gran `aura_identity.jpg`, que duplicava informació sense aportar estat operatiu.
+- Conserva el logotip circular oficial d'Aura a la capçalera.
+- Converteix l'últim nivell en `Cos digital i estat`, amb la visualització tècnica a tota amplada i una composició adaptada a mòbil.
+- Actualitza el contracte web, les proves i el paquet de desplegament perquè la imatge eliminada no es torni a publicar.
+
 ## Revalidació de la Fase 10 - 2026-07-20
 
 - Fa visible `Autoreflexió d'Aura` dins `Entendre Aura`.

@@ -34,6 +34,8 @@ assert.match(html, /class="phase3-layout"/, "La fase 3 ha de separar accions i r
 assert.match(html, /class="action-panel"/, "Les accions immediates han d'estar agrupades al costat de la conversa.");
 assert.match(html, /class="console-head"/, "La conversa ha de tenir un títol visible.");
 assert.match(html, /class="support-grid"/, "Les consultes secundàries han d'estar agrupades per funció.");
+assert.match(html, /<details class="support-section">/, "Les eines secundàries han de poder-se plegar.");
+assert.match(html, /class="support-summary"/, "La navegació plegable ha de tenir un resum visible.");
 assert.match(html, /class="status-grid"/, "El cos digital ha de tenir un últim nivell funcional a tota amplada.");
 const conversationIndex = html.indexOf('class="console-panel"');
 const immediateActionsIndex = html.indexOf('class="action-panel"');
@@ -53,6 +55,8 @@ assert.match(core, /async function askSergiAvatar\(question\)/, "La connexió ex
 assert.doesNotMatch(html, /class="identity-band"/, "La capçalera antiga no ha de continuar ocupant la primera pantalla.");
 assert.match(styles, /@media \(max-width: 620px\)/, "La interfície ha de tenir una composició mòbil específica.");
 assert.match(styles, /\.support-grid/, "La interfície ha de definir la graella de consulta secundària.");
+assert.match(styles, /\.prompt-suggestions\s*\{[\s\S]*grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/, "Els suggeriments d'escriptori no s'han de tallar horitzontalment.");
+assert.match(styles, /Redisseny integral v2/, "La interfície ha d'aplicar la capa visual compacta.");
 assert.match(styles, /\.status-grid/, "La interfície ha de definir el nivell del cos digital i estat.");
 assert.doesNotMatch(styles, /\.aura-identity-card/, "Els estils de la il·lustració decorativa s'han d'eliminar.");
 for (const source of [core, api, backupWorker]) {

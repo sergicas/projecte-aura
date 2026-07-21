@@ -105,7 +105,7 @@ const [html, styles, core, protocol, bodyDocument, worker, migration] = await Pr
   readFile(new URL("../migrations/0006_phase8_body_revalidation.sql", import.meta.url), "utf8"),
 ]);
 
-assert.match(html, /<h3 id="pulse-visual-title">Cos digital d'Aura<\/h3>/);
+assert.match(html, /<h3 id="pulse-visual-title">Lectura operativa<\/h3>/);
 assert.match(html, /data-action="digital-body">Què representa\?<\/button>/);
 assert.match(html, /role="img"/);
 assert.match(html, /aria-label="Cos digital 2D d'Aura:/);

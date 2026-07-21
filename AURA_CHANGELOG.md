@@ -2,6 +2,15 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Redisseny integral de la interfície - 2026-07-21
+
+- Redueix la capçalera i la converteix en una barra compacta de context i connexió.
+- Substitueix el panell negre dominant per una conversa clara, més lleugera i amb menys alçada buida.
+- Distribueix les cinc preguntes suggerides en una graella adaptable, sense tallar-les lateralment.
+- Reuneix les accions immediates en una única targeta amb jerarquia visual explícita.
+- Converteix `Consulta i explora` en navegació secundària plegable i redueix vores, ombres i colors competidors.
+- Manté totes les funcions, l'accessibilitat, el diàleg de records i el comportament mòbil.
+
 ## Simplificació de la identitat visual - 2026-07-21
 
 - Retira la il·lustració gran `aura_identity.jpg`, que duplicava informació sense aportar estat operatiu.

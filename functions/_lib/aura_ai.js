@@ -10,6 +10,7 @@ const MAX_HISTORY_TEXT = 2400;
 const MAX_CONTEXT_CHARS = 14000;
 const AI_TIMEOUT_MS = 45000;
 const PREMIUM_AI_TIMEOUT_MS = 12000;
+const CONTINUITY_SOURCE_LIMIT = 6;
 const STOP_WORDS = new Set([
   "a", "al", "als", "amb", "aquesta", "aquest", "com", "de", "del", "dels", "des", "el", "els", "en",
   "i", "la", "les", "meu", "meva", "per", "que", "què", "sobre", "un", "una", "vaig", "vull",
@@ -138,7 +139,8 @@ export async function runAuraConversation({
         ),
         PREMIUM_AI_TIMEOUT_MS,
       );
-    } catch {
+    } catch (error) {
+      logAiProviderFailure("reasoning", AURA_REASONING_MODEL, error);
       fallbackUsed = true;
       model = AURA_FAST_MODEL;
       provider = "cloudflare-workers-ai";
@@ -146,18 +148,24 @@ export async function runAuraConversation({
   }
 
   if (!result) {
-    result = await withTimeout(
-      ai.run(
-        AURA_FAST_MODEL,
-        {
-          messages,
-          max_tokens: 650,
-          temperature: 0.2,
-        },
-        buildGatewayOptions(gatewayId, contextBundle.intent, fallbackUsed ? "fallback" : "fast"),
-      ),
-      AI_TIMEOUT_MS,
-    );
+    try {
+      result = await withTimeout(
+        ai.run(
+          AURA_FAST_MODEL,
+          {
+            messages,
+            max_tokens: 650,
+            temperature: 0.2,
+          },
+          buildGatewayOptions(gatewayId, contextBundle.intent, fallbackUsed ? "fallback" : "fast"),
+        ),
+        AI_TIMEOUT_MS,
+      );
+    } catch (error) {
+      logAiProviderFailure(fallbackUsed ? "fallback" : "fast", AURA_FAST_MODEL, error);
+      if (!isRecoverableAiFailure(error)) throw error;
+      return buildAuraContinuityResponse({ contextBundle, startedAt, premiumRequested, error });
+    }
   }
   const answer = extractAiText(result);
   if (!answer) throw new Error("El motor conversacional ha retornat una resposta buida.");
@@ -178,6 +186,96 @@ export async function runAuraConversation({
     usage: normalizeUsage(result?.usage),
     persistentWrite: false,
   };
+}
+
+export function buildAuraContinuityResponse({ contextBundle, startedAt = Date.now(), premiumRequested = false, error }) {
+  const sources = selectContinuitySources(contextBundle);
+  const answer = buildContinuityAnswer(contextBundle.intent, sources);
+  return {
+    answer,
+    model: "aura-context-engine",
+    provider: "aura-grounded-fallback",
+    route: "continuity",
+    premiumRequested,
+    fallbackUsed: true,
+    fallbackReason: classifyAiFailure(error),
+    generatedAt: new Date().toISOString(),
+    latencyMs: Date.now() - startedAt,
+    grounded: sources.length > 0,
+    intent: contextBundle.intent,
+    sources,
+    context: contextBundle.stats,
+    usage: null,
+    persistentWrite: false,
+  };
+}
+
+function selectContinuitySources(contextBundle) {
+  const sources = Array.isArray(contextBundle?.sources) ? contextBundle.sources : [];
+  const intentPattern = {
+    commitments: /comprom|pendent|tasca|termini|lliur|cal |ha de|seguent|proper/,
+    decisions: /decisi|decid|acord|priorit|descart/,
+    "timeline-summary": /fase|evoluc|canvi|despleg|hist|versio/,
+    contradictions: /contradi|canvi|revoc|descart|pero|però|no /,
+    "work-plan": /comprom|pendent|tasca|priorit|seguent|proper|pla/,
+  }[contextBundle?.intent];
+  const newestFirst = [...sources].sort((left, right) => Date.parse(right.date || 0) - Date.parse(left.date || 0));
+  const relevant = intentPattern
+    ? newestFirst.filter((source) => intentPattern.test(normalizeForSearch(`${source.title || ""} ${source.excerpt || ""}`)))
+    : [];
+  return uniqueById([...relevant, ...newestFirst]).slice(0, CONTINUITY_SOURCE_LIMIT);
+}
+
+function buildContinuityAnswer(intent, sources) {
+  const evidence = sources.length
+    ? sources.map((source) => `- ${continuityExcerpt(source)} [${source.label}]`).join("\n")
+    : "- No hi ha cap registre persistent prou rellevant per respondre amb seguretat.";
+  const heading = {
+    commitments: "Aquests són els registres que més probablement contenen compromisos o pendents:",
+    decisions: "Aquestes són les decisions o prioritats més rellevants que consten:",
+    "timeline-summary": "Aquests són els punts registrats més rellevants de l'evolució:",
+    contradictions: "Aquests són els registres que cal comparar per revisar possibles contradiccions:",
+    "work-plan": "Aquests són els pendents i prioritats registrats que poden orientar el pla:",
+  }[intent] || "Aquests són els registres més rellevants per a la pregunta:";
+  const caveat = intent === "contradictions"
+    ? "No marco cap contradicció com a confirmada sense la síntesi del model generatiu."
+    : "És una lectura directa de la memòria, no una síntesi generativa.";
+  return [
+    "La IA generativa ha arribat temporalment al límit del proveïdor. Aura manté la continuïtat amb una lectura directa i citada.",
+    "",
+    heading,
+    evidence,
+    "",
+    caveat,
+  ].join("\n");
+}
+
+function continuityExcerpt(source) {
+  const raw = normalizeText(source?.excerpt || source?.title || "Registre sense resum.", 260).replace(/\s+/g, " ");
+  return /[.!?]$/.test(raw) ? raw : `${raw}.`;
+}
+
+function isRecoverableAiFailure(error) {
+  const message = normalizeForSearch(error instanceof Error ? error.message : String(error));
+  return /4006|allocation|quota|rate.?limit|billing|credit|timeout|temps maxim|temporar|unavailable|overload|capacity|503|429/.test(message);
+}
+
+function classifyAiFailure(error) {
+  const message = normalizeForSearch(error instanceof Error ? error.message : String(error));
+  if (/4006|allocation|quota/.test(message)) return "provider-quota";
+  if (/billing|credit/.test(message)) return "provider-billing";
+  if (/timeout|temps maxim/.test(message)) return "provider-timeout";
+  if (/rate.?limit|429/.test(message)) return "provider-rate-limit";
+  return "provider-unavailable";
+}
+
+function logAiProviderFailure(route, model, error) {
+  console.warn(JSON.stringify({
+    message: "Aura AI provider unavailable",
+    route,
+    model,
+    error: normalizeText(error instanceof Error ? error.message : String(error), 500),
+  }));
 }
 
 function formatReasoningInput(history, question) {

@@ -130,6 +130,36 @@ assert.equal(fallbackGenerated.provider, "cloudflare-workers-ai");
 assert.equal(fallbackGenerated.route, "reasoning");
 assert.equal(fallbackGenerated.fallbackUsed, true);
 
+const quotaAi = {
+  async run() {
+    throw new Error("4006: you have used up your daily free allocation of 10,000 neurons");
+  },
+};
+const continuityContext = buildAuraChatContext({
+  question: "Quins compromisos tinc pendents aquesta setmana?",
+  now: new Date("2026-07-22T08:00:00.000Z"),
+  records: [
+    { id: "m-pendent", text: "Pendent: revisar la interfície d'Aura aquesta setmana.", kind: "compromis", weight: 5, createdAt: "2026-07-21T09:00:00.000Z" },
+  ],
+  diary: [],
+  knowledge: [],
+  genes: [],
+});
+const continuityGenerated = await runAuraConversation({
+  ai: quotaAi,
+  question: "Quins compromisos tinc pendents aquesta setmana?",
+  history: [],
+  contextBundle: continuityContext,
+  now: new Date("2026-07-22T08:00:00.000Z"),
+});
+assert.equal(continuityGenerated.model, "aura-context-engine");
+assert.equal(continuityGenerated.provider, "aura-grounded-fallback");
+assert.equal(continuityGenerated.route, "continuity");
+assert.equal(continuityGenerated.fallbackReason, "provider-quota");
+assert.equal(continuityGenerated.persistentWrite, false);
+assert.match(continuityGenerated.answer, /lectura directa i citada/i);
+assert.match(continuityGenerated.answer, /\[M1\]/);
+
 const ACCESS_ASSERTION = "eyJhbGciOiJSUzI1NiJ9.eyJlbWFpbCI6InNlcmdpQGV4YW1wbGUuY29tIn0.signature1234";
 const db = {
   prepare(sql) {
@@ -178,6 +208,20 @@ assert.equal(apiPayload.conversation.model, AURA_CHAT_MODEL);
 assert.equal(apiPayload.conversation.route, "fast");
 assert.ok(apiPayload.conversation.context.sourcesUsed > 0);
 
+const quotaApiResponse = await onRequest({
+  request: new Request("https://aura.test/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Cf-Access-Jwt-Assertion": ACCESS_ASSERTION },
+    body: JSON.stringify({ question: "Quins compromisos tinc pendents?", history: [] }),
+  }),
+  env: { DB: db, AI: quotaAi },
+  params: { path: ["chat"] },
+});
+assert.equal(quotaApiResponse.status, 200, "Una quota esgotada no ha de convertir la conversa en un error intern");
+const quotaApiPayload = await quotaApiResponse.json();
+assert.equal(quotaApiPayload.conversation.provider, "aura-grounded-fallback");
+assert.equal(quotaApiPayload.conversation.fallbackReason, "provider-quota");
+
 const avatarContractResponse = await onRequest({
   request: new Request("https://aura.test/api/avatar-sergi", {
     headers: { "Cf-Access-Jwt-Assertion": ACCESS_ASSERTION },
@@ -200,6 +244,7 @@ assert.match(wrangler, /"ai"\s*:\s*\{\s*"binding"\s*:\s*"AI"/s);
 assert.match(wrangler, /"AURA_PREMIUM_AI_ENABLED"\s*:\s*"true"/);
 assert.match(wrangler, /"AURA_AI_GATEWAY_ID"\s*:\s*"default"/);
 assert.match(core, /apiPost\("\/chat"/);
+assert.match(core, /continuïtat sense IA generativa/);
 assert.match(core, /apiPost\("\/avatar-sergi\/chat"/);
 assert.match(html, /data-prompt="Què vaig decidir sobre aquesta web\?"/);
 assert.match(html, /data-action="sergi-avatar"/);

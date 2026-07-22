@@ -939,8 +939,10 @@ function formatAuraConversation(conversation) {
   const provenance = citedSources.length
     ? ["", "Fonts citades:", ...citedSources]
     : ["", "No hi ha cap font persistent citada en aquesta resposta; revisa-la com una proposta o demana més concreció."];
-  const fallback = conversation.fallbackUsed ? " · retorn automàtic a Llama" : "";
-  return [conversation.answer, ...provenance, "", `Model: ${conversation.model || AURA_CHAT_MODEL}${fallback} · només lectura`].join("\n");
+  const engineLine = conversation.provider === "aura-grounded-fallback"
+    ? "Motor: lectura directa d'Aura · continuïtat sense IA generativa · només lectura"
+    : `Model: ${conversation.model || AURA_CHAT_MODEL}${conversation.fallbackUsed ? " · retorn automàtic a Llama" : ""} · només lectura`;
+  return [conversation.answer, ...provenance, "", engineLine].join("\n");
 }
 
 function formatConversationSourceKind(kind) {

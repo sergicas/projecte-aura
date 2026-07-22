@@ -15,6 +15,7 @@ Pregunta de Sergi
   → intenció habitual: @cf/meta/llama-3.3-70b-instruct-fp8-fast
   → contradiccions, síntesi temporal o pla: openai/gpt-5.6-terra
   → Cloudflare AI Gateway, amb retorn automàtic a Llama si GPT no està disponible
+  → si els dos proveïdors fallen per quota o indisponibilitat: lectura directa i citada del context D1
   → resposta amb cites de fonts
   → historial curt només durant la sessió del navegador
 ```
@@ -23,7 +24,7 @@ El mòdul `functions/_lib/aura_ai.js` valida l'entrada, classifica la intenció,
 
 ## Contracte de resposta
 
-La resposta inclou `answer`, `sources`, `model`, `provider`, `route`, `fallbackUsed`, `usage` i `persistentWrite: false`. Les cites corresponen als identificadors retornats a `sources`, no a fonts inventades.
+La resposta inclou `answer`, `sources`, `model`, `provider`, `route`, `fallbackUsed`, `fallbackReason`, `usage` i `persistentWrite: false`. Les cites corresponen als identificadors retornats a `sources`, no a fonts inventades. En mode de continuïtat, `provider` és `aura-grounded-fallback` i Aura deixa clar que ofereix una lectura directa, no una síntesi generativa.
 
 ## Seguretat i privacitat
 
@@ -33,9 +34,9 @@ La resposta inclou `answer`, `sources`, `model`, `provider`, `route`, `fallbackU
 - El contingut recuperat es tracta com a dades, no com a instruccions.
 - Les preguntes no s'imprimeixen als logs; només es registren mètriques estructurades.
 - AI Gateway rep només el context seleccionat; les peticions desactiven la memòria cau i la recollida del log per no conservar preguntes ni respostes al Gateway.
-- GPT requereix crèdit de Unified Billing; sense crèdit, el retorn a Llama evita que el xat quedi inutilitzable.
+- GPT requereix crèdit de Unified Billing. Si GPT no respon, Aura prova Llama; si Workers AI també ha esgotat la quota o està indisponible, el motor de continuïtat retorna evidències citades sense cap cost d'inferència.
 - La connexió amb Sergi Avatar és explícita, separada i sense compartir context privat.
 
 ## Límits honestos
 
-No hi ha embeddings, Vectorize, ingestió automàtica de documents ni memòria conversacional persistent. La recuperació lèxica pot ometre informació expressada amb paraules molt diferents; les cites permeten revisar què ha sustentat la resposta.
+No hi ha embeddings, Vectorize, ingestió automàtica de documents ni memòria conversacional persistent. La recuperació lèxica pot ometre informació expressada amb paraules molt diferents; les cites permeten revisar què ha sustentat la resposta. El mode de continuïtat no substitueix la qualitat d'una síntesi generativa: prioritza disponibilitat, transparència i accés a les fonts.

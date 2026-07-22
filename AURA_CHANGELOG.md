@@ -2,6 +2,14 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Continuïtat del xat davant límits del proveïdor - 2026-07-22
+
+- Detecta explícitament quotes, límits, temps d'espera i indisponibilitat dels proveïdors d'IA.
+- Evita l'error intern quan Workers AI esgota l'assignació diària.
+- Manté Aura operativa amb una lectura directa i citada de D1, identificada honestament com a mode no generatiu.
+- Registra per separat les fallades de GPT i Llama sense imprimir les preguntes ni el context privat.
+- Afegeix proves contractuals del mode de continuïtat i renova la versió del JavaScript publicada.
+
 ## Redisseny visual càlid - 2026-07-22
 
 - Aura adopta una paleta de paper, verd profund i terracota més humana i menys administrativa.

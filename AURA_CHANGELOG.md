@@ -2,6 +2,14 @@
 
 Canvis rellevants del Projecte Aura.
 
+## Redisseny visual càlid - 2026-07-22
+
+- Aura adopta una paleta de paper, verd profund i terracota més humana i menys administrativa.
+- La conversa manté el protagonisme, però deixa enrere el gran bloc negre i guanya una capçalera editorial.
+- Les accions immediates incorporen jerarquia, símbols i resposta visual al focus i al cursor.
+- Els suggeriments, la memòria i el cos digital guanyen profunditat i codificació cromàtica sense afegir soroll.
+- S'ha renovat la versió dels recursos per evitar que la memòria cau mostri l'estil anterior.
+
 ## Redisseny integral de la interfície - 2026-07-21
 
 - Redueix la capçalera i la converteix en una barra compacta de context i connexió.

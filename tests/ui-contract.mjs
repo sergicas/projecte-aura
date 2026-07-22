@@ -56,7 +56,7 @@ assert.doesNotMatch(html, /class="identity-band"/, "La capçalera antiga no ha d
 assert.match(styles, /@media \(max-width: 620px\)/, "La interfície ha de tenir una composició mòbil específica.");
 assert.match(styles, /\.support-grid/, "La interfície ha de definir la graella de consulta secundària.");
 assert.match(styles, /\.prompt-suggestions\s*\{[\s\S]*grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/, "Els suggeriments d'escriptori no s'han de tallar horitzontalment.");
-assert.match(styles, /Redisseny integral v2/, "La interfície ha d'aplicar la capa visual compacta.");
+assert.match(styles, /Redisseny integral v3/, "La interfície ha d'aplicar la capa visual càlida i editorial.");
 assert.match(styles, /\.status-grid/, "La interfície ha de definir el nivell del cos digital i estat.");
 assert.doesNotMatch(styles, /\.aura-identity-card/, "Els estils de la il·lustració decorativa s'han d'eliminar.");
 for (const source of [core, api, backupWorker]) {

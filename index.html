@@ -8,7 +8,7 @@
       content="Projecte Aura Cloud v5.3: conversa generativa privada híbrida amb Llama i GPT, memòria D1 i connexió explícita amb Sergi Avatar."
     />
     <title>Projecte Aura Cloud v5.3</title>
-    <link rel="stylesheet" href="aura_style.css?v=design-v2-20260721" />
+    <link rel="stylesheet" href="aura_style.css?v=design-v3-20260722" />
   </head>
   <body>
     <main id="aura-shell" class="shell">
@@ -81,11 +81,11 @@
               </div>
 
               <div class="featured-actions" aria-label="Accions recomanades">
-                <button class="action-card action-card--primary" type="button" data-action="next-step">
+                <button class="action-card action-card--primary" type="button" data-action="next-step" aria-label="Què faig ara? Recomanació concreta per continuar">
                   <span>Què faig ara?</span>
                   <small>Recomanació concreta per continuar</small>
                 </button>
-                <button class="action-card" type="button" data-action="daily-report">
+                <button class="action-card" type="button" data-action="daily-report" aria-label="Informe d'avui. Resum del projecte i pendents">
                   <span>Informe d'avui</span>
                   <small>Resum del projecte i pendents</small>
                 </button>
@@ -93,6 +93,7 @@
                   class="action-card action-card--write"
                   type="button"
                   data-action="new-record"
+                  aria-label="Grava un record. Desa una decisió a la memòria"
                   aria-controls="record-form"
                   aria-expanded="false"
                 >
@@ -218,6 +219,6 @@
       </dialog>
     </main>
 
-    <script src="aura_core.js?v=design-v2-20260721" defer></script>
+    <script src="aura_core.js?v=design-v3-20260722" defer></script>
   </body>
 </html>

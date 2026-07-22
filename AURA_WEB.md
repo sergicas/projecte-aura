@@ -32,7 +32,7 @@ Aura Web permet preguntar amb llenguatge natural sobre la memòria del projecte 
 
 L'ordre de lectura canònic és: `conversa` → `accions immediates` → `consulta i explora` → `cos digital i estat`. En pantalles petites, aquests nivells es mantenen en una sola columna i en el mateix ordre.
 
-La capa visual `design-v2` redueix la capçalera, substitueix el panell negre dominant per una superfície clara, distribueix els suggeriments sense desplaçament horitzontal i concentra les accions principals en una única targeta.
+La capa visual `design-v3` manté aquesta jerarquia i hi afegeix una identitat càlida i editorial amb paper, verd profund i terracota, més profunditat i accions recognoscibles sense alterar les funcions.
 
 ## Contracte conversacional
 

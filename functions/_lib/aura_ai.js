@@ -213,7 +213,7 @@ export function buildAuraContinuityResponse({ contextBundle, startedAt = Date.no
 function selectContinuitySources(contextBundle) {
   const sources = Array.isArray(contextBundle?.sources) ? contextBundle.sources : [];
   const intentPattern = {
-    commitments: /\b(compromis\w*|pendent\w*|tasca\w*|termini\w*|lliur\w*|cal)\b|\bha de\b/,
+    commitments: /\b(compromis\w*|pendent\w*|tasca\w*|lliur\w*|cal)\b|\bha de\b/,
     decisions: /decisi|decid|acord|priorit|descart/,
     "timeline-summary": /fase|evoluc|canvi|despleg|hist|versio/,
     contradictions: /contradi|canvi|revoc|descart|pero|però|no /,

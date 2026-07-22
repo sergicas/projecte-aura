@@ -141,7 +141,9 @@ const continuityContext = buildAuraChatContext({
   records: [
     { id: "m-pendent", text: "Pendent: revisar la interfície d'Aura aquesta setmana.", kind: "compromis", weight: 5, createdAt: "2026-07-21T09:00:00.000Z" },
   ],
-  diary: [],
+  diary: [
+    { id: "d-local", text: "La interfície manté fallback local i backups sincronitzats.", createdAt: "2026-07-22T07:00:00.000Z" },
+  ],
   knowledge: [],
   genes: [],
 });
@@ -157,6 +159,7 @@ assert.equal(continuityGenerated.provider, "aura-grounded-fallback");
 assert.equal(continuityGenerated.route, "continuity");
 assert.equal(continuityGenerated.fallbackReason, "provider-quota");
 assert.equal(continuityGenerated.persistentWrite, false);
+assert.ok(!continuityGenerated.sources.some((source) => source.id === "d-local"), "La paraula local no s'ha de confondre amb l'obligació 'cal'");
 assert.match(continuityGenerated.answer, /lectura directa i citada/i);
 assert.match(continuityGenerated.answer, /\[M1\]/);
 

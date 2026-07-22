@@ -936,7 +936,9 @@ function formatAuraConversation(conversation) {
       const excerpt = String(source.excerpt || "").replace(/\s+/g, " ").trim();
       return `- [${source.label}] ${formatConversationSourceKind(source.kind)} · ${date}: ${excerpt}`;
     });
-  const provenance = citedSources.length
+  const provenance = conversation.provider === "aura-grounded-fallback"
+    ? ["", "Les etiquetes [M#], [D#], [K#] i [G#] identifiquen les fonts persistents recuperades."]
+    : citedSources.length
     ? ["", "Fonts citades:", ...citedSources]
     : ["", "No hi ha cap font persistent citada en aquesta resposta; revisa-la com una proposta o demana més concreció."];
   const engineLine = conversation.provider === "aura-grounded-fallback"

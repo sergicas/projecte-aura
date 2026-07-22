@@ -189,8 +189,8 @@ export async function runAuraConversation({
 }
 
 export function buildAuraContinuityResponse({ contextBundle, startedAt = Date.now(), premiumRequested = false, error }) {
-  const sources = selectContinuitySources(contextBundle);
-  const answer = buildContinuityAnswer(contextBundle.intent, sources);
+  const selection = selectContinuitySources(contextBundle);
+  const answer = buildContinuityAnswer(contextBundle.intent, selection.sources, selection.intentMatched);
   return {
     answer,
     model: "aura-context-engine",
@@ -201,9 +201,9 @@ export function buildAuraContinuityResponse({ contextBundle, startedAt = Date.no
     fallbackReason: classifyAiFailure(error),
     generatedAt: new Date().toISOString(),
     latencyMs: Date.now() - startedAt,
-    grounded: sources.length > 0,
+    grounded: selection.sources.length > 0,
     intent: contextBundle.intent,
-    sources,
+    sources: selection.sources,
     context: contextBundle.stats,
     usage: null,
     persistentWrite: false,
@@ -223,21 +223,34 @@ function selectContinuitySources(contextBundle) {
   const relevant = intentPattern
     ? newestFirst.filter((source) => intentPattern.test(normalizeForSearch(`${source.title || ""} ${source.excerpt || ""}`)))
     : [];
-  return uniqueById([...relevant, ...newestFirst]).slice(0, CONTINUITY_SOURCE_LIMIT);
+  if (relevant.length) {
+    return {
+      sources: uniqueById(relevant).slice(0, CONTINUITY_SOURCE_LIMIT),
+      intentMatched: true,
+    };
+  }
+  return {
+    sources: newestFirst.slice(0, Math.min(3, CONTINUITY_SOURCE_LIMIT)),
+    intentMatched: false,
+  };
 }
 
-function buildContinuityAnswer(intent, sources) {
+function buildContinuityAnswer(intent, sources, intentMatched) {
   const evidence = sources.length
     ? sources.map((source) => `- ${continuityExcerpt(source)} [${source.label}]`).join("\n")
     : "- No hi ha cap registre persistent prou rellevant per respondre amb seguretat.";
-  const heading = {
+  const heading = !intentMatched && intent === "commitments"
+    ? "No he trobat cap compromís explícit en el context recuperat. Aquests són els registres més recents, però no els presento com a pendents:"
+    : ({
     commitments: "Aquests són els registres que més probablement contenen compromisos o pendents:",
     decisions: "Aquestes són les decisions o prioritats més rellevants que consten:",
     "timeline-summary": "Aquests són els punts registrats més rellevants de l'evolució:",
     contradictions: "Aquests són els registres que cal comparar per revisar possibles contradiccions:",
     "work-plan": "Aquests són els pendents i prioritats registrats que poden orientar el pla:",
-  }[intent] || "Aquests són els registres més rellevants per a la pregunta:";
-  const caveat = intent === "contradictions"
+  }[intent] || "Aquests són els registres més rellevants per a la pregunta:");
+  const caveat = !intentMatched && intent === "commitments"
+    ? "Per no inventar obligacions, cal registrar els compromisos explícitament o recuperar la síntesi generativa."
+    : intent === "contradictions"
     ? "No marco cap contradicció com a confirmada sense la síntesi del model generatiu."
     : "És una lectura directa de la memòria, no una síntesi generativa.";
   return [
